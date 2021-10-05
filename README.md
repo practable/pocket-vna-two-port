@@ -5,6 +5,22 @@ A go-wrapper for the pocketvna.com 2-port vector network analyser's openAPI
 
 The pocketVNA has a so-called 'open API' which is - contrary to open-source principles - only distributed in compiled form. Nonetheless, this compiled shared library written in pure-C is available for a number of platforms, a colleague already bought some pocketVNA, and we want to use them remotely, so use this library we must. Fortunately, Cgo allows Go code to call C-libraries, so I can write websocket and JSON messaging code in golang rather than C.
 
+## Performance
+
+It is unclear whether the newer, faster firmware is supported on linux. From the manual:-
+
+```
+Pay attention : that newer firmware supports 2 interfaces:
+1. HID -- it is universal and easy. Supported by all platforms. But it is slow
+2. VCI -- available since firmware V2.10. On Windows requires a special driver (for
+example zadig/Interface 1) It is faster. May be unavailable on Mac-OS
+In this case both interfaces are listed as individual (separated\independent) items with
+the same Serial Number.
+It is bad idea to connect both interfaces at the same time and especially bad to perform
+scan concurrently
+```
+
+Thus to use this newer firmware we will likely need to enumerate devices and handle lists, etc. This should be ok because the types in the C library can be used as parameters.
 
 ### Result codes
 

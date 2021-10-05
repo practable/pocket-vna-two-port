@@ -79,6 +79,18 @@ func ReleaseHandle(handle C.PVNA_DeviceHandler) error {
 
 }
 
+func describe(handle C.PVNA_DeviceHandler) Description {
+
+	/*	d := handle //C.PocketVnaDeviceDesc
+
+		return Description{
+			Serial: C.GoString(d.serial_number),
+		}*/
+
+	return Description{}
+
+}
+
 func decode(result C.PVNA_Res) error {
 
 	code := int(result)
