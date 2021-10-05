@@ -176,9 +176,9 @@ func SingleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamS
 
 	s := SParam{
 		S11: complex(S11.real, S11.imag),
-		S12: complex(S11.real, S11.imag),
-		S21: complex(S11.real, S11.imag),
-		S22: complex(S11.real, S11.imag),
+		S12: complex(S12.real, S12.imag),
+		S21: complex(S21.real, S21.imag),
+		S22: complex(S22.real, S22.imag),
 	}
 
 	return s, decode(result)

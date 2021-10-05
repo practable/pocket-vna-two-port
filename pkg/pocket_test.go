@@ -68,11 +68,9 @@ func TestSingleQuery(t *testing.T) {
 	handle, err := GetFirstDeviceHandle()
 	assert.NoError(t, err)
 
-	from, to, err := GetReasonableFrequencyRange(handle)
+	from, _, err := GetReasonableFrequencyRange(handle)
 
 	assert.NoError(t, err)
-
-	fmt.Printf("Reasonable frequency range: [%d, %d]\n", from, to)
 
 	s, err := SingleQuery(handle, from, 1, SParamSelect{true, true, true, true})
 
