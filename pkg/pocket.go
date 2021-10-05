@@ -64,14 +64,20 @@ func ForceUnlockDevices() error {
 
 }
 
-/*
-func tryit() {
+func GetFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
 
-	result := C.pocketvna_force_unlock_devices()
 	handle := C.PVNA_DeviceHandler(nil)
-	result = C.pocketvna_get_first_device_handle(&handle)
-	result = C.pocketvna_release_handle(&handle)
-}*/
+	result := C.pocketvna_get_first_device_handle(&handle)
+	return handle, decode(result)
+
+}
+
+func ReleaseHandle(handle C.PVNA_DeviceHandler) error {
+
+	result := C.pocketvna_release_handle(&handle)
+	return decode(result)
+
+}
 
 func decode(result C.PVNA_Res) error {
 

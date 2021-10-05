@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
@@ -39,10 +40,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetReleaseHandle(t *testing.T) {
-	/*
-		result = C.pocketvna_get_first_device_handle(&handle)
-			fmt.Println(Decode(result))
-			result = C.pocketvna_release_handle(&handle)
-			fmt.Println(Decode(result))
-	*/
+
+	handle, err := GetFirstDeviceHandle()
+	assert.NoError(t, err)
+	err = ReleaseHandle(handle)
+	assert.NoError(t, err)
 }
