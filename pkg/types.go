@@ -26,3 +26,17 @@ type Description struct {
 	Product      string
 	Release      int
 }
+
+type SParamSelect struct {
+	S11 bool
+	S12 bool
+	S21 bool
+	S22 bool
+}
+
+type SParam struct {
+	S11 complex128
+	S12 complex128
+	S21 complex128
+	S22 complex128
+}
