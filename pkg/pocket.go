@@ -79,15 +79,27 @@ func ReleaseHandle(handle C.PVNA_DeviceHandler) error {
 
 }
 
-func describe(handle C.PVNA_DeviceHandler) Description {
+/* @brief Get reasonable frequency range IOW a range device can process correctly
+   Usually it is narrower than [1_Hz; 6_GHz].
 
-	/*	d := handle //C.PocketVnaDeviceDesc
+       @ingroup API
+       @param handle  A pointer to Device.
+       @param from    A pointer (reference) where to save lowest frequency a device can process correctly
+       @param to      A pointer (reference) where to save highest frequency a device can process correctly
 
-		return Description{
-			Serial: C.GoString(d.serial_number),
-		}*/
+       @returns
+           This function returns Result: 'Ok' on success, 'PVNA_Res_InvalidHandle' if handle is invalid
 
-	return Description{}
+   PVNA_EXPORTED PVNA_Res   pocketvna_get_reasonable_frequency_range(const PVNA_DeviceHandler handle, PVNA_Frequency * from, PVNA_Frequency * to);
+*/
+
+func GetReasonableFrequencyRange(handle C.PVNA_DeviceHandler) (uint64, uint64, error) {
+
+	from := C.PVNA_Frequency(0)
+	to := C.PVNA_Frequency(0)
+	result := C.pocketvna_get_reasonable_frequency_range(handle, &from, &to)
+
+	return uint64(from), uint64(to), decode(result)
 
 }
 
