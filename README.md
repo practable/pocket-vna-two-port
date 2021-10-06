@@ -5,6 +5,15 @@ A go-wrapper for the pocketvna.com 2-port vector network analyser's openAPI
 
 The pocketVNA has a so-called 'open API' which is - contrary to open-source principles - only distributed in compiled form. Nonetheless, this compiled shared library written in pure-C is available for a number of platforms, a colleague already bought some pocketVNA, and we want to use them remotely, so use this library we must. Fortunately, Cgo allows Go code to call C-libraries, so I can write websocket and JSON messaging code in golang rather than C.
 
+## CGO info
+
+An example of using cgo can be found [here](https://github.com/timhughes/cgoexample) - note you have to delete hello.c from the project directory to avoid `multiple definition of main` error.
+
+There are some differences between C and golang which could create difficulties for users of some C libraries [here](https://docs.yottadb.com/Presentations/DragonsofCGO.pdf), especially where there are:
+0. pointers to structs containing other pointers
+1. callbacks
+2. issues not apparent until garbage collection is triggered
+
 ## Performance
 
 It is unclear whether the newer, faster firmware is supported on linux. From the manual:-
@@ -72,3 +81,21 @@ Cable connected
 {(-0.0013300031423568726+0.000985749065876007i) (0.0026688948273658752-0.005279362201690674i) (0.002047717571258545-0.006369277834892273i) (-0.0012982413172721863+0.0008942857384681702i)}
 ```
 
+
+## API to the API
+
+since pointers container pointers are difficult to handle, the preferred API is the range API, probably.
+
+
+
+## Small gotchas with cgo
+
+### Could not determine type of name error
+
+```
+To access a struct, union, or enum type directly, prefix it with struct_, union_, or enum_, as in C.struct_stat.
+```
+for example
+```
+C.enum_PocketVNADistribution(distr), //note we have to add enum_ to access this name
+```

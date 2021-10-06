@@ -199,3 +199,86 @@ func decode(result C.PVNA_Res) error {
 		}
 	}
 }
+
+/*   * @brief Query device for some Network Parameters using a distribution formula
+     *
+     *   It accepts @p handle and gets Network parameters @p params. Frequency point is calculated by distribution formula
+     *  Distributions:
+     *    Linear:      (@p start * 1000 + ((@p end - @p start) * 1000 / (@p steps - 1)) * index) / 1000
+     *       (Pay Attention: all numbers are integers. Last element is forced to be equalt to @p end)
+     *    Logarithmic: (@p from * powf((float)to / from, (float)index / (steps - 1)))
+     *       Formula is taken from 10 ** (lg from +  ( lg to - lg from ) * index /  (steps - 1)). 4-bytes float are used
+     *       Pay attention: arithmetic is pretty imprecise on a device
+
+        @ingroup API
+        @param handle   A pointer to Device
+        @param start    Start Frequency
+        @param end      End Frequency. Should be greater than @p start
+        @param steps    Number of frequency points
+        @param distr    A code for distribution formula (Linear)
+        @param average  A average times to ask hardware. Usually should be between [1; 1000]
+        @param params   Network Parameters that should be taken: S11 or S21 or S12 or S22. Use '|' to combine
+        @param s11a      Array to SParam structures (pairs of double). S11 Network Parameters will be here is @p params asked for it
+        @param s21a      Array to SParam structures (pairs of double). S21 Network Parameters will be here is @p params asked for it
+        @param s12a      Array to SParam structures (pairs of double). S21 Network Parameters will be here is @p params asked for it
+        @param s22a      Array to SParam structures (pairs of double). S22 Network Parameters will be here is @p params asked for it
+        @param progress  Callback structure. It if is not NULL callee will be notified about currently processed index of frequency
+
+        @returns
+
+    PVNA_EXPORTED PVNA_Res   pocketvna_range_query(
+            const PVNA_DeviceHandler handle,
+            const PVNA_Frequency start, const PVNA_Frequency end, const uint32_t size, enum PocketVNADistribution distr,
+            const uint16_t average, const PVNA_NetworkParam params,
+            PVNA_Sparam * s11a, PVNA_Sparam * s21a,
+            PVNA_Sparam * s12a, PVNA_Sparam * s22a,
+            PVNA_ProgressCallBack * progress
+    );
+
+enum PocketVNADistribution {
+    PVNADist_Linear=1,
+    PVNADist_Log=2
+};
+
+*/
+type Distribution int
+
+const (
+	Undefined Distribution = iota //handle default value being undefined
+	Linear
+	Log
+)
+
+// We do not implement the callback for this version ...
+func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size uint32, distr int, avg uint16, p SParamSelect) (SParam, error) {
+
+	S11 := [512]C.PVNA_Sparam{}
+	S12 := [512]C.PVNA_Sparam{}
+	S21 := [512]C.PVNA_Sparam{}
+	S22 := [512]C.PVNA_Sparam{}
+
+	result := C.pocketvna_range_query(handle,
+		C.PVNA_Frequency(start),
+		C.PVNA_Frequency(end),
+		C.uint32_t(size),
+		C.enum_PocketVNADistribution(distr), //note we have to add enum_ to access this name
+		C.uint16_t(avg),
+		encodeParams(p),
+		&S11[0],
+		&S21[0],
+		&S12[0],
+		&S22[0],
+
+		nil)
+
+	s := SParam{}
+	/*
+			S11: complex(S11.real, S11.imag),
+			S12: complex(S12.real, S12.imag),
+			S21: complex(S21.real, S21.imag),
+			S22: complex(S22.real, S22.imag),
+		}
+	*/
+	return s, decode(result)
+
+}

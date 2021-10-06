@@ -82,3 +82,23 @@ func TestSingleQuery(t *testing.T) {
 	assert.NoError(t, err)
 
 }
+
+func TestRangeQuery(t *testing.T) {
+
+	handle, err := GetFirstDeviceHandle()
+	assert.NoError(t, err)
+
+	from, to, err := GetReasonableFrequencyRange(handle)
+
+	assert.NoError(t, err)
+
+	s, err := RangeQuery(handle, from, to, 128, 1, 1, SParamSelect{true, true, true, true})
+
+	assert.NoError(t, err)
+
+	fmt.Println(s)
+
+	err = ReleaseHandle(handle)
+	assert.NoError(t, err)
+
+}
