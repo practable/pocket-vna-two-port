@@ -250,7 +250,7 @@ const (
 )
 
 // We do not implement the callback for this version ...
-func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size uint32, distr int, avg uint16, p SParamSelect) (SParam, error) {
+func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr int, avg uint16, p SParamSelect) ([]SParam, error) {
 
 	S11 := [512]C.PVNA_Sparam{}
 	S12 := [512]C.PVNA_Sparam{}
@@ -271,14 +271,21 @@ func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size uint32, dis
 
 		nil)
 
-	s := SParam{}
-	/*
-			S11: complex(S11.real, S11.imag),
-			S12: complex(S12.real, S12.imag),
-			S21: complex(S21.real, S21.imag),
-			S22: complex(S22.real, S22.imag),
+	ss := []SParam{}
+
+	for i := 0; i < int(size); i++ {
+
+		s := SParam{
+			S11: complex(S11[i].real, S11[i].imag),
+			S12: complex(S12[i].real, S12[i].imag),
+			S21: complex(S21[i].real, S21[i].imag),
+			S22: complex(S22[i].real, S22[i].imag),
 		}
-	*/
-	return s, decode(result)
+
+		ss = append(ss, s)
+
+	}
+
+	return ss, decode(result)
 
 }

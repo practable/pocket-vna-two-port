@@ -92,7 +92,7 @@ func TestRangeQuery(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	s, err := RangeQuery(handle, from, to, 128, 1, 1, SParamSelect{true, true, true, true})
+	s, err := RangeQuery(handle, from, to, 3, 1, 1, SParamSelect{true, true, true, true})
 
 	assert.NoError(t, err)
 
