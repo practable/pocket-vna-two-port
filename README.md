@@ -86,6 +86,13 @@ Cable connected
 
 since pointers container pointers are difficult to handle, the preferred API is the range API, probably.
 
+## Testability, and future substitution of other hardware ...
+
+There is really only one command that the user interface needs to know about - RangeQuery.
+
+Therefore a simple remote driver would grab a device handle, and sit back and wait for RangeQuery commands.
+
+Getting the callback to work would be pretty sweet, too. Can we poke percentage complete values into a channel?
 
 
 ## Small gotchas with cgo
