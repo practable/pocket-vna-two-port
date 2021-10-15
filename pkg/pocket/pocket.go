@@ -32,50 +32,57 @@ type VNA struct {
 	handle C.PVNA_DeviceHandler
 }
 
-var Results = [...]string{
-	"PVNA_Res_Ok",
-	"PVNA_Res_NoDevice",
-	"PVNA_Res_NoMemoryError",
-	"PVNA_Res_CanNotInitialize",
-	"PVNA_Res_BadDescriptor",
-	"PVNA_Res_DeviceLocked",
-	"PVNA_Res_NoDevicePath",
-	"PVNA_Res_NoAccess",
-	"PVNA_Res_FailedToOpen",
-	"PVNA_Res_InvalidHandle",
-	"PVNA_Res_BadTransmission",
-	"PVNA_Res_UnsupportedTransmission",
-	"PVNA_Res_BadFrequency",
-	"PVNA_Res_DataReadFailure",
-	"PVNA_Res_EmptyResponse",
-	"PVNA_Res_IncompleteResponse",
-	"PVNA_Res_FailedToWriteRequest",
-	"PVNA_Res_ArraySizeTooBig",
-	"PVNA_Res_BadResponse",
-	"PVNA_Res_DeviceResponseSection",
-	"PVNA_Res_Response_UNKNOWN_MODE",
-	"PVNA_Res_Response_UNKNOWN_PARAMETER",
-	"PVNA_Res_Response_NOT_INITIALIZED",
-	"PVNA_Res_Response_FREQ_TOO_LOW",
-	"PVNA_Res_Response_FREQ_TOO_HIGH",
-	"PVNA_Res_Response_OutOfBound",
-	"PVNA_Res_Response_UNKNOWN_VARIABLE",
-	"PVNA_Res_Response_UNKNOWN_ERROR",
-	"PVNA_Res_Response_BAD_FORMAT",
-	"PVNA_Res_ExtendedSection",
-	"PVNA_Res_ScanCanceled",
-	"PVNA_Res_Rfmath_Section",
-	"PVNA_Res_No_Data",
-	"PVNA_Res_LIBUSB_Error",
-	"PVNA_Res_LIBUSB_CanNotSelectInterface",
-	"PVNA_Res_LIBUSB_Timeout",
-	"PVNA_Res_LIBUSB_Busy",
-	"PVNA_Res_VCI_PrepareScanError",
-	"PVNA_Res_VCI_Response_Error",
-	"PVNA_Res_EndLEQStart",
-	"PVNA_Res_VCI_Failed2OpenProbablyDriver",
-	"PVNA_Res_HID_AdditionalError",
-	"PVNA_Res_Fail",
+func NewVNA() *VNA {
+
+	return new(VNA)
+}
+
+/* Run provides a go channel interface to the first available instance of a pocket VNA device
+
+There are two uni-directional channels, one to receive commands, the other to reply with data
+
+*/
+
+func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx context.Context) {
+
+	err := v.Connect()
+
+	if err != nil {
+		result <- err
+		return
+	}
+
+	for {
+		select {
+
+		case cmd := <-command:
+
+			result <- v.HandleCommand(cmd)
+
+		case <-ctx.Done():
+			err := v.Disconnect()
+			if err != nil {
+				result <- err
+			}
+			return
+		}
+	}
+}
+
+func (v *VNA) Connect() error {
+	handle, err := getFirstDeviceHandle()
+	if err != nil {
+		return err
+	}
+
+	v.handle = handle
+
+	return nil
+}
+
+func (v *VNA) Disconnect() error {
+
+	return releaseHandle(v.handle)
 }
 
 func ForceUnlockDevices() error {
@@ -83,8 +90,100 @@ func ForceUnlockDevices() error {
 	result := C.pocketvna_force_unlock_devices()
 
 	return decode(result)
+}
+
+func (v *VNA) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
+
+	fStart, fEnd, err := getReasonableFrequencyRange(v.handle)
+
+	if err != nil {
+		return r, err
+	}
+
+	r.Result.Start = fStart
+	r.Result.End = fEnd
+
+	return r, err
 
 }
+
+func (v *VNA) HandleCommand(command interface{}) interface{} {
+
+	switch command.(type) {
+
+	case ReasonableFrequencyRange:
+
+		result, err := v.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
+
+		if err != nil {
+			return err
+		}
+
+		return result
+
+	case RangeQuery:
+
+		result, err := v.RangeQuery(command.(RangeQuery))
+
+		if err != nil {
+			return err
+		}
+
+		return result
+
+	case SingleQuery:
+
+		result, err := v.SingleQuery(command.(SingleQuery))
+
+		if err != nil {
+			return err
+		}
+
+		return result
+
+	default:
+		return CustomResult{
+			Message: "Unknown Command",
+			Command: command,
+		}
+	}
+
+}
+
+func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
+
+	distr := 0
+
+	if r.LogDistribution {
+		distr = 1
+	}
+
+	sparams, err := rangeQuery(v.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
+
+	if err != nil {
+		return r, err
+	}
+
+	r.Result = sparams
+
+	return r, err
+}
+
+func (v *VNA) SingleQuery(s SingleQuery) (SingleQuery, error) {
+
+	sparam, err := singleQuery(v.handle, s.Freq, s.Avg, s.Select)
+
+	if err != nil {
+		return s, err
+	}
+
+	s.Result = sparam
+
+	return s, err
+
+}
+
+/* PRIVATE FUNCTIONS */
 
 func getFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
 
@@ -311,56 +410,3 @@ func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 	return ss, decode(result)
 
 }
-
-func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
-
-	distr := 0
-
-	if r.LogDistribution {
-		distr = 1
-	}
-
-	sparams, err := rangeQuery(v.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
-
-	if err != nil {
-		return r, err
-	}
-
-	r.Result = sparams
-
-	return r, err
-
-}
-
-/* RunHandle provides a go channel interface to a given instance of a pocket VNA device
-
-There are two uni-directional channels, one to receive commands, the other to reply with data
-
-*/
-
-func (c *VNA) Run(command <-chan interface{}, result chan<- interface{}, e chan<- error, ctx context.Context) {
-
-}
-
-/*
-func RunFirstAvailable(c <- chan Command, d chan <- Data, e chan <- errors.Error, ctx context.Context) {
-
-	handle, err := GetFirstDeviceHandle()
-
-	from, _, err := GetReasonableFrequencyRange(handle)
-
-	assert.NoError(t, err)
-
-	s, err := SingleQuery(handle, from, 1, SParamSelect{true, true, true, true})
-
-	assert.NoError(t, err)
-
-	fmt.Println(s)
-
-	err = ReleaseHandle(handle)
-	assert.NoError(t, err)
-
-	RunHandle(h C.PVNA_DeviceHandler, c chan<- Command, d <-chan Data, ctx context.Context)
-
-}
-*/
