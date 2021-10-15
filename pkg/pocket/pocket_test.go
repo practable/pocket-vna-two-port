@@ -3,9 +3,11 @@ package pocket
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -100,5 +102,42 @@ func TestRangeQuery(t *testing.T) {
 
 	err = releaseHandle(handle)
 	assert.NoError(t, err)
+
+}
+
+func TestRun(t *testing.T) {
+
+	timeout := time.Millisecond * 100
+
+	v := NewVNA()
+
+	command := make(chan interface{})
+	result := make(chan interface{})
+
+	ctx := context.Background()
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	go v.Run(command, result, ctx)
+
+	id := "123xyz"
+	command <- ReasonableFrequencyRange{Command: Command{ID: id}}
+
+	select {
+	case <-time.After(timeout):
+		t.Error("timeout")
+	case ri := <-result:
+
+		if actual, ok := ri.(ReasonableFrequencyRange); !ok {
+			t.Error("Wrong type returned")
+		} else {
+
+			assert.Equal(t, actual.ID, id)
+			assert.True(t, actual.Result.Start > 0)
+			assert.True(t, actual.Result.End > actual.Result.Start)
+		}
+
+	}
+	cancel()
 
 }
