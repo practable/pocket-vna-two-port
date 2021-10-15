@@ -40,3 +40,42 @@ type SParam struct {
 	S21 complex128
 	S22 complex128
 }
+
+type Range struct {
+	Start uint64
+	End   uint64
+}
+
+type Command struct {
+	ID      string `json:"id,omitEmpty"`
+	Time    int    `json:"t,omitEmpty"`
+	Command string `json:"cmd,omitEmpty"`
+}
+
+type RangeQuery struct {
+	Command
+	Range           Range        `json:"range"`
+	Size            int          `json:"size"`
+	LogDistribution bool         `json:"isLog"`
+	Avg             uint16       `json:"avg"`
+	Select          SParamSelect `json:"sparam"`
+	Result          []SParam     `json:"result,omitEmpty"`
+}
+
+type SingleQuery struct {
+	Command
+	Freq   uint64       `json:"freq"`
+	Avg    uint16       `json:"avg"`
+	Select SParamSelect `json:"sparam"`
+	Result SParam       `json:"result,omitEmpty"`
+}
+
+type ReasonableFrequencyRange struct {
+	Command
+	Result Range `json:"range"`
+}
+
+type Progress struct {
+	Command
+	Percentage int `json:"pc"`
+}

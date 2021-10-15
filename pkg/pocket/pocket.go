@@ -1,3 +1,19 @@
+/*
+Package pocket uses cgo to wrap the shared C library for the pocketVNA openAPI
+
+The commands supported are
+
+ForceUnlock
+GetFirstDeviceHandle
+ReleaseHandle
+GetReasonableFrequencyRange
+SingleQuery
+RangeQuery
+
+Function call result codes are decoded as required, into strings as specified in pocket.h
+
+*/
+
 package pocket
 
 /*
@@ -7,8 +23,14 @@ package pocket
 */
 import "C"
 import (
+	"context"
 	"errors"
 )
+
+// does not compile if in types.go ("C undefined")
+type VNA struct {
+	handle C.PVNA_DeviceHandler
+}
 
 var Results = [...]string{
 	"PVNA_Res_Ok",
@@ -64,7 +86,7 @@ func ForceUnlockDevices() error {
 
 }
 
-func GetFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
+func getFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
 
 	handle := C.PVNA_DeviceHandler(nil)
 	result := C.pocketvna_get_first_device_handle(&handle)
@@ -72,7 +94,7 @@ func GetFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
 
 }
 
-func ReleaseHandle(handle C.PVNA_DeviceHandler) error {
+func releaseHandle(handle C.PVNA_DeviceHandler) error {
 
 	result := C.pocketvna_release_handle(&handle)
 	return decode(result)
@@ -93,7 +115,7 @@ func ReleaseHandle(handle C.PVNA_DeviceHandler) error {
    PVNA_EXPORTED PVNA_Res   pocketvna_get_reasonable_frequency_range(const PVNA_DeviceHandler handle, PVNA_Frequency * from, PVNA_Frequency * to);
 */
 
-func GetReasonableFrequencyRange(handle C.PVNA_DeviceHandler) (uint64, uint64, error) {
+func getReasonableFrequencyRange(handle C.PVNA_DeviceHandler) (uint64, uint64, error) {
 
 	from := C.PVNA_Frequency(0)
 	to := C.PVNA_Frequency(0)
@@ -165,7 +187,7 @@ func encodeParams(p SParamSelect) C.PVNA_NetworkParam {
 
 }
 
-func SingleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamSelect) (SParam, error) {
+func singleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamSelect) (SParam, error) {
 
 	S11 := C.PVNA_Sparam{0.0, 0.0}
 	S12 := C.PVNA_Sparam{0.0, 0.0}
@@ -250,7 +272,7 @@ const (
 )
 
 // We do not implement the callback for this version ...
-func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr int, avg uint16, p SParamSelect) ([]SParam, error) {
+func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr int, avg uint16, p SParamSelect) ([]SParam, error) {
 
 	S11 := [512]C.PVNA_Sparam{}
 	S12 := [512]C.PVNA_Sparam{}
@@ -289,3 +311,56 @@ func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 	return ss, decode(result)
 
 }
+
+func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
+
+	distr := 0
+
+	if r.LogDistribution {
+		distr = 1
+	}
+
+	sparams, err := rangeQuery(v.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
+
+	if err != nil {
+		return r, err
+	}
+
+	r.Result = sparams
+
+	return r, err
+
+}
+
+/* RunHandle provides a go channel interface to a given instance of a pocket VNA device
+
+There are two uni-directional channels, one to receive commands, the other to reply with data
+
+*/
+
+func (c *VNA) Run(command <-chan interface{}, result chan<- interface{}, e chan<- error, ctx context.Context) {
+
+}
+
+/*
+func RunFirstAvailable(c <- chan Command, d chan <- Data, e chan <- errors.Error, ctx context.Context) {
+
+	handle, err := GetFirstDeviceHandle()
+
+	from, _, err := GetReasonableFrequencyRange(handle)
+
+	assert.NoError(t, err)
+
+	s, err := SingleQuery(handle, from, 1, SParamSelect{true, true, true, true})
+
+	assert.NoError(t, err)
+
+	fmt.Println(s)
+
+	err = ReleaseHandle(handle)
+	assert.NoError(t, err)
+
+	RunHandle(h C.PVNA_DeviceHandler, c chan<- Command, d <-chan Data, ctx context.Context)
+
+}
+*/

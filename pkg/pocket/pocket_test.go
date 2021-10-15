@@ -41,64 +41,64 @@ func TestMain(m *testing.M) {
 
 func TestGetReleaseHandle(t *testing.T) {
 
-	handle, err := GetFirstDeviceHandle()
+	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
-	err = ReleaseHandle(handle)
+	err = releaseHandle(handle)
 	assert.NoError(t, err)
 }
 
 func TestGetReasonableFrequency(t *testing.T) {
 
-	handle, err := GetFirstDeviceHandle()
+	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
 
-	from, to, err := GetReasonableFrequencyRange(handle)
+	from, to, err := getReasonableFrequencyRange(handle)
 
 	assert.NoError(t, err)
 
 	fmt.Printf("Reasonable frequency range: [%d, %d]\n", from, to)
 
-	err = ReleaseHandle(handle)
+	err = releaseHandle(handle)
 	assert.NoError(t, err)
 
 }
 
 func TestSingleQuery(t *testing.T) {
 
-	handle, err := GetFirstDeviceHandle()
+	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
 
-	from, _, err := GetReasonableFrequencyRange(handle)
+	from, _, err := getReasonableFrequencyRange(handle)
 
 	assert.NoError(t, err)
 
-	s, err := SingleQuery(handle, from, 1, SParamSelect{true, true, true, true})
+	s, err := singleQuery(handle, from, 1, SParamSelect{true, true, true, true})
 
 	assert.NoError(t, err)
 
 	fmt.Println(s)
 
-	err = ReleaseHandle(handle)
+	err = releaseHandle(handle)
 	assert.NoError(t, err)
 
 }
 
 func TestRangeQuery(t *testing.T) {
 
-	handle, err := GetFirstDeviceHandle()
+	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
 
-	from, to, err := GetReasonableFrequencyRange(handle)
+	from, to, err := getReasonableFrequencyRange(handle)
 
 	assert.NoError(t, err)
 
-	s, err := RangeQuery(handle, from, to, 3, 1, 1, SParamSelect{true, true, true, true})
+	s, err := rangeQuery(handle, from, to, 3, 1, 1, SParamSelect{true, true, true, true})
 
 	assert.NoError(t, err)
 
 	fmt.Println(s)
 
-	err = ReleaseHandle(handle)
+	err = releaseHandle(handle)
 	assert.NoError(t, err)
 
 }
