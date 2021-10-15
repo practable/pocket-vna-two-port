@@ -14,9 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var verbose bool
+
 func TestMain(m *testing.M) {
 	// Setup  logging
 	debug := false
+	verbose = false
 
 	if debug {
 		log.SetLevel(log.TraceLevel)
@@ -58,7 +61,9 @@ func TestGetReasonableFrequency(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	fmt.Printf("Reasonable frequency range: [%d, %d]\n", from, to)
+	if verbose {
+		fmt.Printf("Reasonable frequency range: [%d, %d]\n", from, to)
+	}
 
 	err = releaseHandle(handle)
 	assert.NoError(t, err)
@@ -78,7 +83,9 @@ func TestSingleQuery(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	fmt.Println(s)
+	if verbose {
+		fmt.Println(s)
+	}
 
 	err = releaseHandle(handle)
 	assert.NoError(t, err)
@@ -98,7 +105,9 @@ func TestRangeQuery(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	fmt.Println(s)
+	if verbose {
+		fmt.Println(s)
+	}
 
 	err = releaseHandle(handle)
 	assert.NoError(t, err)
@@ -120,6 +129,10 @@ func TestRun(t *testing.T) {
 
 	go v.Run(command, result, ctx)
 
+	// Do GetReasonableFrequencyRange command
+
+	reasonable := Range{}
+
 	id := "123xyz"
 	command <- ReasonableFrequencyRange{Command: Command{ID: id}}
 
@@ -133,11 +146,77 @@ func TestRun(t *testing.T) {
 		} else {
 
 			assert.Equal(t, actual.ID, id)
+			// weak test - with real kit attached, we should get non-zero numbers
 			assert.True(t, actual.Result.Start > 0)
 			assert.True(t, actual.Result.End > actual.Result.Start)
+			reasonable = actual.Result //save for RangeQuery
+			if verbose {
+				fmt.Println(actual.Result)
+			}
 		}
-
 	}
+
+	// Do SingleQuery command
+
+	id = "456abc"
+	command <- SingleQuery{
+		Command: Command{ID: id},
+		Freq:    200000,
+		Avg:     1,
+		Select:  SParamSelect{true, true, true, true},
+	}
+
+	select {
+	case <-time.After(timeout):
+		t.Error("timeout")
+	case ri := <-result:
+
+		if actual, ok := ri.(SingleQuery); !ok {
+			t.Error("Wrong type returned")
+		} else {
+
+			assert.Equal(t, actual.ID, id)
+			// weak test - with real kit attached, we should get non-zero numbers
+			assert.True(t, real(actual.Result.S11) < 0)
+			if verbose {
+				fmt.Println(actual.Result)
+			}
+		}
+	}
+
+	// Do RangeQuery command
+
+	id = "789def"
+	N := 7 // number of samples
+	command <- RangeQuery{
+		Command:         Command{ID: id},
+		Range:           reasonable,
+		Size:            N,
+		Avg:             1,
+		LogDistribution: true,
+		Select:          SParamSelect{true, true, true, true},
+	}
+
+	timeout = time.Second //need more time for this than a single query
+
+	select {
+	case <-time.After(timeout):
+		t.Error("timeout")
+	case ri := <-result:
+
+		if actual, ok := ri.(RangeQuery); !ok {
+			t.Error("Wrong type returned")
+		} else {
+
+			assert.Equal(t, actual.ID, id)
+			// weak test - with real kit attached, we should get non-zero numbers
+			assert.Equal(t, len(actual.Result), N)
+			if verbose {
+				fmt.Println(actual.Result)
+			}
+		}
+	}
+
 	cancel()
 
 }
