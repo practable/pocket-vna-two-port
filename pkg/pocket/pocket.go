@@ -48,7 +48,7 @@ func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx con
 	err := v.Connect()
 
 	if err != nil {
-		result <- err
+		result <- CustomResult{Message: err.Error()}
 		return
 	}
 
@@ -62,7 +62,7 @@ func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx con
 		case <-ctx.Done():
 			err := v.Disconnect()
 			if err != nil {
-				result <- err
+				result <- CustomResult{Message: err.Error()}
 			}
 			return
 		}
@@ -116,7 +116,7 @@ func (v *VNA) HandleCommand(command interface{}) interface{} {
 		result, err := v.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
 
 		if err != nil {
-			return err
+			return CustomResult{Message: err.Error()}
 		}
 
 		return result
@@ -126,7 +126,7 @@ func (v *VNA) HandleCommand(command interface{}) interface{} {
 		result, err := v.RangeQuery(command.(RangeQuery))
 
 		if err != nil {
-			return err
+			return CustomResult{Message: err.Error()}
 		}
 
 		return result
@@ -136,7 +136,7 @@ func (v *VNA) HandleCommand(command interface{}) interface{} {
 		result, err := v.SingleQuery(command.(SingleQuery))
 
 		if err != nil {
-			return err
+			return CustomResult{Message: err.Error()}
 		}
 
 		return result

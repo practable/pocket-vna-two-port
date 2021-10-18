@@ -2,6 +2,7 @@ package stream
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -20,18 +21,59 @@ var upgrader = websocket.Upgrader{}
 
 func TestRun(t *testing.T) {
 
-	// Create test server with the echo handler.
-	s := httptest.NewServer(http.HandlerFunc(reasonableRange))
+	timeout := 100 * time.Millisecond
+
+	toClient := make(chan reconws.WsMessage)
+	fromClient := make(chan reconws.WsMessage)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create test server with the channel handler.
+	s := httptest.NewServer(http.HandlerFunc(channelHandler(toClient, fromClient, ctx)))
+
+	//s := httptest.NewServer(http.HandlerFunc(reasonableRange))
 	defer s.Close()
 
 	// Convert http://127.0.0.1 to ws://127.0.0.
 	u := "ws" + strings.TrimPrefix(s.URL, "http")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
+	err := pocket.ForceUnlockDevices()
+
+	if err != nil {
+		t.Error("Can't unlock devices")
+	}
+
 	go Run(u, ctx)
 
-	time.Sleep(2 * time.Second)
+	mt := int(websocket.TextMessage)
+
+	/* Test ReasonableFrequencyRange */
+	message := []byte("{\"cmd\":\"rr\",\"id\":\"xyz123\"}")
+
+	toClient <- reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case reply := <-fromClient:
+
+		rr := pocket.ReasonableFrequencyRange{}
+
+		err := json.Unmarshal(reply.Data, &rr)
+
+		if err != nil {
+			t.Error("Cannot marshal response to rr command")
+		}
+
+		assert.Equal(t, rr.ID, "xyz123")
+		// weak test - with real kit attached, we should get non-zero numbers
+		assert.True(t, rr.Result.Start > 0)
+		assert.True(t, rr.Result.End > rr.Result.Start)
+
+	case <-time.After(timeout):
+		t.Error("timeout waiting for reply to rr command")
+	}
 
 }
 
@@ -226,4 +268,55 @@ func reasonableRange(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(message)
 
 	}
+}
+
+func channelHandler(toClient, fromClient chan reconws.WsMessage, ctx context.Context) func(w http.ResponseWriter, r *http.Request) {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		timeout := 100 * time.Millisecond
+
+		c, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Println("Cannot upgrade")
+			return
+		}
+		defer c.Close()
+
+		for { //backwards to normal server: we send a message to the client, get a response, repeat until cancel
+			// write our first message to the websocket client....
+			select {
+
+			case <-ctx.Done():
+				return
+
+			case <-time.After(timeout):
+				return
+
+			case msg := <-toClient:
+
+				err = c.WriteMessage(msg.Type, msg.Data)
+				if err != nil {
+					break
+				}
+
+			} //select
+
+			// read from the Client's websocket connection
+			mt, message, err := c.ReadMessage()
+			if err != nil {
+				break
+			}
+
+			// timeout if we don't manage to write to the fromClient channel
+			select {
+			case <-time.After(timeout):
+				return
+			case fromClient <- reconws.WsMessage{Data: message, Type: mt}:
+			}
+
+		} // for
+
+	} //anon func
+
 }
