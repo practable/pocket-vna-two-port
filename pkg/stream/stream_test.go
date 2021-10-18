@@ -67,8 +67,11 @@ func TestPipeInterfaceToWs(t *testing.T) {
 		Command: pocket.Command{Command: "sq"},
 		Freq:    100000,
 		Avg:     1,
-		Select:  pocket.SParamSelect{true, true, true, true},
-		Result:  pocket.SParam{},
+		Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+		Result: pocket.SParam{
+			S11: pocket.Complex{Real: -1, Imag: 2},
+			S21: pocket.Complex{Real: 0.34, Imag: 0.12},
+		},
 	}
 
 	select {
@@ -77,9 +80,7 @@ func TestPipeInterfaceToWs(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanWs:
 
-		fmt.Println(string(reply.Data))
-		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rr\",\"range\":{\"Start\":100000,\"End\":4000000}}"
-
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}}}"
 		assert.Equal(t, expected, string(reply.Data))
 	}
 
@@ -116,7 +117,7 @@ func TestPipeWsToInterface(t *testing.T) {
 	}
 
 	/* Test SingleQuery */
-	message = []byte("{\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":[true,true,false,false]}")
+	message = []byte("{\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S21\":true}}")
 
 	ws = reconws.WsMessage{
 		Data: message,
