@@ -11,8 +11,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"../pocket"
-	"../reconws"
+	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
+	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"

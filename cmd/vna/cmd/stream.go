@@ -17,23 +17,71 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/signal"
 
+	"github.com/ory/viper"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/timdrysdale/go-pocketvna/pkg/stream"
 )
 
 // streamCmd represents the stream command
 var streamCmd = &cobra.Command{
 	Use:   "stream",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Stream connects a pocketVNA to a websocket server",
+	Long: `Stream connects the first available pocketVNA to a websocket server. The websocket server is specified via an environment variable
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+export VNA_DESTINATION=ws://localhost:8888/ws/vna
+vna stream 
+
+Note that development can be enabled by setting environment variable VNA_DEVELOPMENT
+export VNA_DEVELOPMENT=true
+
+`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("stream called")
+
+		viper.SetEnvPrefix("VNA")
+		viper.AutomaticEnv()
+
+		destination := viper.GetString("destination")
+		development := viper.GetBool("development")
+
+		if development {
+			// development environment
+			fmt.Println("Development mode - logging output to stdout")
+			fmt.Printf("Streaming to %s\n", destination)
+			log.SetFormatter(&log.TextFormatter{})
+			log.SetLevel(log.TraceLevel)
+			log.SetOutput(os.Stdout)
+
+		} else {
+
+			//production environment
+			log.SetFormatter(&log.JSONFormatter{})
+			log.SetLevel(log.WarnLevel)
+
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+
+		c := make(chan os.Signal, 1)
+
+		signal.Notify(c, os.Interrupt)
+
+		go func() {
+			for range c {
+				cancel()
+				os.Exit(0)
+			}
+		}()
+
+		go stream.Run(destination, ctx)
+
+		<-ctx.Done()
+
 	},
 }
 
