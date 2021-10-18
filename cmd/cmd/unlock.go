@@ -18,22 +18,24 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"../../pkg/pocket"
 	"github.com/spf13/cobra"
 )
 
 // unlockCmd represents the unlock command
 var unlockCmd = &cobra.Command{
 	Use:   "unlock",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Unlock all VNA on the system",
+	Long:  `Unlock all VNA on the system.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("unlock called")
+		err := pocket.ForceUnlockDevices()
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+		os.Exit(0)
 	},
 }
 
