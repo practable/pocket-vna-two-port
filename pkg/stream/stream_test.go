@@ -14,8 +14,15 @@ import (
 	"../pocket"
 	"../reconws"
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+
+	log.SetLevel(log.WarnLevel)
+
+}
 
 var upgrader = websocket.Upgrader{}
 
@@ -75,9 +82,64 @@ func TestRun(t *testing.T) {
 		t.Error("timeout waiting for reply to rr command")
 	}
 
-}
+	/* Test SingleQuery */
+	message = []byte("{\"cmd\":\"sq\",\"id\":\"456abc\",\"freq\":200000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false}}")
 
-// TODO test the pipe functions
+	toClient <- reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case reply := <-fromClient:
+
+		sq := pocket.SingleQuery{}
+
+		err := json.Unmarshal(reply.Data, &sq)
+
+		if err != nil {
+			t.Error("Cannot marshal response to sq command")
+		}
+
+		assert.Equal(t, sq.ID, "456abc")
+		// weak test - with real kit attached, we should get non-zero numbers
+		assert.True(t, sq.Result.S11.Real < 0)
+
+	case <-time.After(timeout):
+		t.Error("timeout waiting for reply to sq command")
+	}
+
+	/* Test RangeQuery */
+	message = []byte("{\"id\":\"def789\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false}}")
+
+	toClient <- reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case reply := <-fromClient:
+
+		rq := pocket.RangeQuery{}
+
+		err := json.Unmarshal(reply.Data, &rq)
+
+		if err != nil {
+			t.Error("Cannot marshal response to rq command")
+		}
+
+		assert.Equal(t, rq.ID, "def789")
+		// weak test - with real kit attached, we should get non-zero numbers
+
+		assert.True(t, rq.Result[0].S11.Real != 0)
+
+		assert.Equal(t, len(rq.Result), 2)
+
+	case <-time.After(10 * timeout):
+		t.Error("timeout waiting for reply to rq command")
+	}
+
+}
 
 func TestPipeInterfaceToWs(t *testing.T) {
 	timeout := 100 * time.Millisecond
