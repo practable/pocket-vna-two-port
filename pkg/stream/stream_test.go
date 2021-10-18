@@ -145,11 +145,12 @@ func TestPipeWsToInterface(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanInterface:
 		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.ReasonableFrequencyRange{}))
-		fmt.Println(reply)
+		rr := reply.(pocket.ReasonableFrequencyRange)
+		assert.Equal(t, "rr", rr.Command.Command)
 	}
 
 	/* Test SingleQuery */
-	message = []byte("{\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S21\":true}}")
+	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}}}")
 
 	ws = reconws.WsMessage{
 		Data: message,
@@ -164,7 +165,37 @@ func TestPipeWsToInterface(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanInterface:
 		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.SingleQuery{}))
-		fmt.Println(reply)
+		sq := reply.(pocket.SingleQuery)
+		assert.Equal(t, "sq", sq.Command.Command)
+		assert.Equal(t, uint64(100000), sq.Freq)
+		assert.Equal(t, uint16(1), sq.Avg)
+		assert.Equal(t, pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false}, sq.Select)
+		// no need to check the Sparam results because we are not expecting to pass them in this direction
+	}
+
+	/* Test RangeQuery */
+	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":[{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}},{\"S11\":{\"Real\":-0.1,\"Imag\":0.2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.3,\"Imag\":0.4},\"S22\":{\"Real\":0,\"Imag\":0}}]}")
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	chanWs <- ws
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case reply := <-chanInterface:
+		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.RangeQuery{}))
+		rq := reply.(pocket.RangeQuery)
+		assert.Equal(t, "rq", rq.Command.Command)
+		assert.Equal(t, pocket.Range{Start: 100000, End: 4000000}, rq.Range)
+		assert.Equal(t, uint16(1), rq.Avg)
+		assert.Equal(t, pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false}, rq.Select)
+		assert.Equal(t, true, rq.LogDistribution)
+		// no need to check the Sparam results because we are not expecting to pass them in this direction
 	}
 
 }
