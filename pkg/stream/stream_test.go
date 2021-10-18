@@ -81,6 +81,38 @@ func TestPipeInterfaceToWs(t *testing.T) {
 	case reply := <-chanWs:
 
 		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}}}"
+
+		assert.Equal(t, expected, string(reply.Data))
+	}
+
+	/* Test RangeQuery */
+	chanInterface <- pocket.RangeQuery{
+		Command:         pocket.Command{Command: "rq"},
+		Range:           pocket.Range{Start: 100000, End: 4000000},
+		LogDistribution: true,
+		Avg:             1,
+		Size:            2,
+		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+		Result: []pocket.SParam{
+			pocket.SParam{
+				S11: pocket.Complex{Real: -1, Imag: 2},
+				S21: pocket.Complex{Real: 0.34, Imag: 0.12},
+			},
+			pocket.SParam{
+				S11: pocket.Complex{Real: -0.1, Imag: 0.2},
+				S21: pocket.Complex{Real: 0.3, Imag: 0.4},
+			},
+		},
+	}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case reply := <-chanWs:
+
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":[{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}},{\"S11\":{\"Real\":-0.1,\"Imag\":0.2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.3,\"Imag\":0.4},\"S22\":{\"Real\":0,\"Imag\":0}}]}"
+
 		assert.Equal(t, expected, string(reply.Data))
 	}
 
