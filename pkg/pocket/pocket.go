@@ -296,10 +296,10 @@ func singleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamS
 	result := C.pocketvna_single_query(handle, C.PVNA_Frequency(freq), C.uint16_t(avg), encodeParams(p), &S11, &S21, &S12, &S22)
 
 	s := SParam{
-		S11: complex(S11.real, S11.imag),
-		S12: complex(S12.real, S12.imag),
-		S21: complex(S21.real, S21.imag),
-		S22: complex(S22.real, S22.imag),
+		S11: Complex{Real: float64(S11.real), Imag: float64(S11.imag)},
+		S12: Complex{Real: float64(S12.real), Imag: float64(S12.imag)},
+		S21: Complex{Real: float64(S21.real), Imag: float64(S21.imag)},
+		S22: Complex{Real: float64(S22.real), Imag: float64(S22.imag)},
 	}
 
 	return s, decode(result)
@@ -397,10 +397,10 @@ func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 	for i := 0; i < int(size); i++ {
 
 		s := SParam{
-			S11: complex(S11[i].real, S11[i].imag),
-			S12: complex(S12[i].real, S12[i].imag),
-			S21: complex(S21[i].real, S21[i].imag),
-			S22: complex(S22[i].real, S22[i].imag),
+			S11: Complex{Real: float64(S11[i].real), Imag: float64(S11[i].imag)},
+			S12: Complex{Real: float64(S12[i].real), Imag: float64(S12[i].imag)},
+			S21: Complex{Real: float64(S21[i].real), Imag: float64(S21[i].imag)},
+			S22: Complex{Real: float64(S22[i].real), Imag: float64(S22[i].imag)},
 		}
 
 		ss = append(ss, s)

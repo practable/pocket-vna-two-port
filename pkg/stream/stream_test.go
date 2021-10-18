@@ -37,6 +37,54 @@ func TestRun(t *testing.T) {
 
 // TODO test the pipe functions
 
+func TestPipeInterfaceToWs(t *testing.T) {
+	timeout := 100 * time.Millisecond
+
+	chanWs := make(chan reconws.WsMessage)
+	chanInterface := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go PipeInterfaceToWs(chanInterface, chanWs, ctx)
+
+	/* Test ReasonableFrequencyRange */
+
+	chanInterface <- pocket.ReasonableFrequencyRange{
+		Command: pocket.Command{Command: "rr"}, Result: pocket.Range{Start: 100000, End: 4000000}}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case reply := <-chanWs:
+
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rr\",\"range\":{\"Start\":100000,\"End\":4000000}}"
+
+		assert.Equal(t, expected, string(reply.Data))
+	}
+
+	/* Test SingleQuery */
+	chanInterface <- pocket.SingleQuery{
+		Command: pocket.Command{Command: "sq"},
+		Freq:    100000,
+		Avg:     1,
+		Select:  pocket.SParamSelect{true, true, true, true},
+		Result:  pocket.SParam{},
+	}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case reply := <-chanWs:
+
+		fmt.Println(string(reply.Data))
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rr\",\"range\":{\"Start\":100000,\"End\":4000000}}"
+
+		assert.Equal(t, expected, string(reply.Data))
+	}
+
+}
+
 func TestPipeWsToInterface(t *testing.T) {
 	timeout := 100 * time.Millisecond
 
@@ -46,8 +94,10 @@ func TestPipeWsToInterface(t *testing.T) {
 	defer cancel()
 	go PipeWsToInterface(chanWs, chanInterface, ctx)
 
-	message := []byte("{\"cmd\":\"rr\"}")
 	mt := int(websocket.TextMessage)
+
+	/* Test ReasonableFrequencyRange */
+	message := []byte("{\"cmd\":\"rr\"}")
 
 	ws := reconws.WsMessage{
 		Data: message,
@@ -62,6 +112,25 @@ func TestPipeWsToInterface(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanInterface:
 		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.ReasonableFrequencyRange{}))
+		fmt.Println(reply)
+	}
+
+	/* Test SingleQuery */
+	message = []byte("{\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":[true,true,false,false]}")
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	chanWs <- ws
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case reply := <-chanInterface:
+		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.SingleQuery{}))
 		fmt.Println(reply)
 	}
 

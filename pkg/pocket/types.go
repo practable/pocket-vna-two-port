@@ -80,10 +80,10 @@ type SParamSelect struct {
 }
 
 type SParam struct {
-	S11 complex128
-	S12 complex128
-	S21 complex128
-	S22 complex128
+	S11 Complex
+	S12 Complex
+	S21 Complex
+	S22 Complex
 }
 
 type Range struct {
@@ -128,4 +128,9 @@ type Progress struct {
 type CustomResult struct {
 	Message string
 	Command interface{}
+}
+
+type Complex struct {
+	Real float64
+	Imag float64
 }

@@ -177,7 +177,7 @@ func TestRun(t *testing.T) {
 
 			assert.Equal(t, actual.ID, id)
 			// weak test - with real kit attached, we should get non-zero numbers
-			assert.True(t, real(actual.Result.S11) < 0)
+			assert.True(t, actual.Result.S11.Real < 0)
 			if verbose {
 				fmt.Println(actual.Result)
 			}
