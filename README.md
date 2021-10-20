@@ -68,8 +68,13 @@ There are three commands
 0. sq: get S-parameters at a single frequency 
 0. rq: get S-paramters at a range of frequencies
 
+There is also a heartbeat sent every second from the driver, to let you know it is still connected. You can use the absence of this heartbeat to infer that your connection has dropped (it is unlikely the driver has stopped, although that is technically possible if there is a power outage). This heartbeat is added because VNA experiments are unlikely to use a camera (and we've been using the video to check for connection drops, so without it we need something else to check).
 
-In order to relate commands to responses you can include an id (string) and/or time (int) field.
+```
+{"cmd":"hb"}
+```
+
+In order to relate commands to responses you can include an ID `id` (string) and/or time `t` (int) field.
 
 ### rr
 
@@ -163,7 +168,7 @@ These frequency points are calculated in this library, because they are not sent
 
 ## Example data
 
-Good data from a passive device under test always returns a gain of less than 0dB (i.e. without power from a bias supply, it can't add any powerof its own) so we can see that in the following results, we should not rely on values close to DC (for the calibration we did, at least). Also, there is some drift in this measurement of a cable, bearing in mind the cable was re-connected after the first few scans and the device moved, so not an entirely fair test on the device. This data was collected in the native app and plotted using python's matplotlib.pyplot.
+Good data from a passive device under test always returns a gain of less than 0dB (i.e. without power from a bias supply, it can't add any power of its own) so we can see that in the following results, we should not rely on values close to DC (for the calibration we did, at least). Also, there is some drift in this measurement of a cable, bearing in mind the cable was re-connected after the first few scans and the device moved, so not an entirely fair test on the device. This data was collected in the native app and plotted using python's matplotlib.pyplot.
 
 ![magnitude](./img/cable-dB.png)
 ![phase](./img/cable-deg.png)
