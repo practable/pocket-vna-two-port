@@ -25,6 +25,7 @@ import "C"
 import (
 	"context"
 	"errors"
+	"math"
 )
 
 // does not compile if in types.go ("C undefined")
@@ -152,10 +153,10 @@ func (v *VNA) HandleCommand(command interface{}) interface{} {
 
 func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
 
-	distr := 0
+	distr := 1 // Linear
 
 	if r.LogDistribution {
-		distr = 1
+		distr = 2
 	}
 
 	sparams, err := rangeQuery(v.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
@@ -296,10 +297,11 @@ func singleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamS
 	result := C.pocketvna_single_query(handle, C.PVNA_Frequency(freq), C.uint16_t(avg), encodeParams(p), &S11, &S21, &S12, &S22)
 
 	s := SParam{
-		S11: Complex{Real: float64(S11.real), Imag: float64(S11.imag)},
-		S12: Complex{Real: float64(S12.real), Imag: float64(S12.imag)},
-		S21: Complex{Real: float64(S21.real), Imag: float64(S21.imag)},
-		S22: Complex{Real: float64(S22.real), Imag: float64(S22.imag)},
+		S11:  Complex{Real: float64(S11.real), Imag: float64(S11.imag)},
+		S12:  Complex{Real: float64(S12.real), Imag: float64(S12.imag)},
+		S21:  Complex{Real: float64(S21.real), Imag: float64(S21.imag)},
+		S22:  Complex{Real: float64(S22.real), Imag: float64(S22.imag)},
+		Freq: freq,
 	}
 
 	return s, decode(result)
@@ -392,15 +394,24 @@ func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 
 		nil)
 
+	var ff []uint64
+
+	if distr == 1 {
+		ff = LinFrequency(start, end, size)
+	} else {
+		ff = LogFrequency(start, end, size)
+	}
+
 	ss := []SParam{}
 
 	for i := 0; i < int(size); i++ {
 
 		s := SParam{
-			S11: Complex{Real: float64(S11[i].real), Imag: float64(S11[i].imag)},
-			S12: Complex{Real: float64(S12[i].real), Imag: float64(S12[i].imag)},
-			S21: Complex{Real: float64(S21[i].real), Imag: float64(S21[i].imag)},
-			S22: Complex{Real: float64(S22[i].real), Imag: float64(S22[i].imag)},
+			S11:  Complex{Real: float64(S11[i].real), Imag: float64(S11[i].imag)},
+			S12:  Complex{Real: float64(S12[i].real), Imag: float64(S12[i].imag)},
+			S21:  Complex{Real: float64(S21[i].real), Imag: float64(S21[i].imag)},
+			S22:  Complex{Real: float64(S22[i].real), Imag: float64(S22[i].imag)},
+			Freq: ff[i],
 		}
 
 		ss = append(ss, s)
@@ -408,5 +419,34 @@ func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 	}
 
 	return ss, decode(result)
+
+}
+
+func LinFrequency(start, end uint64, size int) []uint64 {
+
+	var ff []uint64
+	s := float64(start)
+	e := float64(end)
+
+	for i := 0; i < size; i++ {
+		f := s + float64(i)*(e-s)/(float64(size)-1)
+		ff = append(ff, uint64(f))
+	}
+	return ff
+}
+
+func LogFrequency(start, end uint64, size int) []uint64 {
+
+	var ff []uint64
+	s := float64(start)
+	e := float64(end)
+	x := e / s
+	for i := 0; i < size; i++ {
+
+		y := float64(i) / (float64(size) - 1.0)
+		f := s * math.Pow(x, y)
+		ff = append(ff, uint64(math.Round(f)))
+	}
+	return ff
 
 }

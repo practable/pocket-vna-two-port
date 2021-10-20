@@ -87,6 +87,8 @@ func TestSingleQuery(t *testing.T) {
 		fmt.Println(s)
 	}
 
+	assert.Equal(t, from, s.Freq)
+
 	err = releaseHandle(handle)
 	assert.NoError(t, err)
 
@@ -108,6 +110,11 @@ func TestRangeQuery(t *testing.T) {
 	if verbose {
 		fmt.Println(s)
 	}
+
+	//make int for easier interpretation of debug info during test, if wrong
+	assert.Equal(t, int(from), int(s[0].Freq))
+	assert.Equal(t, int(from+(to-from)/2), int(s[1].Freq))
+	assert.Equal(t, int(to), int(s[2].Freq))
 
 	err = releaseHandle(handle)
 	assert.NoError(t, err)
@@ -211,6 +218,19 @@ func TestRun(t *testing.T) {
 			assert.Equal(t, actual.ID, id)
 			// weak test - with real kit attached, we should get non-zero numbers
 			assert.Equal(t, len(actual.Result), N)
+
+			assert.Equal(t, reasonable.Start, actual.Result[0].Freq)
+			assert.Equal(t, reasonable.End, actual.Result[N-1].Freq)
+
+			expectedFreq := LogFrequency(reasonable.Start, reasonable.End, N)
+
+			for i := 0; i < N; i++ {
+				if verbose {
+					fmt.Printf("%d: %d %d\n", i, int(expectedFreq[i]), int(actual.Result[i].Freq))
+				}
+				assert.Equal(t, int(expectedFreq[i]), int(actual.Result[i].Freq))
+			}
+
 			if verbose {
 				fmt.Println(actual.Result)
 			}
@@ -218,5 +238,50 @@ func TestRun(t *testing.T) {
 	}
 
 	cancel()
+
+}
+
+func TestFrequency(t *testing.T) {
+
+	var start, end uint64
+	start = 1000000
+	end = 500000000
+	size := 11
+
+	expectedLinear := []uint64{
+		1000000,
+		50900000,
+		100800000,
+		150700000,
+		200600000,
+		250500000,
+		300400000,
+		350300000,
+		400200000,
+		450100000,
+		500000000,
+	}
+
+	expectedLog := []uint64{
+		1000000,
+		1861646,
+		3465724,
+		6451950,  //-1 cf native app
+		12011244, //-1 cf native app
+		22360680,
+		41627660,  //-8 cf native app
+		77495949,  //+5 cf native app
+		144269991, //-9 cf native app
+		268579588, //+36 cf native app
+		500000000,
+	}
+
+	flin := LinFrequency(start, end, size)
+	flog := LogFrequency(start, end, size)
+
+	for i := 0; i < size; i++ {
+		assert.Equal(t, int(expectedLinear[i]), int(flin[i]))
+		assert.Equal(t, int(expectedLog[i]), int(flog[i]))
+	}
 
 }

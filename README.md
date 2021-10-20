@@ -141,22 +141,23 @@ Note that the frequencies are not (currently) included in the response. They can
      *       Pay attention: arithmetic is pretty imprecise on a device
 	 
 ```
-These frequency points are not currently calculated in the hardware or in this interface library. They potentially could be. Meanwhile, it may be necessary to calculate them in the user interface. In which case, for the sake of validating the calculations, here is a table of 11 points from 1MHz - 500MHz, taken from the native application for Linear and Log scans.
+These frequency points are calculated in this library, because they are not sent from the hardware. Here is a table of 11 points from 1MHz - 500MHz, taken from the native application for Linear and Log scans. Note that these values from the native app are not quite the same as we expect from the formula for the case of a Log distribution, although the precision issue is acknowledged in the library header file from the supplier as if it is a hardware issue but the values are probably calculated in the native app - the differences are quite small and probably not significant.
 
 
-| Point  | Linear      |  Log      |
-| -------|-------------|-----------|
-| 0      |  1000000    | 1000000   |
-| 1      |  50900000   | 1861646   |
-| 2      |  100800000  | 3465724   |
-| 3      |  150700000  | 6451951   |
-| 4      |  200600000  | 12011245  |
-| 5      |  250500000  | 22360680  |
-| 6      |  300400000  | 41627668  |
-| 7      |  350300000  | 77495944  |
-| 8      |  400200000  | 144270000 |
-| 9      |  450100000  | 268579552 |
-| 11     |  500000000  | 500000000 |
+| Point  | Linear      |  Log       | Log       |  delta |
+|        |  (both)     | native app | this lib  |        |
+| -------|-------------|------------|-----------|--------|
+| 0      |  1000000    | 1000000    | 1000000   |        |
+| 1      |  50900000   | 1861646    | 1861646   |        |
+| 2      |  100800000  | 3465724    | 3465724   |        |
+| 3      |  150700000  | 6451951    | 6451950   |  -1    |
+| 4      |  200600000  | 12011245   | 12011244  |  -1    |  
+| 5      |  250500000  | 22360680   | 22360680  |        |
+| 6      |  300400000  | 41627668   | 41627660  |  -8    |
+| 7      |  350300000  | 77495944   | 77495949  |  +5    |
+| 8      |  400200000  | 144270000  | 144269991 |  -9    |
+| 9      |  450100000  | 268579552  | 268579588 | +36    |
+| 11     |  500000000  | 500000000  | 500000000 |        |
 
 
 ## Developer info

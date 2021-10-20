@@ -80,10 +80,11 @@ type SParamSelect struct {
 }
 
 type SParam struct {
-	S11 Complex
-	S12 Complex
-	S21 Complex
-	S22 Complex
+	S11  Complex
+	S12  Complex
+	S21  Complex
+	S22  Complex
+	Freq uint64
 }
 
 type Range struct {
