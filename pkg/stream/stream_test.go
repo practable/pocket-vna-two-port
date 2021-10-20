@@ -130,13 +130,14 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, "456abc", sq.ID)
 		// weak test - with real kit attached, we should get non-zero numbers
 		assert.True(t, sq.Result.S11.Real < 0)
+		assert.Equal(t, uint64(200000), sq.Result.Freq)
 
 	case <-time.After(timeout):
 		t.Error("timeout waiting for reply to sq command")
 	}
 
 	/* Test RangeQuery */
-	message = []byte("{\"id\":\"def789\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false}}")
+	message = []byte("{\"id\":\"def789\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":3,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false}}")
 
 	toClient <- reconws.WsMessage{
 		Data: message,
@@ -159,7 +160,13 @@ func TestRun(t *testing.T) {
 
 		assert.True(t, rq.Result[0].S11.Real != 0)
 
-		assert.Equal(t, len(rq.Result), 2)
+		assert.Equal(t, len(rq.Result), 3)
+
+		expectedFreq := pocket.LogFrequency(100000, 4000000, 3)
+
+		for i := 0; i < 3; i++ {
+			assert.Equal(t, int(expectedFreq[i]), int(rq.Result[i].Freq))
+		}
 
 	case <-time.After(10 * timeout):
 		t.Error("timeout waiting for reply to rq command")
@@ -220,7 +227,7 @@ func TestPipeInterfaceToWs(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanWs:
 
-		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}}}"
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0},\"Freq\":0}}"
 
 		assert.Equal(t, expected, string(reply.Data))
 	}
@@ -251,7 +258,7 @@ func TestPipeInterfaceToWs(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanWs:
 
-		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":[{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}},{\"S11\":{\"Real\":-0.1,\"Imag\":0.2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.3,\"Imag\":0.4},\"S22\":{\"Real\":0,\"Imag\":0}}]}"
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":[{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0},\"Freq\":0},{\"S11\":{\"Real\":-0.1,\"Imag\":0.2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.3,\"Imag\":0.4},\"S22\":{\"Real\":0,\"Imag\":0},\"Freq\":0}]}"
 
 		assert.Equal(t, expected, string(reply.Data))
 	}
@@ -307,7 +314,7 @@ func TestPipeWsToInterface(t *testing.T) {
 		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.SingleQuery{}))
 		sq := reply.(pocket.SingleQuery)
 		assert.Equal(t, "sq", sq.Command.Command)
-		assert.Equal(t, uint64(100000), sq.Freq)
+		assert.Equal(t, uint64(100000), sq.Freq) //not testing Freq in result because this is just a piping test....
 		assert.Equal(t, uint16(1), sq.Avg)
 		assert.Equal(t, pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false}, sq.Select)
 		// no need to check the Sparam results because we are not expecting to pass them in this direction
@@ -335,6 +342,7 @@ func TestPipeWsToInterface(t *testing.T) {
 		assert.Equal(t, uint16(1), rq.Avg)
 		assert.Equal(t, pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false}, rq.Select)
 		assert.Equal(t, true, rq.LogDistribution)
+
 		// no need to check the Sparam results because we are not expecting to pass them in this direction
 	}
 
