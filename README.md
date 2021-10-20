@@ -112,7 +112,7 @@ Response:
 
 ### rq
 
-Get the requested S-paramters at a range of frequencies. Parameters:
+Get the requested S-parameters at a range of frequencies. Parameters:
 
     - range (start, end) the start and end of the frequency range to take measurements
 	- size the number of separate frequency points to measure at, across the range
@@ -144,20 +144,31 @@ Note that the frequencies are not (currently) included in the response. They can
 These frequency points are calculated in this library, because they are not sent from the hardware. Here is a table of 11 points from 1MHz - 500MHz, taken from the native application for Linear and Log scans. Note that these values from the native app are not quite the same as we expect from the formula for the case of a Log distribution, although the precision issue is acknowledged in the library header file from the supplier as if it is a hardware issue but the values are probably calculated in the native app - the differences are quite small and probably not significant.
 
 
-| Point  | Linear      |  Log       | Log       |  delta |
-|        |  (both)     | native app | this lib  |        |
+| Point  | Linear (both)     |  Log (native app)      | Log (go-pocketVNA)      |  delta |
 | -------|-------------|------------|-----------|--------|
 | 0      |  1000000    | 1000000    | 1000000   |        |
 | 1      |  50900000   | 1861646    | 1861646   |        |
 | 2      |  100800000  | 3465724    | 3465724   |        |
 | 3      |  150700000  | 6451951    | 6451950   |  -1    |
-| 4      |  200600000  | 12011245   | 12011244  |  -1    |  
+| 4      |  200600000  | 12011245   | 12011244  |  -1    |
 | 5      |  250500000  | 22360680   | 22360680  |        |
 | 6      |  300400000  | 41627668   | 41627660  |  -8    |
 | 7      |  350300000  | 77495944   | 77495949  |  +5    |
 | 8      |  400200000  | 144270000  | 144269991 |  -9    |
 | 9      |  450100000  | 268579552  | 268579588 | +36    |
 | 11     |  500000000  | 500000000  | 500000000 |        |
+
+
+
+
+## Example data
+
+Good data from a passive device under test always returns a gain of less than 0dB (i.e. without power from a bias supply, it can't generate energy) so we can see that in the following results, we should not rely on values close to DC (for the calibration we did, at least). Also, there is some drift in this measurement of a cable, bearing in mind the cable was re-connected after the first few scans and the device moved, so not an entirely fair test on the device. This data was collected in the native app and plotted using python's matplotlib.pyplot.
+
+![magnitude](./img/cable-dB.png)
+![phase](./img/cable-deg.png)
+
+
 
 
 ## Developer info
