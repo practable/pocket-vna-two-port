@@ -163,7 +163,7 @@ These frequency points are calculated in this library, because they are not sent
 
 ## Example data
 
-Good data from a passive device under test always returns a gain of less than 0dB (i.e. without power from a bias supply, it can't generate energy) so we can see that in the following results, we should not rely on values close to DC (for the calibration we did, at least). Also, there is some drift in this measurement of a cable, bearing in mind the cable was re-connected after the first few scans and the device moved, so not an entirely fair test on the device. This data was collected in the native app and plotted using python's matplotlib.pyplot.
+Good data from a passive device under test always returns a gain of less than 0dB (i.e. without power from a bias supply, it can't add any powerof its own) so we can see that in the following results, we should not rely on values close to DC (for the calibration we did, at least). Also, there is some drift in this measurement of a cable, bearing in mind the cable was re-connected after the first few scans and the device moved, so not an entirely fair test on the device. This data was collected in the native app and plotted using python's matplotlib.pyplot.
 
 ![magnitude](./img/cable-dB.png)
 ![phase](./img/cable-deg.png)
