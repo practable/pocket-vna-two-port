@@ -12,9 +12,9 @@ This is a bit finicky because the pocketVNA library has different name and requi
 
 0. Download the repo
 0. replace pkg/pocket/libPocketAPI.so with the appropriate pocketVNA library for your target
-0. copy that library to your system path, e.g. for linux /usr/lib (for linux, add `.0`)
+0. copy that library to your system path, e.g. for linux /usr/lib (for linux amd64/arm, add `.0` so the ending is `...so.0`)
 0. get all dependencies `go get -u ./...' (you may need to add or remove the -lm flag for linking the maths library - not needed on linux 64 bit but needed on Raspbian buster
-0. Compile the vna command (cd to `cmd/vna` then `go build`)
+0. Compile the vna command (`go mod init github.com/timdrysdale/go-pocketvna && cd cmd/vna && go build`)
 0. copy the `vna` executable to your usual location on the path
 
 ## Usage
