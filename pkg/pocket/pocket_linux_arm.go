@@ -1,59 +1,89 @@
+/*
+Package pocket uses cgo to wrap the shared C library for the pocketVNA openAPI
+
+The commands supported are
+
+ForceUnlock
+GetFirstDeviceHandle
+ReleaseHandle
+GetReasonableFrequencyRange
+SingleQuery
+RangeQuery
+
+Function call result codes are decoded as required, into strings as specified in pocket.h
+
+*/
+
 package pocket
 
 /*
 #cgo CFLAGS: -g -Wall
-#cgo LDFLAGS: -L. -lPocketVnaApi_x64
+#cgo LDFLAGS: -L. -lPocketVnaApi -lm
 #include "pocketvna.h"
 */
 import "C"
 import (
+	"context"
 	"errors"
+	"math"
 )
 
-var Results = [...]string{
-	"PVNA_Res_Ok",
-	"PVNA_Res_NoDevice",
-	"PVNA_Res_NoMemoryError",
-	"PVNA_Res_CanNotInitialize",
-	"PVNA_Res_BadDescriptor",
-	"PVNA_Res_DeviceLocked",
-	"PVNA_Res_NoDevicePath",
-	"PVNA_Res_NoAccess",
-	"PVNA_Res_FailedToOpen",
-	"PVNA_Res_InvalidHandle",
-	"PVNA_Res_BadTransmission",
-	"PVNA_Res_UnsupportedTransmission",
-	"PVNA_Res_BadFrequency",
-	"PVNA_Res_DataReadFailure",
-	"PVNA_Res_EmptyResponse",
-	"PVNA_Res_IncompleteResponse",
-	"PVNA_Res_FailedToWriteRequest",
-	"PVNA_Res_ArraySizeTooBig",
-	"PVNA_Res_BadResponse",
-	"PVNA_Res_DeviceResponseSection",
-	"PVNA_Res_Response_UNKNOWN_MODE",
-	"PVNA_Res_Response_UNKNOWN_PARAMETER",
-	"PVNA_Res_Response_NOT_INITIALIZED",
-	"PVNA_Res_Response_FREQ_TOO_LOW",
-	"PVNA_Res_Response_FREQ_TOO_HIGH",
-	"PVNA_Res_Response_OutOfBound",
-	"PVNA_Res_Response_UNKNOWN_VARIABLE",
-	"PVNA_Res_Response_UNKNOWN_ERROR",
-	"PVNA_Res_Response_BAD_FORMAT",
-	"PVNA_Res_ExtendedSection",
-	"PVNA_Res_ScanCanceled",
-	"PVNA_Res_Rfmath_Section",
-	"PVNA_Res_No_Data",
-	"PVNA_Res_LIBUSB_Error",
-	"PVNA_Res_LIBUSB_CanNotSelectInterface",
-	"PVNA_Res_LIBUSB_Timeout",
-	"PVNA_Res_LIBUSB_Busy",
-	"PVNA_Res_VCI_PrepareScanError",
-	"PVNA_Res_VCI_Response_Error",
-	"PVNA_Res_EndLEQStart",
-	"PVNA_Res_VCI_Failed2OpenProbablyDriver",
-	"PVNA_Res_HID_AdditionalError",
-	"PVNA_Res_Fail",
+// does not compile if in types.go ("C undefined")
+type VNA struct {
+	handle C.PVNA_DeviceHandler
+}
+
+func NewVNA() *VNA {
+
+	return new(VNA)
+}
+
+/* Run provides a go channel interface to the first available instance of a pocket VNA device
+
+There are two uni-directional channels, one to receive commands, the other to reply with data
+
+*/
+
+func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx context.Context) {
+
+	err := v.Connect()
+
+	if err != nil {
+		result <- CustomResult{Message: err.Error()}
+		return
+	}
+
+	for {
+		select {
+
+		case cmd := <-command:
+
+			result <- v.HandleCommand(cmd)
+
+		case <-ctx.Done():
+			err := v.Disconnect()
+			if err != nil {
+				result <- CustomResult{Message: err.Error()}
+			}
+			return
+		}
+	}
+}
+
+func (v *VNA) Connect() error {
+	handle, err := getFirstDeviceHandle()
+	if err != nil {
+		return err
+	}
+
+	v.handle = handle
+
+	return nil
+}
+
+func (v *VNA) Disconnect() error {
+
+	return releaseHandle(v.handle)
 }
 
 func ForceUnlockDevices() error {
@@ -61,10 +91,102 @@ func ForceUnlockDevices() error {
 	result := C.pocketvna_force_unlock_devices()
 
 	return decode(result)
+}
+
+func (v *VNA) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
+
+	fStart, fEnd, err := getReasonableFrequencyRange(v.handle)
+
+	if err != nil {
+		return r, err
+	}
+
+	r.Result.Start = fStart
+	r.Result.End = fEnd
+
+	return r, err
 
 }
 
-func GetFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
+func (v *VNA) HandleCommand(command interface{}) interface{} {
+
+	switch command.(type) {
+
+	case ReasonableFrequencyRange:
+
+		result, err := v.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
+
+		if err != nil {
+			return CustomResult{Message: err.Error()}
+		}
+
+		return result
+
+	case RangeQuery:
+
+		result, err := v.RangeQuery(command.(RangeQuery))
+
+		if err != nil {
+			return CustomResult{Message: err.Error()}
+		}
+
+		return result
+
+	case SingleQuery:
+
+		result, err := v.SingleQuery(command.(SingleQuery))
+
+		if err != nil {
+			return CustomResult{Message: err.Error()}
+		}
+
+		return result
+
+	default:
+		return CustomResult{
+			Message: "Unknown Command",
+			Command: command,
+		}
+	}
+
+}
+
+func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
+
+	distr := 1 // Linear
+
+	if r.LogDistribution {
+		distr = 2
+	}
+
+	sparams, err := rangeQuery(v.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
+
+	if err != nil {
+		return r, err
+	}
+
+	r.Result = sparams
+
+	return r, err
+}
+
+func (v *VNA) SingleQuery(s SingleQuery) (SingleQuery, error) {
+
+	sparam, err := singleQuery(v.handle, s.Freq, s.Avg, s.Select)
+
+	if err != nil {
+		return s, err
+	}
+
+	s.Result = sparam
+
+	return s, err
+
+}
+
+/* PRIVATE FUNCTIONS */
+
+func getFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
 
 	handle := C.PVNA_DeviceHandler(nil)
 	result := C.pocketvna_get_first_device_handle(&handle)
@@ -72,7 +194,7 @@ func GetFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
 
 }
 
-func ReleaseHandle(handle C.PVNA_DeviceHandler) error {
+func releaseHandle(handle C.PVNA_DeviceHandler) error {
 
 	result := C.pocketvna_release_handle(&handle)
 	return decode(result)
@@ -93,7 +215,7 @@ func ReleaseHandle(handle C.PVNA_DeviceHandler) error {
    PVNA_EXPORTED PVNA_Res   pocketvna_get_reasonable_frequency_range(const PVNA_DeviceHandler handle, PVNA_Frequency * from, PVNA_Frequency * to);
 */
 
-func GetReasonableFrequencyRange(handle C.PVNA_DeviceHandler) (uint64, uint64, error) {
+func getReasonableFrequencyRange(handle C.PVNA_DeviceHandler) (uint64, uint64, error) {
 
 	from := C.PVNA_Frequency(0)
 	to := C.PVNA_Frequency(0)
@@ -165,7 +287,7 @@ func encodeParams(p SParamSelect) C.PVNA_NetworkParam {
 
 }
 
-func SingleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamSelect) (SParam, error) {
+func singleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamSelect) (SParam, error) {
 
 	S11 := C.PVNA_Sparam{0.0, 0.0}
 	S12 := C.PVNA_Sparam{0.0, 0.0}
@@ -175,10 +297,11 @@ func SingleQuery(handle C.PVNA_DeviceHandler, freq uint64, avg uint16, p SParamS
 	result := C.pocketvna_single_query(handle, C.PVNA_Frequency(freq), C.uint16_t(avg), encodeParams(p), &S11, &S21, &S12, &S22)
 
 	s := SParam{
-		S11: complex(S11.real, S11.imag),
-		S12: complex(S12.real, S12.imag),
-		S21: complex(S21.real, S21.imag),
-		S22: complex(S22.real, S22.imag),
+		S11:  Complex{Real: float64(S11.real), Imag: float64(S11.imag)},
+		S12:  Complex{Real: float64(S12.real), Imag: float64(S12.imag)},
+		S21:  Complex{Real: float64(S21.real), Imag: float64(S21.imag)},
+		S22:  Complex{Real: float64(S22.real), Imag: float64(S22.imag)},
+		Freq: freq,
 	}
 
 	return s, decode(result)
@@ -250,7 +373,7 @@ const (
 )
 
 // We do not implement the callback for this version ...
-func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr int, avg uint16, p SParamSelect) ([]SParam, error) {
+func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr int, avg uint16, p SParamSelect) ([]SParam, error) {
 
 	S11 := [512]C.PVNA_Sparam{}
 	S12 := [512]C.PVNA_Sparam{}
@@ -271,15 +394,24 @@ func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 
 		nil)
 
+	var ff []uint64
+
+	if distr == 1 {
+		ff = LinFrequency(start, end, size)
+	} else {
+		ff = LogFrequency(start, end, size)
+	}
+
 	ss := []SParam{}
 
 	for i := 0; i < int(size); i++ {
 
 		s := SParam{
-			S11: complex(S11[i].real, S11[i].imag),
-			S12: complex(S12[i].real, S12[i].imag),
-			S21: complex(S21[i].real, S21[i].imag),
-			S22: complex(S22[i].real, S22[i].imag),
+			S11:  Complex{Real: float64(S11[i].real), Imag: float64(S11[i].imag)},
+			S12:  Complex{Real: float64(S12[i].real), Imag: float64(S12[i].imag)},
+			S21:  Complex{Real: float64(S21[i].real), Imag: float64(S21[i].imag)},
+			S22:  Complex{Real: float64(S22[i].real), Imag: float64(S22[i].imag)},
+			Freq: ff[i],
 		}
 
 		ss = append(ss, s)
@@ -287,5 +419,34 @@ func RangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 	}
 
 	return ss, decode(result)
+
+}
+
+func LinFrequency(start, end uint64, size int) []uint64 {
+
+	var ff []uint64
+	s := float64(start)
+	e := float64(end)
+
+	for i := 0; i < size; i++ {
+		f := s + float64(i)*(e-s)/(float64(size)-1)
+		ff = append(ff, uint64(f))
+	}
+	return ff
+}
+
+func LogFrequency(start, end uint64, size int) []uint64 {
+
+	var ff []uint64
+	s := float64(start)
+	e := float64(end)
+	x := e / s
+	for i := 0; i < size; i++ {
+
+		y := float64(i) / (float64(size) - 1.0)
+		f := s * math.Pow(x, y)
+		ff = append(ff, uint64(math.Round(f)))
+	}
+	return ff
 
 }
