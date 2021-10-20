@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
 	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
@@ -35,6 +36,28 @@ func Run(u string, ctx context.Context) {
 	go PipeWsToInterface(r.In, command, ctx)
 
 	go PipeInterfaceToWs(result, r.Out, ctx)
+
+	go HeartBeat(r.Out, time.Second, ctx)
+
+}
+
+func HeartBeat(out chan reconws.WsMessage, t time.Duration, ctx context.Context) {
+
+	mtype := int(websocket.TextMessage)
+
+	for {
+		select {
+
+		case <-ctx.Done():
+			return
+		case <-time.After(t):
+			out <- reconws.WsMessage{
+				Data: []byte("{\"cmd\":\"hb\"}"),
+				Type: mtype,
+			}
+
+		}
+	}
 
 }
 

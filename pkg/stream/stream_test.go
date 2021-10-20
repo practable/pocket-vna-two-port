@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"../pocket"
-	"../reconws"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
+	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 )
 
 func init() {
@@ -26,7 +26,33 @@ func init() {
 
 var upgrader = websocket.Upgrader{}
 
+func TestHeartBeat(t *testing.T) {
+
+	c := make(chan reconws.WsMessage)
+	d := time.Millisecond
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	go HeartBeat(c, d, ctx)
+
+	for i := 0; i < 10; i++ {
+		select {
+		case <-time.After(2 * d):
+			t.Error("timeout on heartbeat")
+		case msg := <-c:
+			assert.Equal(t, []byte("{\"cmd\":\"hb\"}"), msg.Data)
+
+		}
+	}
+
+}
+
 func TestRun(t *testing.T) {
+
+	/* note this test will fail if the first heartbeat comes before the command-response tests
+	are completed; could add conditional code to ignore heartbeat commands */
 
 	timeout := 100 * time.Millisecond
 
@@ -73,7 +99,7 @@ func TestRun(t *testing.T) {
 			t.Error("Cannot marshal response to rr command")
 		}
 
-		assert.Equal(t, rr.ID, "xyz123")
+		assert.Equal(t, "xyz123", rr.ID)
 		// weak test - with real kit attached, we should get non-zero numbers
 		assert.True(t, rr.Result.Start > 0)
 		assert.True(t, rr.Result.End > rr.Result.Start)
@@ -101,7 +127,7 @@ func TestRun(t *testing.T) {
 			t.Error("Cannot marshal response to sq command")
 		}
 
-		assert.Equal(t, sq.ID, "456abc")
+		assert.Equal(t, "456abc", sq.ID)
 		// weak test - with real kit attached, we should get non-zero numbers
 		assert.True(t, sq.Result.S11.Real < 0)
 
@@ -128,7 +154,7 @@ func TestRun(t *testing.T) {
 			t.Error("Cannot marshal response to rq command")
 		}
 
-		assert.Equal(t, rq.ID, "def789")
+		assert.Equal(t, "def789", rq.ID)
 		// weak test - with real kit attached, we should get non-zero numbers
 
 		assert.True(t, rq.Result[0].S11.Real != 0)
@@ -137,6 +163,16 @@ func TestRun(t *testing.T) {
 
 	case <-time.After(10 * timeout):
 		t.Error("timeout waiting for reply to rq command")
+	}
+
+	/* Test heartbeat */
+	select {
+	case reply := <-fromClient:
+
+		assert.Equal(t, "{\"cmd\":\"hb\"}", string(reply.Data))
+
+	case <-time.After(5 * time.Second):
+		t.Error("No heartbeat")
 	}
 
 }
@@ -336,7 +372,7 @@ func channelHandler(toClient, fromClient chan reconws.WsMessage, ctx context.Con
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		timeout := 100 * time.Millisecond
+		timeout := 1 * time.Millisecond
 
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -353,7 +389,7 @@ func channelHandler(toClient, fromClient chan reconws.WsMessage, ctx context.Con
 				return
 
 			case <-time.After(timeout):
-				return
+				//carry on
 
 			case msg := <-toClient:
 
