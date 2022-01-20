@@ -84,7 +84,7 @@ def clean_oneport(obj):
     
        
     return {
-            "freq":  obj[cal_freq],
+            "freq":  np.array(obj[cal_freq]),
             "short": np.array(obj[cal_short][cal_real]) + 1j * np.array(obj[cal_short][cal_imag]),
             "open":  np.array(obj[cal_open][cal_real]) + 1j * np.array(obj[cal_open][cal_imag]),
             "load":  np.array(obj[cal_load][cal_real]) + 1j * np.array(obj[cal_load][cal_imag]),
@@ -92,24 +92,25 @@ def clean_oneport(obj):
             }
   
 def test_object(N):
+    #make these lists so we can serialise this for writing to file
       return {
     "cmd":"oneport",
-    "freq": np.linspace(1e6,100e6,num=N),
+    "freq": np.linspace(1e6,100e6,num=N).tolist(),
     "short":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
             },
      "open":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
             },               
      "load":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
             },                 
      "dut":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
             }  
     } 
      
@@ -238,7 +239,7 @@ if __name__ == "__main__":
         
         obj = test_object(10)
         
-        f = obj[cal_freq]
+        f = np.array(obj[cal_freq])
         
         obj[cal_freq][4] = float("nan")
         obj[cal_dut][cal_real][7] = float("nan")
@@ -359,6 +360,10 @@ if __name__ == "__main__":
     data = apply_cal(dut, ideal, meas)
     result = network_to_result(data)
     
-    with open('test/json/test.json', 'w') as f:
+    with open('test/json/result.json', 'w') as f:
         json.dump(result, f)
     
+    # make a small input file for testing websocket interface
+    obj = test_object(10)
+    with open('test/json/test.json', 'w') as f:
+        json.dump(obj, f)
