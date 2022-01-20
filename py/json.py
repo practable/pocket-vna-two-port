@@ -13,7 +13,6 @@ Created 2022-02-20
 """
 
 import json
-import matplotlib.pyplot as plt
 import numpy as np
 import skrf as rf
 import time
