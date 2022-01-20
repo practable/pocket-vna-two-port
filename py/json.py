@@ -79,7 +79,8 @@ def clean_oneport(obj):
         for part in parts:
             obj[param][part] = np.array(obj[param][part])[ok_index].tolist()   
             
-            
+    obj[cal_freq] = np.array(obj[cal_freq])[ok_index].tolist() 
+        
     is_oneport(obj) #throws exception if array lengths no longer consistent
     
        
@@ -222,6 +223,26 @@ if __name__ == "__main__":
         pass #expected
     else:
         assert False, "Did not raise ValueError for uneven array lengths"  
+        
+        
+    #add some NaNs and check they are cleaned out
+    try:
+        
+        obj = test_object(10)
+        
+        f = obj[cal_freq]
+        
+        obj[cal_freq][4] = float("nan")
+        obj[cal_dut][cal_real][7] = float("nan")
+        obj = clean_oneport(obj)
+        
+        expected = np.array(f[[True, True, True, True, False, True, True, False, True, True]]).astype('float32')
+        actual = np.array(obj[cal_freq]).astype('float32')
+      
+        assert np.array_equal(expected, actual) 
+        
+    except:
+        assert False, "Error reading and cleaning oneport with nan"    
 
     # check that we can make networks, with the correct assignments of values
     # including the correct ideal properties for the ideal networks
