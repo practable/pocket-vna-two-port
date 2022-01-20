@@ -172,6 +172,15 @@ def use_cal(cal, dut):
     
     return cal.apply_cal(dut)
     
+def network_to_result(network):
+    return {
+           "freq": network.f,
+           "S11": {
+                       "Real": np.squeeze(network.s_re),
+                       "Imag": np.squeeze(network.s_im),
+                   }
+    }
+    
         
 
 if __name__ == "__main__":
@@ -338,5 +347,12 @@ if __name__ == "__main__":
     
     assert np.all(np.less_equal(actual_deg_error, max_deg_error))
     
-
+    # check result_to_json
+    result = network_to_result(data)
+    
+    assert np.array_equal(result["freq"], data.f)
+    assert np.array_equal(result["S11"]["Real"], np.squeeze(data.s_re))
+    assert np.array_equal(result["S11"]["Imag"], np.squeeze(data.s_im))
+    
+    
     
