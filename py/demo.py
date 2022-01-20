@@ -99,8 +99,49 @@ plt.show()
 plt.close()
 
 
+## prep for the JSON DEMO ... do it all again, but with JSON.
+
+# get our arrays out of the network models
+f = meas1port[0].f.tolist()
+mssr = np.squeeze(meas1port[0].s_re).tolist()
+mssi = np.squeeze(meas1port[0].s_im).tolist()
+
+msor = np.squeeze(meas1port[1].s_re).tolist()
+msoi = np.squeeze(meas1port[1].s_im).tolist()
+
+mslr = np.squeeze(meas1port[2].s_re).tolist()
+msli = np.squeeze(meas1port[2].s_im).tolist()
+
+msdr = np.squeeze(dut1port.s_re).tolist()
+msdi = np.squeeze(dut1port.s_im).tolist()
 
 
-# save results
-dut_caled.write_touchstone()
+request = {
+        "cmd":"oneport",
+        "freq":f,
+        "short":{
+            "real":mssr,
+            "imag":mssi
+                },
+         "open":{
+            "real":msor,
+            "imag":msoi
+                },               
+         "load":{
+            "real":mslr,
+            "imag":msli
+                },                 
+         "dut":{
+            "real":msdr,
+            "imag":msdi
+                }  
+        }
+
+import json
+with open('test/json/oneport.json', 'w') as f:
+    json.dump(request, f)
+
+
+
+
 
