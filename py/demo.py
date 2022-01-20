@@ -58,6 +58,9 @@ dut2port = rf.Network('test/supplied/DUTuncal.s2p')
 dut1port = rf.Network(frequency=dut2port.frequency, s=dut2port.s[:,0,0], name="scikit cal")
 dut_caled = cal.apply_cal(dut1port)
 
+# save results for comparison against automated implementation of this approach
+dut_caled.write_touchstone('test/expected/expected.s1p')
+
 # check results against supplied data
 
 expected2port = rf.Network('test/supplied/DUTcal.s2p')
