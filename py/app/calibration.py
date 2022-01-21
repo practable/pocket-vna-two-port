@@ -14,12 +14,13 @@ Created 2022-02-20
 
 import json
 import numpy as np
-from skrf.calibration import OnePort
-from skrf.media import DefinedGammaZ0
 import skrf as rf
 import time
+
 import warnings
 
+from skrf.calibration import OnePort
+from skrf.media import DefinedGammaZ0
 
 #define keys as variables so that mistypes throw an error
 cal_cmd = "cmd"
