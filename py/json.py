@@ -174,9 +174,9 @@ def use_cal(cal, dut):
 def network_to_result(network):
     return {
            "freq": network.f,
-           "S11": {
-                       "Real": np.squeeze(network.s_re),
-                       "Imag": np.squeeze(network.s_im),
+           "s11": {
+                       "real": np.squeeze(network.s_re),
+                       "imag": np.squeeze(network.s_im),
                    }
     }
     
@@ -350,8 +350,8 @@ if __name__ == "__main__":
     result = network_to_result(data)
     
     assert np.array_equal(result["freq"], data.f)
-    assert np.array_equal(result["S11"]["Real"], np.squeeze(data.s_re))
-    assert np.array_equal(result["S11"]["Imag"], np.squeeze(data.s_im))
+    assert np.array_equal(result["s11"]["real"], np.squeeze(data.s_re))
+    assert np.array_equal(result["s11"]["imag"], np.squeeze(data.s_im))
     
     
     
