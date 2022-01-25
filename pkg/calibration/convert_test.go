@@ -149,3 +149,45 @@ func TestMakeOnePort(t *testing.T) {
 	assert.Error(t, err)
 
 }
+
+func TestCalibrationToPocket(t *testing.T) {
+
+	freq := []uint64{1000, 2000, 3000, 4000}
+	real := []float64{3.31, 3.32, -3.33, 5.66}
+	imag := []float64{3.41, -3.42, 3.45, 6.77}
+
+	result := Result{
+		Freq: freq,
+		S11: ComplexArray{
+			Real: real,
+			Imag: imag,
+		},
+	}
+
+	pa, err := CalibrationToPocket(result)
+
+	assert.NoError(t, err)
+
+	for i := range freq {
+		assert.Equal(t, freq[i], pa[i].Freq)
+		assert.Equal(t, real[i], pa[i].S11.Real)
+		assert.Equal(t, imag[i], pa[i].S11.Imag)
+	}
+
+	// freq length is too short
+	freq = []uint64{1000, 2000, 3000}
+
+	result = Result{
+		Freq: freq,
+		S11: ComplexArray{
+			Real: real,
+			Imag: imag,
+		},
+	}
+
+	pa, err = CalibrationToPocket(result)
+
+	assert.Error(t, err)
+	assert.Equal(t, "Freq and S11 are different lengths", err.Error())
+
+}

@@ -64,5 +64,24 @@ func PocketToCalibration(p []pocket.SParam) ([]uint64, ComplexArray) {
 
 }
 
-func CalibrationToPocket() {
+func CalibrationToPocket(result Result) ([]pocket.SParam, error) {
+
+	pa := []pocket.SParam{}
+
+	if len(result.Freq) != len(result.S11.Real) {
+		return pa, errors.New("Freq and S11 are different lengths")
+	}
+
+	for i, freq := range result.Freq {
+		p := pocket.SParam{
+			Freq: freq,
+			S11: pocket.Complex{
+				Real: result.S11.Real[i],
+				Imag: result.S11.Imag[i],
+			},
+		}
+		pa = append(pa, p)
+	}
+
+	return pa, nil
 }
