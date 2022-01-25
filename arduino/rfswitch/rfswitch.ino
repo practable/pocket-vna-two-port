@@ -7,7 +7,12 @@
  *
  */
 
- /*********** USAGE
+ /*********** INSTALLATION ************
+  *  Requires https://github.com/khoih-prog/TimerInterrupt
+  *  Install using the library manager, or manually, following the readme at the link
+  */
+  
+ /*********** USAGE  *****************
   *  
   *  On startup, monitor at 57600 baud, you will see  {"report":"port","is":"short"}
   *  To change the port, use the commands {"set":"port","to":<port>} where port is
@@ -36,6 +41,8 @@ bool trace = false;
 
 /********** HEADERS ******************/
 #include "ArduinoJson-v6.9.1.h"
+// See Timer headers below - these need a #define before them
+
 
 /********** RF SWITCH ***********/
 // define such that A=low, B=high gives RF Port 2.
@@ -53,6 +60,8 @@ enum port {
 };
 
 
+
+
 /********* RF PORT NAME ************/
 static const char name_short[] = "short";
 static const char name_open[] = "open";
@@ -63,9 +72,27 @@ static const char name_dut[] = "dut";
 /*********** LED DISPLAY ***********/
 #define LED_SWITCH 13
 
+//this sets the blink code
+// do not edit to suit actual RF ports
+// display what port was last requested
+enum blinkCode {
+  BLINK_SHORT = 1,
+  BLINK_OPEN = 2,
+  BLINK_LOAD = 3,
+  BLINK_DUT = 4,
+};
 
 /********** TIMER *****************/
-// nothing here
+// must put #define before the include; see https://github.com/khoih-prog/TimerInterrupt/discussions/21
+#define USE_TIMER_1     true
+
+// These two includes to be included only in the .ino with setup() to avoid `Multiple Definitions` Linker Error
+#include "TimerInterrupt.h"           //https://github.com/khoih-prog/TimerInterrupt
+#include "ISR_Timer.h"                //https://github.com/khoih-prog/TimerInterrupt
+
+#define TIMER_INTERVAL_MS        250L
+
+
 
 /*********** JSON SERIAL ***********/
 #define COMMAND_SIZE 128 
@@ -77,6 +104,8 @@ StaticJsonDocument<COMMAND_SIZE> doc;
 
 /******** OTHER GLOBAL VARIABLES ********/
 bool writing;//for serial semaphore
+long int count; //counter for displaying port set as blinks.
+int blink; //current port state to blink according to blink enum
 
 //=============================================================
 // Function Prototypes
@@ -86,7 +115,7 @@ void setRFPort(int port);
 void reportRFPort(const char *name); //const since not modifying the string
 void requestSerial(void);
 void releaseSerial(void);
-
+bool blinkState(long int count, int blink);
 
 
 /**
@@ -191,6 +220,7 @@ void stateShortBefore(void) {
   state = STATE_SHORT_DURING;
   setRFPort(PORT_SHORT);
   reportRFPort(name_short);
+  blink = BLINK_SHORT;
 }
 
 void stateOpenBefore(void) {
@@ -198,6 +228,7 @@ void stateOpenBefore(void) {
   state = STATE_OPEN_DURING;
   setRFPort(PORT_OPEN);
   reportRFPort(name_open);
+  blink = BLINK_OPEN;
 }
 
 void stateLoadBefore(void) {
@@ -205,6 +236,7 @@ void stateLoadBefore(void) {
   state = STATE_LOAD_DURING;
   setRFPort(PORT_LOAD);
   reportRFPort(name_load);
+  blink = BLINK_LOAD;
 }
 
 void stateDUTBefore(void) {
@@ -212,6 +244,7 @@ void stateDUTBefore(void) {
   state = STATE_DUT_DURING;
   setRFPort(PORT_DUT);
   reportRFPort(name_dut);
+  blink = BLINK_DUT;
 }
 
 
@@ -268,6 +301,50 @@ void reportRFPort(const char *name){
   
 }
 
+bool blinkState(long int count, int blink){
+
+  // we want a pattern like this
+  // SHORT: (10)(00)(00)(00)(delay)
+  // OPEN:  (10)(10)(00)(00)(delay)
+  // LOAD:  (10)(10)(10)(00)(delay)
+  // DUT:   (10)(10)(10)(10)(delay) 
+  // where delay is the same length again.
+
+  switch (count%12){
+      case 0:
+        return true;
+      case 2:
+        switch (blink){
+            case BLINK_OPEN:
+            case BLINK_LOAD:
+            case BLINK_DUT:
+              return true;            
+            default:
+              return false;  
+        }
+      case 4:
+        switch (blink){
+            case BLINK_LOAD:
+            case BLINK_DUT:
+              return true;            
+            default:
+              return false;  
+        }  
+       case 6:
+        switch (blink){
+            case BLINK_DUT:
+              return true;            
+            default:
+              return false;  
+        }              
+      default: 
+        return false;
+  }
+  
+
+  
+}
+  
 //*****************************************************************************
 
 //STATE MACHINE RUN FUNCTION
@@ -287,10 +364,11 @@ void SMRun(void)
 
 
 //This function is run on a timer interrupt 
-void TimerInterrupt(void) {
-  //TODO display blinking light here
+void TimerHandler()
+{
+    digitalWrite(LED_SWITCH,blinkState(count, blink));
+    count++;
 }
-
 
 //===================================================================================
 //====================== SETUP AND LOOP =============================================
@@ -298,17 +376,26 @@ void TimerInterrupt(void) {
 
 void setup() {
 
-  //pins for the RF switch control
+  // pins for the RF switch control
   pinMode(SWITCH_A, OUTPUT);
   pinMode(SWITCH_B, OUTPUT);
   
-  //pins for LED display
+  // pins for LED display
   pinMode(LED_SWITCH, OUTPUT);
 
+  // Init timer ITimer1
+  ITimer1.init();
+
+  // timer
+  ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS, TimerHandler);
+  
   Serial.setTimeout(50);
   Serial.begin(57600);
  
   while (! Serial); //wait for serial to start 
+
+  count = 0; //initialise counter for use in blink code
+ 
 
 }
 
