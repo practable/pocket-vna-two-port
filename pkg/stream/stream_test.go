@@ -76,7 +76,7 @@ func TestRun(t *testing.T) {
 		t.Error("Can't unlock devices")
 	}
 
-	go Run(u, ctx)
+	go RunNoCal(u, ctx)
 
 	mt := int(websocket.TextMessage)
 
@@ -129,7 +129,7 @@ func TestRun(t *testing.T) {
 
 		assert.Equal(t, "456abc", sq.ID)
 		// weak test - with real kit attached, we should get non-zero numbers
-		assert.True(t, sq.Result.S11.Real < 0)
+		assert.True(t, sq.Result.S11.Real != 0)
 		assert.Equal(t, uint64(200000), sq.Result.Freq)
 
 	case <-time.After(timeout):

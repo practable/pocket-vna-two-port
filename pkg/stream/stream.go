@@ -19,7 +19,47 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Run(u string, ctx context.Context) {
+func Run(ucal, udest, usw string, ctx context.Context) {
+
+	rcal := reconws.New()  //calibration service
+	rdest := reconws.New() //destination (relay)
+	rsw := reconws.New()   // rfswitch
+
+	v := pocket.NewVNA()
+
+	command_internal := make(chan interface{})
+	result_internal := make(chan interface{})
+
+	command_external := make(chan interface{})
+	result_external := make(chan interface{})
+
+	calibration_request := make(chan interface{})
+	calibration_response := make(chan interface{})
+
+	switch_request := make(chan interface{})
+	switch_response := make(chan interface{})
+
+	go v.Run(command_internal, result_internal, ctx)
+
+	go rcal.Reconnect(ctx, ucal)
+	go rdest.Reconnect(ctx, udest)
+	go rsw.Reconnect(ctx, usw)
+
+	go PipeWsToInterface(rdest.In, command_external, ctx)
+
+	go PipeInterfaceToWs(result_external, rdest.Out, ctx)
+
+	go PipeWsToInterfaceCal(rcal.In, calibration_response, ctx)
+	go PipeInterfaceToWs(calibration_request, rcal.Out, ctx)
+
+	go PipeWsToInterfaceSwitch(rsw.In, switch_response, ctx)
+	go PipeInterfaceToWs(switch_request, rsw.Out, ctx)
+
+	go HeartBeat(rdest.Out, time.Second, ctx)
+
+}
+
+func RunNoCal(u string, ctx context.Context) {
 
 	r := reconws.New()
 
@@ -146,6 +186,140 @@ func PipeInterfaceToWs(in chan interface{}, out chan reconws.WsMessage, ctx cont
 			}
 
 			out <- reconws.WsMessage{Data: payload, Type: mtype}
+
+		}
+
+	}
+
+}
+
+func PipeWsToInterfaceCal(in chan reconws.WsMessage, out chan interface{}, ctx context.Context) {
+
+	for {
+		select {
+
+		case <-ctx.Done():
+			return
+
+		case msg := <-in:
+
+			//var rq pocket.RangeQuery
+			//var sq pocket.SingleQuery
+			//var rr pocket.ReasonableFrequencyRange
+
+			var c pocket.Command
+
+			err := json.Unmarshal([]byte(msg.Data), &c)
+
+			if err != nil {
+				log.WithField("error", err).Warning("Could not turn unmarshal JSON - invalid cmd string in JSON?")
+			}
+
+			switch strings.ToLower(c.Command) {
+
+			case "rq", "rangequey":
+
+				s := pocket.RangeQuery{}
+
+				err := json.Unmarshal([]byte(msg.Data), &s)
+
+				if err != nil {
+					log.WithField("error", err).Warning("Could not turn unmarshal JSON for RangeQuery (rq) command - invalid or missing parameters in JSON?")
+				}
+
+				out <- s
+
+			case "sq", "singlequery":
+
+				s := pocket.SingleQuery{}
+
+				err := json.Unmarshal([]byte(msg.Data), &s)
+
+				if err != nil {
+					log.WithField("error", err).Warning("Could not turn unmarshal JSON for SingleQuery (sq) command - invalid or missing parameters in JSON?")
+				}
+
+				out <- s
+
+			case "rr", "reasonablefrequencyrange":
+
+				s := pocket.ReasonableFrequencyRange{}
+
+				err := json.Unmarshal([]byte(msg.Data), &s)
+
+				if err != nil {
+					log.WithField("error", err).Warning("Could not turn unmarshal JSON for ReasonableFrequencyRange (rr) command - invalid or missing parameters in JSON?")
+				}
+
+				out <- s
+			}
+
+		}
+
+	}
+
+}
+
+func PipeWsToInterfaceSwitch(in chan reconws.WsMessage, out chan interface{}, ctx context.Context) {
+
+	for {
+		select {
+
+		case <-ctx.Done():
+			return
+
+		case msg := <-in:
+
+			//var rq pocket.RangeQuery
+			//var sq pocket.SingleQuery
+			//var rr pocket.ReasonableFrequencyRange
+
+			var c pocket.Command
+
+			err := json.Unmarshal([]byte(msg.Data), &c)
+
+			if err != nil {
+				log.WithField("error", err).Warning("Could not turn unmarshal JSON - invalid cmd string in JSON?")
+			}
+
+			switch strings.ToLower(c.Command) {
+
+			case "rq", "rangequey":
+
+				s := pocket.RangeQuery{}
+
+				err := json.Unmarshal([]byte(msg.Data), &s)
+
+				if err != nil {
+					log.WithField("error", err).Warning("Could not turn unmarshal JSON for RangeQuery (rq) command - invalid or missing parameters in JSON?")
+				}
+
+				out <- s
+
+			case "sq", "singlequery":
+
+				s := pocket.SingleQuery{}
+
+				err := json.Unmarshal([]byte(msg.Data), &s)
+
+				if err != nil {
+					log.WithField("error", err).Warning("Could not turn unmarshal JSON for SingleQuery (sq) command - invalid or missing parameters in JSON?")
+				}
+
+				out <- s
+
+			case "rr", "reasonablefrequencyrange":
+
+				s := pocket.ReasonableFrequencyRange{}
+
+				err := json.Unmarshal([]byte(msg.Data), &s)
+
+				if err != nil {
+					log.WithField("error", err).Warning("Could not turn unmarshal JSON for ReasonableFrequencyRange (rr) command - invalid or missing parameters in JSON?")
+				}
+
+				out <- s
+			}
 
 		}
 

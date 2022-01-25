@@ -35,6 +35,9 @@ var streamCmd = &cobra.Command{
 	Long: `Stream connects the first available pocketVNA to a websocket server. The websocket server is specified via an environment variable
 
 export VNA_DESTINATION=ws://localhost:8888/ws/vna
+export VNA_CALIBRATION=ws://localhost:8888/ws/calibration
+export VNA_RFSWITCH=ws://localhost:8888/ws/rfswitch
+
 vna stream 
 
 Note that development can be enabled by setting environment variable VNA_DEVELOPMENT
@@ -47,6 +50,8 @@ export VNA_DEVELOPMENT=true
 		viper.AutomaticEnv()
 
 		destination := viper.GetString("destination")
+		calibration := viper.GetString("calibration")
+		rfswitch := viper.GetString("rfswitch")
 		development := viper.GetBool("development")
 
 		if development {
@@ -78,7 +83,7 @@ export VNA_DEVELOPMENT=true
 			}
 		}()
 
-		go stream.Run(destination, ctx)
+		go stream.Run(calibration, destination, rfswitch, ctx)
 
 		<-ctx.Done()
 
