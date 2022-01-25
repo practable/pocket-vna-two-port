@@ -7,6 +7,23 @@
  *
  */
 
+ /*********** USAGE
+  *  
+  *  On startup, monitor at 57600 baud, you will see  {"report":"port","is":"short"}
+  *  To change the port, use the commands {"set":"port","to":<port>} where port is
+  *  "short", "open", "load", "dut" e.g.
+  *  {"set":"port","to":"short"} 
+  *  {"set":"port","to":"open"} 
+  *  {"set":"port","to":"load"} 
+  *  {"set":"port","to":"dut"} 
+  *  You will get a confirmation message everytime you change the port setting
+  *  {"report":"port","is":"short"}
+  *  {"report":"port","is":"open"}
+  *  {"report":"port","is":"load"}  
+  *  {"report":"port","is":"dut"}  
+  *    
+  */
+
 
 //=============================================================
 // SET BOTH THESE TO FALSE BEFORE ROLLING OUT IN PRODUCTION
@@ -117,8 +134,8 @@ StateMachineType StateMachine[] =
 {
   {STATE_SHORT_BEFORE, stateShortBefore},
   {STATE_SHORT_DURING, stateShortDuring},
-  {STATE_OPEN_BEFORE, stateShortBefore},
-  {STATE_OPEN_DURING, stateShortDuring}, 
+  {STATE_OPEN_BEFORE, stateOpenBefore},
+  {STATE_OPEN_DURING, stateOpenDuring}, 
   {STATE_LOAD_BEFORE, stateLoadBefore},
   {STATE_LOAD_DURING, stateLoadDuring},
   {STATE_DUT_BEFORE, stateDUTBefore},  
@@ -246,7 +263,7 @@ void reportRFPort(const char *name){
   requestSerial();
   Serial.print("{\"report\":\"port\",\"is\":\"");
   Serial.print(name);
-  Serial.println("%s\"}");
+  Serial.println("\"}");
   releaseSerial();
   
 }
@@ -330,7 +347,6 @@ float secondsFromMillis(float t) {
 float secondsFromMicros(float t) {
   return t / 1000000.0f;
 }
-
 
 
 //===================================================================================
