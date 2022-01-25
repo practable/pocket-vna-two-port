@@ -10,21 +10,25 @@ func MakeOnePort(pshort, popen, pload, pdut []pocket.SParam) (Command, error) {
 
 	freq, cshort := PocketToCalibration(pshort)
 
+	if len(freq) != len(cshort.Real) {
+		return Command{}, errors.New("data set mismatch")
+	}
+
 	tmp, copen := PocketToCalibration(popen)
 
-	if len(freq) != len(tmp) {
+	if len(freq) != len(tmp) || len(freq) != len(copen.Real) {
 		return Command{}, errors.New("data set mismatch")
 	}
 
 	tmp, cload := PocketToCalibration(pload)
 
-	if len(freq) != len(tmp) {
+	if len(freq) != len(tmp) || len(freq) != len(cload.Real) {
 		return Command{}, errors.New("data set mismatch")
 	}
 
 	tmp, cdut := PocketToCalibration(pdut)
 
-	if len(freq) != len(tmp) {
+	if len(freq) != len(tmp) || len(freq) != len(cdut.Real) {
 		return Command{}, errors.New("data set mismatch")
 	}
 
