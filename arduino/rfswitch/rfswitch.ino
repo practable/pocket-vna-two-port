@@ -46,16 +46,16 @@ bool trace = false;
 
 /********** RF SWITCH ***********/
 // define such that A=low, B=high gives RF Port 2.
-#define SWITCH_A 8
-#define SWITCH_B 12
+#define SWITCH_V1 8
+#define SWITCH_V2 12
 
 /********* RF PORTS ************/
 // Check the port number on the RF switch 
 // and see where each standard/dut is connected
 enum port {
   PORT_SHORT = 1,
-  PORT_OPEN = 3,
-  PORT_LOAD = 2,
+  PORT_OPEN = 2,
+  PORT_LOAD = 3,
   PORT_DUT = 4,
 };
 
@@ -275,20 +275,39 @@ void stateDUTDuring(void) {
 
 
 void setRFPort(int port){
-  
+
+  /*
+   *  Table 5. Truth Table
+   * State V1 V2
+   * RF1 on 0 0
+   * RF2 on 1 0
+   * RF3 on 0 1
+   * RF4 on 1 1
+   * 
+  */
+
   switch(port) {
     case 1:
-      digitalWrite(SWITCH_A, LOW);
-      digitalWrite(SWITCH_B, LOW); 
+      digitalWrite(SWITCH_V1, LOW);
+      digitalWrite(SWITCH_V2, LOW); 
+      break;
     case 2:
-      digitalWrite(SWITCH_A, LOW);
-      digitalWrite(SWITCH_B, HIGH);
+      digitalWrite(SWITCH_V1, HIGH);
+      digitalWrite(SWITCH_V2, LOW);
+      break;
     case 3:
-      digitalWrite(SWITCH_A, HIGH);
-      digitalWrite(SWITCH_B, LOW);   
+      digitalWrite(SWITCH_V1, LOW);
+      digitalWrite(SWITCH_V2, HIGH);   
+      break;
     case 4:  
-      digitalWrite(SWITCH_A, HIGH);  
-      digitalWrite(SWITCH_B, HIGH);       
+      digitalWrite(SWITCH_V1, HIGH);  
+      digitalWrite(SWITCH_V2, HIGH); 
+      break;
+    default:
+      Serial.print("{\"report\":\"error\",\"is\":\"Port ");
+      Serial.print(port);
+      Serial.println(" is not known\"}");
+              
   } 
 }
 
@@ -377,8 +396,8 @@ void TimerHandler()
 void setup() {
 
   // pins for the RF switch control
-  pinMode(SWITCH_A, OUTPUT);
-  pinMode(SWITCH_B, OUTPUT);
+  pinMode(SWITCH_V1, OUTPUT);
+  pinMode(SWITCH_V2, OUTPUT);
   
   // pins for LED display
   pinMode(LED_SWITCH, OUTPUT);
