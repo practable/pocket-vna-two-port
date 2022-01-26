@@ -49,6 +49,201 @@ func TestHeartBeat(t *testing.T) {
 
 }
 
+func TestNew(t *testing.T) {
+
+	timeout := 100 * time.Millisecond
+
+	toClient := make(chan reconws.WsMessage)
+	fromClient := make(chan reconws.WsMessage)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create test server with the channel handler.
+	s := httptest.NewServer(http.HandlerFunc(channelHandler(toClient, fromClient, ctx)))
+
+	//s := httptest.NewServer(http.HandlerFunc(reasonableRange))
+	defer s.Close()
+
+	// Convert http://127.0.0.1 to ws://127.0.0.
+	u := "ws" + strings.TrimPrefix(s.URL, "http")
+
+	stream := New(u, ctx)
+
+	mt := int(websocket.TextMessage)
+
+	/* Test ReasonableFrequencyRange */
+
+	message := []byte("{\"cmd\":\"rr\"}")
+
+	ws := reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case toClient <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case reply := <-stream.R.In:
+
+		var rr pocket.ReasonableFrequencyRange
+
+		err := json.Unmarshal(reply.Data, &rr)
+
+		assert.NoError(t, err)
+
+		assert.Equal(t, "rr", rr.Command.Command)
+	}
+}
+
+//
+//	/* Test SingleQuery */
+//	chanInterface <- pocket.SingleQuery{
+//		Command: pocket.Command{Command: "sq"},
+//		Freq:    100000,
+//		Avg:     1,
+//		Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+//		Result: pocket.SParam{
+//			S11: pocket.Complex{Real: -1, Imag: 2},
+//			S21: pocket.Complex{Real: 0.34, Imag: 0.12},
+//		},
+//	}
+//
+//	select {
+//
+//	case <-time.After(timeout):
+//		t.Error("timeout awaiting response")
+//	case reply := <-chanWs:
+//
+//		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0},\"freq\":0}}"
+//
+//		assert.Equal(t, expected, string(reply.Data))
+//	}
+//
+//	/* Test RangeQuery */
+//	chanInterface <- pocket.RangeQuery{
+//		Command:         pocket.Command{Command: "rq"},
+//		Range:           pocket.Range{Start: 100000, End: 4000000},
+//		LogDistribution: true,
+//		Avg:             1,
+//		Size:            2,
+//		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+//		Result: []pocket.SParam{
+//			pocket.SParam{
+//				S11: pocket.Complex{Real: -1, Imag: 2},
+//				S21: pocket.Complex{Real: 0.34, Imag: 0.12},
+//			},
+//			pocket.SParam{
+//				S11: pocket.Complex{Real: -0.1, Imag: 0.2},
+//				S21: pocket.Complex{Real: 0.3, Imag: 0.4},
+//			},
+//		},
+//	}
+//
+//	select {
+//
+//	case <-time.After(timeout):
+//		t.Error("timeout awaiting response")
+//	case reply := <-chanWs:
+//
+//		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"start\":100000,\"end\":4000000},\"size\":2,\"islog\":true,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":[{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0},\"freq\":0},{\"s11\":{\"real\":-0.1,\"imag\":0.2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.3,\"imag\":0.4},\"s22\":{\"real\":0,\"imag\":0},\"freq\":0}]}"
+//
+//		assert.Equal(t, expected, string(reply.Data))
+//	}
+//
+//}
+//
+//func TestPipeWsToInterface(t *testing.T) {
+//	timeout := 100 * time.Millisecond
+//
+//	chanWs := make(chan reconws.WsMessage)
+//	chanInterface := make(chan interface{})
+//	ctx, cancel := context.WithCancel(context.Background())
+//	defer cancel()
+//	go PipeWsToInterface(chanWs, chanInterface, ctx)
+//
+//	mt := int(websocket.TextMessage)
+//
+//	/* Test ReasonableFrequencyRange */
+//	message := []byte("{\"cmd\":\"rr\"}")
+//
+//	ws := reconws.WsMessage{
+//		Data: message,
+//		Type: mt,
+//	}
+//
+//	chanWs <- ws
+//
+//	select {
+//
+//	case <-time.After(timeout):
+//		t.Error("timeout awaiting response")
+//	case reply := <-chanInterface:
+//		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.ReasonableFrequencyRange{}))
+//		rr := reply.(pocket.ReasonableFrequencyRange)
+//		assert.Equal(t, "rr", rr.Command.Command)
+//	}
+//
+//	/* Test SingleQuery */
+//	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0}}}")
+//
+//	ws = reconws.WsMessage{
+//		Data: message,
+//		Type: mt,
+//	}
+//
+//	chanWs <- ws
+//
+//	select {
+//
+//	case <-time.After(timeout):
+//		t.Error("timeout awaiting response")
+//	case reply := <-chanInterface:
+//		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.SingleQuery{}))
+//		sq := reply.(pocket.SingleQuery)
+//		assert.Equal(t, "sq", sq.Command.Command)
+//		assert.Equal(t, uint64(100000), sq.Freq) //not testing Freq in result because this is just a piping test....
+//		assert.Equal(t, uint16(1), sq.Avg)
+//		assert.Equal(t, pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false}, sq.Select)
+//		// no need to check the Sparam results because we are not expecting to pass them in this direction
+//	}
+//
+//	/* Test RangeQuery */
+//	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"start\":100000,\"end\":4000000},\"size\":2,\"islog\":true,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":[{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0}},{\"s11\":{\"real\":-0.1,\"imag\":0.2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.3,\"imag\":0.4},\"s22\":{\"real\":0,\"imag\":0}}]}")
+//
+//	ws = reconws.WsMessage{
+//		Data: message,
+//		Type: mt,
+//	}
+//
+//	chanWs <- ws
+//
+//	select {
+//
+//	case <-time.After(timeout):
+//		t.Error("timeout awaiting response")
+//	case reply := <-chanInterface:
+//		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(pocket.RangeQuery{}))
+//		rq := reply.(pocket.RangeQuery)
+//		assert.Equal(t, "rq", rq.Command.Command)
+//		assert.Equal(t, pocket.Range{Start: 100000, End: 4000000}, rq.Range)
+//		assert.Equal(t, uint16(1), rq.Avg)
+//		assert.Equal(t, pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false}, rq.Select)
+//		assert.Equal(t, true, rq.LogDistribution)
+//
+//		// no need to check the Sparam results because we are not expecting to pass them in this direction
+//	}
+//
+//}
+//
+
 func TestRunDirect(t *testing.T) {
 
 	/* note this test will fail if the first heartbeat comes before the command-response tests

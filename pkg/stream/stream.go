@@ -22,6 +22,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// TODO duplicate the testing applied to RunDirect
 func New(u string, ctx context.Context) Stream {
 
 	request := make(chan interface{})
@@ -48,6 +49,8 @@ func New(u string, ctx context.Context) Stream {
 
 }
 
+// This is the straight-forward version of the firmware with no added functionality
+// useful for raw access to the VNA. Requires VNA to be connected for testing.
 func RunDirect(u string, ctx context.Context) {
 
 	r := reconws.New()
