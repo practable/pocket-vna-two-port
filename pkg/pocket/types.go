@@ -66,30 +66,30 @@ var Results = [...]string{
 }
 
 type Description struct {
-	Serial       string
-	Manufacturer string
-	Product      string
-	Release      int
+	Serial       string `json:"serial"`
+	Manufacturer string `json:"manufacturer"`
+	Product      string `json:"product"`
+	Release      int    `json:"release"`
 }
 
 type SParamSelect struct {
-	S11 bool
-	S12 bool
-	S21 bool
-	S22 bool
+	S11 bool `json:"s11"`
+	S12 bool `json:"s12"`
+	S21 bool `json:"s21"`
+	S22 bool `json:"s22"`
 }
 
 type SParam struct {
-	S11  Complex
-	S12  Complex
-	S21  Complex
-	S22  Complex
-	Freq uint64
+	S11  Complex `json:"s11"`
+	S12  Complex `json:"s12"`
+	S21  Complex `json:"s21"`
+	S22  Complex `json:"s22"`
+	Freq uint64  `json:"freq"`
 }
 
 type Range struct {
-	Start uint64
-	End   uint64
+	Start uint64 `json:"start"`
+	End   uint64 `json:"end"`
 }
 
 type Command struct {
@@ -102,10 +102,19 @@ type RangeQuery struct {
 	Command
 	Range           Range        `json:"range"`
 	Size            int          `json:"size"`
-	LogDistribution bool         `json:"isLog"`
+	LogDistribution bool         `json:"islog"`
 	Avg             uint16       `json:"avg"`
 	Select          SParamSelect `json:"sparam"`
 	Result          []SParam     `json:"result,omitEmpty"`
+}
+
+// this command is not supported by pocket
+// we have to handle this in the firmwarees
+type CalibratedRangeQuery struct {
+	Command
+	Avg    uint16       `json:"avg"`
+	Select SParamSelect `json:"sparam"`
+	Result []SParam     `json:"result,omitEmpty"`
 }
 
 type SingleQuery struct {
@@ -127,11 +136,11 @@ type Progress struct {
 }
 
 type CustomResult struct {
-	Message string
+	Message string `json:"message"`
 	Command interface{}
 }
 
 type Complex struct {
-	Real float64
-	Imag float64
+	Real float64 `json:"real"`
+	Imag float64 `json:"imag"`
 }
