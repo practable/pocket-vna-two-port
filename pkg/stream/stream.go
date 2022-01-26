@@ -15,51 +15,40 @@ import (
 	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
 	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 
+	//"github.com/timdrysdale/go-pocketvna/pkg/calibration"
+	//"github.com/timdrysdale/go-pocketvna/pkg/rfswitch"
+
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
 
-func Run(ucal, udest, usw string, ctx context.Context) {
+func New(u string, ctx context.Context) Stream {
 
-	rcal := reconws.New()  //calibration service
-	rdest := reconws.New() //destination (relay)
-	rsw := reconws.New()   // rfswitch
+	request := make(chan interface{})
+	response := make(chan interface{})
 
-	v := pocket.NewVNA()
+	r := reconws.New()
 
-	command_internal := make(chan interface{})
-	result_internal := make(chan interface{})
+	go r.Reconnect(ctx, u)
 
-	command_external := make(chan interface{})
-	result_external := make(chan interface{})
+	// We receive requests from user
+	// i.e. reverse sense to our own services
+	go PipeInterfaceToWs(request, r.In, ctx)
+	go PipeWsToInterface(r.Out, response, ctx)
+	go HeartBeat(r.Out, time.Second, ctx)
 
-	calibration_request := make(chan interface{})
-	calibration_response := make(chan interface{})
-
-	switch_request := make(chan interface{})
-	switch_response := make(chan interface{})
-
-	go v.Run(command_internal, result_internal, ctx)
-
-	go rcal.Reconnect(ctx, ucal)
-	go rdest.Reconnect(ctx, udest)
-	go rsw.Reconnect(ctx, usw)
-
-	go PipeWsToInterface(rdest.In, command_external, ctx)
-
-	go PipeInterfaceToWs(result_external, rdest.Out, ctx)
-
-	go PipeWsToInterfaceCal(rcal.In, calibration_response, ctx)
-	go PipeInterfaceToWs(calibration_request, rcal.Out, ctx)
-
-	go PipeWsToInterfaceSwitch(rsw.In, switch_response, ctx)
-	go PipeInterfaceToWs(switch_request, rsw.Out, ctx)
-
-	go HeartBeat(rdest.Out, time.Second, ctx)
+	return Stream{
+		u:        u,
+		R:        r,
+		Ctx:      ctx,
+		Request:  request,
+		Response: response,
+		Timeout:  time.Second,
+	}
 
 }
 
-func RunNoCal(u string, ctx context.Context) {
+func RunDirect(u string, ctx context.Context) {
 
 	r := reconws.New()
 
@@ -125,7 +114,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 			switch strings.ToLower(c.Command) {
 
-			case "rq", "rangequey":
+			case "rq", "rangequery", "rc", "rangecal":
 
 				s := pocket.RangeQuery{}
 
@@ -133,6 +122,18 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 				if err != nil {
 					log.WithField("error", err).Warning("Could not turn unmarshal JSON for RangeQuery (rq) command - invalid or missing parameters in JSON?")
+				}
+
+				out <- s
+
+			case "crq", "calibratedrangequery":
+
+				s := pocket.CalibratedRangeQuery{}
+
+				err := json.Unmarshal([]byte(msg.Data), &s)
+
+				if err != nil {
+					log.WithField("error", err).Warning("Could not turn unmarshal JSON for CalibratedRangeQuery (rq) command - invalid or missing parameters in JSON?")
 				}
 
 				out <- s
@@ -168,6 +169,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 }
 
+// This can be used for all of the external connections because it is data structure agnostic
 func PipeInterfaceToWs(in chan interface{}, out chan reconws.WsMessage, ctx context.Context) {
 
 	mtype := int(websocket.TextMessage)

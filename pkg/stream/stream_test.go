@@ -49,7 +49,7 @@ func TestHeartBeat(t *testing.T) {
 
 }
 
-func TestRun(t *testing.T) {
+func TestRunDirect(t *testing.T) {
 
 	/* note this test will fail if the first heartbeat comes before the command-response tests
 	are completed; could add conditional code to ignore heartbeat commands */
@@ -76,7 +76,7 @@ func TestRun(t *testing.T) {
 		t.Error("Can't unlock devices")
 	}
 
-	go RunNoCal(u, ctx)
+	go RunDirect(u, ctx)
 
 	mt := int(websocket.TextMessage)
 
@@ -204,7 +204,7 @@ func TestPipeInterfaceToWs(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanWs:
 
-		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rr\",\"range\":{\"Start\":100000,\"End\":4000000}}"
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rr\",\"range\":{\"start\":100000,\"end\":4000000}}"
 
 		assert.Equal(t, expected, string(reply.Data))
 	}
@@ -227,7 +227,7 @@ func TestPipeInterfaceToWs(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanWs:
 
-		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0},\"Freq\":0}}"
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0},\"freq\":0}}"
 
 		assert.Equal(t, expected, string(reply.Data))
 	}
@@ -258,7 +258,7 @@ func TestPipeInterfaceToWs(t *testing.T) {
 		t.Error("timeout awaiting response")
 	case reply := <-chanWs:
 
-		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":[{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0},\"Freq\":0},{\"S11\":{\"Real\":-0.1,\"Imag\":0.2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.3,\"Imag\":0.4},\"S22\":{\"Real\":0,\"Imag\":0},\"Freq\":0}]}"
+		expected := "{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"start\":100000,\"end\":4000000},\"size\":2,\"islog\":true,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":[{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0},\"freq\":0},{\"s11\":{\"real\":-0.1,\"imag\":0.2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.3,\"imag\":0.4},\"s22\":{\"real\":0,\"imag\":0},\"freq\":0}]}"
 
 		assert.Equal(t, expected, string(reply.Data))
 	}
@@ -297,7 +297,7 @@ func TestPipeWsToInterface(t *testing.T) {
 	}
 
 	/* Test SingleQuery */
-	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}}}")
+	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"sq\",\"freq\":100000,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0}}}")
 
 	ws = reconws.WsMessage{
 		Data: message,
@@ -321,7 +321,7 @@ func TestPipeWsToInterface(t *testing.T) {
 	}
 
 	/* Test RangeQuery */
-	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"Start\":100000,\"End\":4000000},\"size\":2,\"isLog\":true,\"avg\":1,\"sparam\":{\"S11\":true,\"S12\":false,\"S21\":true,\"S22\":false},\"result\":[{\"S11\":{\"Real\":-1,\"Imag\":2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.34,\"Imag\":0.12},\"S22\":{\"Real\":0,\"Imag\":0}},{\"S11\":{\"Real\":-0.1,\"Imag\":0.2},\"S12\":{\"Real\":0,\"Imag\":0},\"S21\":{\"Real\":0.3,\"Imag\":0.4},\"S22\":{\"Real\":0,\"Imag\":0}}]}")
+	message = []byte("{\"id\":\"\",\"t\":0,\"cmd\":\"rq\",\"range\":{\"start\":100000,\"end\":4000000},\"size\":2,\"islog\":true,\"avg\":1,\"sparam\":{\"s11\":true,\"s12\":false,\"s21\":true,\"s22\":false},\"result\":[{\"s11\":{\"real\":-1,\"imag\":2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.34,\"imag\":0.12},\"s22\":{\"real\":0,\"imag\":0}},{\"s11\":{\"real\":-0.1,\"imag\":0.2},\"s12\":{\"real\":0,\"imag\":0},\"s21\":{\"real\":0.3,\"imag\":0.4},\"s22\":{\"real\":0,\"imag\":0}}]}")
 
 	ws = reconws.WsMessage{
 		Data: message,
