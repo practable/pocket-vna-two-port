@@ -1,5 +1,22 @@
 package calibration
 
+import (
+	"context"
+	"time"
+
+	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
+)
+
+type Calibration struct {
+	u        string
+	R        *reconws.ReconWs
+	Ctx      context.Context
+	Request  chan interface{}
+	Response chan interface{}
+	Timeout  time.Duration
+	Command  Command
+}
+
 /* Command object definition in python calibration service
 
    {
@@ -24,6 +41,8 @@ package calibration
     }
 */
 
+// this command only has enough fields to support a oneport calibration
+// will need extending for two port, or other more exotic calibrations
 type Command struct {
 	Command string       `json:"cmd"`
 	Freq    []uint64     `json:"freq"`
