@@ -91,16 +91,61 @@ func TestNew(t *testing.T) {
 
 	case <-time.After(timeout):
 		t.Error("timeout awaiting response")
-	case reply := <-stream.R.In:
+	case request := <-stream.Request:
 
-		var rr pocket.ReasonableFrequencyRange
+		v, ok := request.(pocket.ReasonableFrequencyRange)
 
-		err := json.Unmarshal(reply.Data, &rr)
+		assert.True(t, ok)
 
-		assert.NoError(t, err)
-
-		assert.Equal(t, "rr", rr.Command.Command)
+		assert.Equal(t, "rr", v.Command.Command)
 	}
+
+	// Send something back to avoid mock Handler stalling on readmessage
+	select {
+	case stream.Response <- pocket.Command{}:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send response")
+	}
+
+	/* Test rangeQuery */
+	rq := pocket.RangeQuery{
+		Command:         pocket.Command{Command: "rq"},
+		Range:           pocket.Range{Start: 100000, End: 4000000},
+		LogDistribution: true,
+		Avg:             1,
+		Size:            2,
+		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+	}
+
+	message, err := json.Marshal(rq)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case toClient <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case request := <-stream.Request:
+
+		v, ok := request.(pocket.RangeQuery)
+
+		assert.True(t, ok)
+
+		assert.Equal(t, "rq", v.Command.Command)
+
+	}
+
 }
 
 //

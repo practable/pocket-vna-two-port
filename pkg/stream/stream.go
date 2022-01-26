@@ -25,8 +25,8 @@ import (
 // TODO duplicate the testing applied to RunDirect
 func New(u string, ctx context.Context) Stream {
 
-	request := make(chan interface{})
-	response := make(chan interface{})
+	request := make(chan interface{}, 2)
+	response := make(chan interface{}, 2)
 
 	r := reconws.New()
 
@@ -34,8 +34,11 @@ func New(u string, ctx context.Context) Stream {
 
 	// We receive requests from user
 	// i.e. reverse sense to our own services
-	go PipeInterfaceToWs(request, r.In, ctx)
-	go PipeWsToInterface(r.Out, response, ctx)
+
+	go PipeWsToInterface(r.In, request, ctx)
+
+	go PipeInterfaceToWs(response, r.Out, ctx)
+
 	go HeartBeat(r.Out, time.Second, ctx)
 
 	return Stream{
@@ -57,9 +60,9 @@ func RunDirect(u string, ctx context.Context) {
 
 	v := pocket.NewVNA()
 
-	command := make(chan interface{})
+	command := make(chan interface{}, 2)
 
-	result := make(chan interface{})
+	result := make(chan interface{}, 2)
 
 	go v.Run(command, result, ctx)
 
