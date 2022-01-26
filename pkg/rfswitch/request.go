@@ -126,10 +126,6 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 		case msg := <-in:
 
-			//var rq pocket.RangeQuery
-			//var sq pocket.SingleQuery
-			//var rr pocket.ReasonableFrequencyRange
-
 			var r Report
 
 			err := json.Unmarshal([]byte(msg.Data), &r)
