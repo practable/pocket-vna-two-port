@@ -102,10 +102,22 @@ func TestNew(t *testing.T) {
 
 	// Send something back to avoid mock Handler stalling on readmessage
 	select {
-	case stream.Response <- pocket.Command{}:
+	case stream.Response <- pocket.Command{ID: "0"}:
 	case <-time.After(timeout):
 		t.Error(t, "timeout awaiting send response")
 	}
+
+	// outgoing pipe does not depend on type...
+	// note there is a 1ms timeout in the handler which could be
+	// fragile to slow-running test environments
+	// you will not get messages that were not available to be taken
+	// from the channel within the timelimit (it does not block on that write)
+	// as it is only a testing feature, it does not affect actual operation
+	// there is no message loss in the actual code - just the testing mock
+	// since not all messages need to be sent/received in the tests
+	msg := <-fromClient
+	expected := "{\"id\":\"0\",\"t\":0,\"cmd\":\"\"}"
+	assert.Equal(t, expected, string(msg.Data))
 
 	/* Test rangeQuery */
 	rq := pocket.RangeQuery{
@@ -145,6 +157,65 @@ func TestNew(t *testing.T) {
 		assert.Equal(t, "rq", v.Command.Command)
 
 	}
+	// Send something back to avoid mock Handler stalling on readmessage
+	select {
+	case stream.Response <- pocket.Command{ID: "1"}:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send response")
+	}
+
+	// outgoing pipe does not depend on type...
+	msg = <-fromClient
+	expected = "{\"id\":\"1\",\"t\":0,\"cmd\":\"\"}"
+	assert.Equal(t, expected, string(msg.Data))
+
+	/* Test calibratedRangeQuery */
+	crq := pocket.CalibratedRangeQuery{
+		Command: pocket.Command{Command: "crq"},
+		Avg:     1,
+		Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+	}
+
+	message, err = json.Marshal(crq)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case toClient <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case request := <-stream.Request:
+
+		v, ok := request.(pocket.CalibratedRangeQuery)
+
+		assert.True(t, ok)
+
+		assert.Equal(t, "crq", v.Command.Command)
+
+	}
+
+	// Send something back to avoid mock Handler stalling on readmessage
+	select {
+	case stream.Response <- pocket.Command{ID: "2"}:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send response")
+	}
+
+	// outgoing pipe does not depend on type...
+	msg = <-fromClient
+	expected = "{\"id\":\"2\",\"t\":0,\"cmd\":\"\"}"
+	assert.Equal(t, expected, string(msg.Data))
 
 }
 
