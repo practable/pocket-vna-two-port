@@ -3,6 +3,7 @@ package calibration
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"testing"
 	"time"
 
@@ -261,38 +262,54 @@ func TestPipeInterfaceToWs(t *testing.T) {
 
 }
 
-//func TestPipeWsToInterface(t *testing.T) {
-//	timeout := 100 * time.Millisecond
-//
-//	chanWs := make(chan reconws.WsMessage)
-//	chanInterface := make(chan interface{})
-//	ctx, cancel := context.WithCancel(context.Background())
-//	defer cancel()
-//	go PipeWsToInterface(chanWs, chanInterface, ctx)
-//
-//	mt := int(websocket.TextMessage)
-//
-//	/* Test Report */
-//	message := []byte("{\"report\":\"port\",\"is\":\"short\"}")
-//
-//	ws := reconws.WsMessage{
-//		Data: message,
-//		Type: mt,
-//	}
-//
-//	chanWs <- ws
-//
-//	select {
-//
-//	case <-time.After(timeout):
-//		t.Error("timeout awaiting response")
-//	case reply := <-chanInterface:
-//		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(Result{}))
-//		report := reply.(Result)
-//		assert.Equal(t, "short", Result.Is)
-//	}
-//
-//}
+func TestPipeWsToInterface(t *testing.T) {
+	timeout := 100 * time.Millisecond
+
+	chanWs := make(chan reconws.WsMessage)
+	chanInterface := make(chan interface{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go PipeWsToInterface(chanWs, chanInterface, ctx)
+
+	mt := int(websocket.TextMessage)
+
+	/* Test Report */
+	freq := []uint64{1, 2}
+	real := []float64{0.1, 0.2}
+	imag := []float64{0.3, 0.4}
+
+	r := Result{
+		Freq: freq,
+		S11: ComplexArray{
+			Real: real,
+			Imag: imag,
+		},
+	}
+
+	payload, err := json.Marshal(r)
+
+	assert.NoError(t, err)
+
+	ws := reconws.WsMessage{
+		Data: payload,
+		Type: mt,
+	}
+
+	chanWs <- ws
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case reply := <-chanInterface:
+		assert.Equal(t, reflect.TypeOf(reply), reflect.TypeOf(Result{}))
+		result := reply.(Result)
+		assert.Equal(t, freq, result.Freq)
+		assert.Equal(t, real, result.S11.Real)
+		assert.Equal(t, imag, result.S11.Imag)
+	}
+
+}
 
 //
 //// Reply with expected response if port command is correctly formed
