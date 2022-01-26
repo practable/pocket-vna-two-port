@@ -2,9 +2,12 @@ package rfswitch
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,57 +25,121 @@ func init() {
 
 var upgrader = websocket.Upgrader{}
 
-//func TestNew(t *testing.T) {
-//
-//	timeout := 100 * time.Millisecond
-//
-//	toClient := make(chan reconws.WsMessage)
-//	fromClient := make(chan reconws.WsMessage)
-//	ctx, cancel := context.WithCancel(context.Background())
-//	defer cancel()
-//
-//	// Create test server with the channel handler.
-//	s := httptest.NewServer(http.HandlerFunc(channelHandler(toClient, fromClient, ctx)))
-//
-//	defer s.Close()
-//
-//	// Convert http://127.0.0.1 to ws://127.0.0.
-//	u := "ws" + strings.TrimPrefix(s.URL, "http")
-//
-//	rf := New(u, ctx)
-//
-//	mt := int(websocket.TextMessage)
-//
-//	/* Test ReasonableFrequencyRange */
-//	message := []byte("{\"cmd\":\"rr\",\"id\":\"xyz123\"}")
-//
-//	toClient <- reconws.WsMessage{
-//		Data: message,
-//		Type: mt,
-//	}
-//
-//	select {
-//	case reply := <-fromClient:
-//
-//		rr := pocket.ReasonableFrequencyRange{}
-//
-//		err := json.Unmarshal(reply.Data, &rr)
-//
-//		if err != nil {
-//			t.Error("Cannot marshal response to rr command")
-//		}
-//
-//		assert.Equal(t, "xyz123", rr.ID)
-//		// weak test - with real kit attached, we should get non-zero numbers
-//		assert.True(t, rr.Result.Start > 0)
-//		assert.True(t, rr.Result.End > rr.Result.Start)
-//
-//	case <-time.After(timeout):
-//		t.Error("timeout waiting for reply to rr command")
-//	}
-//
-//}
-//
+func TestNew(t *testing.T) {
+
+	timeout := 100 * time.Millisecond
+
+	toClient := make(chan reconws.WsMessage)
+	fromClient := make(chan reconws.WsMessage)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create test server with the channel handler.
+	s := httptest.NewServer(http.HandlerFunc(channelHandler(toClient, fromClient, ctx)))
+
+	defer s.Close()
+
+	go switchMock(fromClient, toClient, ctx)
+
+	// Convert http://127.0.0.1 to ws://127.0.0.
+	u := "ws" + strings.TrimPrefix(s.URL, "http")
+
+	rf := New(u, ctx)
+
+	ports := []string{"short", "open", "load", "dut"}
+
+	for _, port := range ports {
+
+		c := Command{
+			Set: "port",
+			To:  port,
+		}
+
+		rf.Request <- c
+
+		select {
+		case report := <-rf.Response:
+
+			v, ok := report.(Report)
+
+			assert.True(t, ok)
+
+			assert.Equal(t, "port", v.Report)
+			assert.Equal(t, port, v.Is)
+
+		case <-time.After(timeout):
+			t.Error("timeout waiting for reply to Set port")
+		}
+	}
+
+	// bad port
+	c := Command{
+		Set: "port",
+		To:  "foo",
+	}
+
+	rf.Request <- c
+
+	select {
+	case report := <-rf.Response:
+
+		v, ok := report.(Report)
+
+		assert.True(t, ok)
+
+		assert.Equal(t, "error", v.Report)
+		assert.Equal(t, "unrecognised port", v.Is)
+
+	case <-time.After(timeout):
+		t.Error("timeout waiting for reply to Set port")
+	}
+
+	// bad command
+	c = Command{
+		Set: "bar",
+		To:  "foo",
+	}
+
+	rf.Request <- c
+
+	select {
+	case report := <-rf.Response:
+
+		v, ok := report.(Report)
+
+		assert.True(t, ok)
+
+		assert.Equal(t, "error", v.Report)
+		assert.Equal(t, "unrecognised command", v.Is)
+
+	case <-time.After(timeout):
+		t.Error("timeout waiting for reply to Set port")
+	}
+
+	// not even a  command
+	r := Report{
+		Report: "bar",
+		Is:     "foo",
+	}
+
+	rf.Request <- r
+
+	select {
+	case report := <-rf.Response:
+
+		v, ok := report.(Report)
+
+		assert.True(t, ok)
+
+		assert.Equal(t, "error", v.Report)
+		assert.Equal(t, "unrecognised command", v.Is)
+
+	case <-time.After(timeout):
+		t.Error("timeout waiting for reply to Set port")
+	}
+
+}
+
 func TestPipeInterfaceToWs(t *testing.T) {
 	timeout := 100 * time.Millisecond
 
@@ -136,51 +203,66 @@ func TestPipeWsToInterface(t *testing.T) {
 }
 
 // Reply with expected response if port command is correctly formed
-/*
-func switchMock(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		return
-	}
-	defer c.Close()
+
+func switchMock(request, response chan reconws.WsMessage, ctx context.Context) {
 
 	mt := int(websocket.TextMessage)
 
 	message := []byte("{\"report\":\"error\",\"is\":\"unrecognised command\"}")
 
+	timeout := 1 * time.Millisecond
+
 	for {
 
-		_, message, err := c.ReadMessage()
-		if err != nil {
-			break
-		}
+		select {
 
-		var r Report
+		case <-ctx.Done():
+			return
 
-		err := json.Unmarshal([]byte(msg.Data), &r)
+		case msg := <-request:
 
-		if r.Report == "port" {
-			switch r.Is {
-			case "short":
-				message = []byte("{\"report\":\"port\",\"is\":\"short\"}")
-			case "open":
-				message = []byte("{\"report\":\"port\",\"is\":\"open\"}")
-			case "load":
-				message = []byte("{\"report\":\"port\",\"is\":\"load\"}")
-			case "dut":
-				message = []byte("{\"report\":\"port\",\"is\":\"dut\"}")
-			default:
-				message = []byte("{\"report\":\"error\",\"is\":\"unrecognised port\"}")
+			//fmt.Println(string(msg.Data))
+
+			var c Command
+
+			err := json.Unmarshal([]byte(msg.Data), &c)
+
+			message = []byte("{\"report\":\"error\",\"is\":\"unrecognised command\"}")
+
+			if err == nil {
+
+				if c.Set == "port" {
+					switch c.To {
+					case "short":
+						message = []byte("{\"report\":\"port\",\"is\":\"short\"}")
+					case "open":
+						message = []byte("{\"report\":\"port\",\"is\":\"open\"}")
+					case "load":
+						message = []byte("{\"report\":\"port\",\"is\":\"load\"}")
+					case "dut":
+						message = []byte("{\"report\":\"port\",\"is\":\"dut\"}")
+					default:
+						message = []byte("{\"report\":\"error\",\"is\":\"unrecognised port\"}")
+					}
+				}
 			}
-		}
 
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			break
+			select {
+
+			case <-ctx.Done():
+				return
+
+			case <-time.After(timeout):
+				//carry on
+
+			case response <- reconws.WsMessage{Data: message, Type: mt}:
+				//fmt.Println(string(message))
+				// carry on
+			}
+
 		}
 	}
 }
-*/
 
 func channelHandler(toClient, fromClient chan reconws.WsMessage, ctx context.Context) func(w http.ResponseWriter, r *http.Request) {
 
