@@ -39,7 +39,9 @@ func TestNew(t *testing.T) {
 
 	defer s.Close()
 
-	go switchMock(fromClient, toClient, ctx)
+	ctx_mock, cancel_mock := context.WithCancel(context.Background())
+
+	go switchMock(fromClient, toClient, ctx_mock)
 
 	// Convert http://127.0.0.1 to ws://127.0.0.
 	u := "ws" + strings.TrimPrefix(s.URL, "http")
@@ -137,6 +139,58 @@ func TestNew(t *testing.T) {
 	case <-time.After(timeout):
 		t.Error("timeout waiting for reply to Set port")
 	}
+
+	// check that the commands complete ok when getting the expected response
+
+	err := rf.SetShort()
+
+	assert.NoError(t, err)
+
+	err = rf.SetOpen()
+
+	assert.NoError(t, err)
+
+	err = rf.SetLoad()
+
+	assert.NoError(t, err)
+
+	err = rf.SetDUT()
+
+	assert.NoError(t, err)
+
+	cancel_mock() //check commands are asking for the right port
+
+	go rf.SetShort()
+
+	msg := <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "short", c.To)
+
+	go rf.SetOpen()
+
+	msg = <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "open", c.To)
+
+	go rf.SetLoad()
+
+	msg = <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "load", c.To)
+
+	go rf.SetDUT()
+
+	msg = <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "dut", c.To)
 
 }
 

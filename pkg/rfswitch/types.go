@@ -2,6 +2,7 @@ package rfswitch
 
 import (
 	"context"
+	"time"
 
 	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 )
@@ -22,4 +23,5 @@ type Switch struct {
 	Ctx      context.Context
 	Request  chan interface{}
 	Response chan interface{}
+	Timeout  time.Duration
 }

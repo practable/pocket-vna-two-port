@@ -3,6 +3,8 @@ package rfswitch
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"time"
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -27,8 +29,66 @@ func New(u string, ctx context.Context) Switch {
 		Ctx:      ctx,
 		Request:  request,
 		Response: response,
+		Timeout:  time.Second,
+	}
+}
+
+func (s *Switch) SetShort() error {
+	return s.SetPort("short")
+}
+
+func (s *Switch) SetOpen() error {
+	return s.SetPort("open")
+}
+
+func (s *Switch) SetLoad() error {
+	return s.SetPort("load")
+}
+
+func (s *Switch) SetDUT() error {
+	return s.SetPort("dut")
+}
+
+func (s *Switch) SetPort(port string) error {
+	request := Command{
+		Set: "port",
+		To:  port,
 	}
 
+	select {
+	case <-time.After(s.Timeout):
+		return errors.New("timeout sending request")
+	case s.Request <- request:
+		//carry on
+	}
+
+	select {
+	case <-time.After(s.Timeout):
+		return errors.New("timeout receiving response")
+	case response := <-s.Response:
+		r, ok := response.(Report)
+
+		if !ok {
+			return errors.New("Unexpected response")
+		}
+
+		if r.Report == "error" {
+			return errors.New("Error" + r.Is)
+		}
+
+		if r.Report == "port" {
+
+			if r.Is == port {
+				return nil
+			} else {
+				return errors.New("Wrong port set")
+			}
+		}
+
+		// catch anything else
+		return errors.New("unexpected response")
+
+	}
 }
 
 func PipeInterfaceToWs(in chan interface{}, out chan reconws.WsMessage, ctx context.Context) {
