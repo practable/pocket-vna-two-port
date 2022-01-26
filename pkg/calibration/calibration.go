@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
+	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
 	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 )
 
@@ -94,6 +95,22 @@ func (r *Result) CompareFreq(freq []uint64) error {
 	return nil
 }
 
+func (c *Calibration) SetShortParam(p []pocket.SParam) error {
+	return c.SetShort(PocketToResult(p))
+}
+
+func (c *Calibration) SetOpenParam(p []pocket.SParam) error {
+	return c.SetOpen(PocketToResult(p))
+}
+
+func (c *Calibration) SetLoadParam(p []pocket.SParam) error {
+	return c.SetLoad(PocketToResult(p))
+}
+
+func (c *Calibration) SetDUTParam(p []pocket.SParam) error {
+	return c.SetDUT(PocketToResult(p))
+}
+
 func (c *Calibration) SetShort(result Result) error {
 	return c.Set("short", result)
 }
@@ -145,14 +162,14 @@ func (c *Calibration) Set(target string, result Result) error {
 func (ca *ComplexArray) BadLen(freq []uint64) bool {
 
 	if len(ca.Real) != len(ca.Imag) {
-		return false
+		return true
 	}
 
 	if len(freq) != len(ca.Real) {
-		return false
+		return true
 	}
 
-	return true
+	return false
 }
 
 func (c *Calibration) Apply() (Result, error) {

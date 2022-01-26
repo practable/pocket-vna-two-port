@@ -64,6 +64,14 @@ func PocketToCalibration(p []pocket.SParam) ([]uint64, ComplexArray) {
 
 }
 
+func PocketToResult(p []pocket.SParam) Result {
+	freq, ca := PocketToCalibration(p)
+	return Result{
+		Freq: freq,
+		S11:  ca,
+	}
+}
+
 func CalibrationToPocket(result Result) ([]pocket.SParam, error) {
 
 	pa := []pocket.SParam{}
