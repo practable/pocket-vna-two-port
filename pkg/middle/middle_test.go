@@ -630,68 +630,86 @@ FILTERGOOD:
 		}
 	}
 
-	//TODO check the results for some data.
+	/* Test calibratedRangeQuery */
+	crq := pocket.CalibratedRangeQuery{
+		Command: pocket.Command{Command: "crq"},
+		What:    "dut",
+		Avg:     1,
+		Select:  pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
+	}
 
-	// TODO Test rangecal
+	message, err = json.Marshal(crq)
 
-	///* Test calibratedRangeQuery */
-	//crq := pocket.CalibratedRangeQuery{
-	//	Command: pocket.Command{Command: "crq"},
-	//	Avg:     1,
-	//	Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
-	//}
-	//
-	//message, err = json.Marshal(crq)
-	//
-	//assert.NoError(t, err)
-	//
-	//ws = reconws.WsMessage{
-	//	Data: message,
-	//	Type: mt,
-	//}
-	//
-	//select {
-	//case streamWrite <- ws:
-	//case <-time.After(timeout):
-	//	t.Error(t, "timeout awaiting send message")
-	//}
-	//
-	//select {
-	//
-	//case <-time.After(timeout):
-	//	t.Error("timeout awaiting response")
-	//case request := <-mds.Next():
-	//
-	//	m, ok := request.(reconws.WsMessage)
-	//
-	//	assert.True(t, ok)
-	//
-	//	fmt.Printf(string(m.Data))
-	//
-	//	// we might get a heartbeat message, if so, ignore
-	//	if string(m.Data) == "{\"cmd\":\"hb\"}" {
-	//		select {
-	//		case request := <-mds.Next():
-	//			m, ok = request.(reconws.WsMessage)
-	//			assert.True(t, ok)
-	//		case <-time.After(timeout):
-	//			t.Error("timeout awaiting response")
-	//		}
-	//	}
-	//
-	//	var crq pocket.CalibratedRangeQuery
-	//
-	//	err := json.Unmarshal(m.Data, &crq)
-	//
-	//	assert.NoError(t, err)
-	//
-	//	assert.Equal(t, "crq", crq.Command.Command)
-	//
-	//	// TODO check message contents are ok
-	//
-	//	assert.Equal(t, 100000, crq.Result[0].Freq)
-	//
-	//}
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	responseFiltered = reconws.WsMessage{}
+
+FILTERCRQGOOD:
+	for i := 0; i < 20; i++ {
+		if debug {
+			fmt.Printf("FILTERCRQGOOD: iteration %d\n", i)
+		}
+		if i > 19 {
+			t.Error("timeout awaiting response")
+		}
+		select {
+
+		case <-time.After(timeout):
+			//silently wait - could be a slow scan
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+			assert.True(t, ok)
+			if debug {
+				idx, err := mds.LastReadIndex()
+				assert.NoError(t, err)
+				fmt.Printf("CRQGOOD-UNFILTERED: %d->%s:\n", idx, m.Data)
+			}
+			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
+				string(m.Data) != "" {
+
+				responseFiltered = m
+				if debug {
+					fmt.Printf("CRGOOD-FILTERED: %s\n", responseFiltered.Data)
+				}
+				break FILTERCRQGOOD
+			}
+		}
+	}
+
+	if debug {
+		fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+	}
+
+	// should just be a pocket.RangeQuery result when it is a success
+	// unmarshal to get the command info
+
+	crq = pocket.CalibratedRangeQuery{}
+
+	err = json.Unmarshal(responseFiltered.Data, &crq)
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, "crq", crq.Command.Command)
+
+	//avoid panic if results are unexpectedly empty, and still fail the test
+	if len(rq.Result) == 2 {
+		assert.Equal(t, 200000, int(rq.Result[0].Freq))
+		assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+	} else {
+		t.Error("Wrong length array, could not check values")
+	}
 
 }
 

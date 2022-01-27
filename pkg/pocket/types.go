@@ -125,6 +125,7 @@ type RangeQuery struct {
 // we have to handle this in the firmwarees
 type CalibratedRangeQuery struct {
 	Command
+	What   string       `json:"what"`
 	Avg    uint16       `json:"avg"`
 	Select SParamSelect `json:"sparam"`
 	Result []SParam     `json:"result,omitEmpty"`

@@ -34,7 +34,7 @@ func New(uc, ur, us string, ctx context.Context) Middle {
 
 				select {
 
-				case s.Response <- HandleRequest(request, c, r, v):
+				case s.Response <- HandleRequest(request, &c, &r, &v):
 					// carry on
 				case <-time.After(requesttimeout):
 					s.Response <- TimeoutMessage(request)
@@ -50,10 +50,10 @@ func New(uc, ur, us string, ctx context.Context) Middle {
 	}() //func
 
 	return Middle{
-		Calibration: c,
-		Stream:      s,
-		Switch:      r,
-		VNA:         v,
+		Calibration: &c,
+		Stream:      &s,
+		Switch:      &r,
+		VNA:         &v,
 	}
 
 }
@@ -67,7 +67,7 @@ func TimeoutMessage(request interface{}) interface{} {
 
 }
 
-func HandleRequest(request interface{}, c calibration.Calibration, r rfswitch.Switch, v pocket.VNAService) interface{} {
+func HandleRequest(request interface{}, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
 
 	switch request.(type) {
 
@@ -119,21 +119,120 @@ func HandleRequest(request interface{}, c calibration.Calibration, r rfswitch.Sw
 	}
 }
 
-func CalibratedRangeQuery(rq pocket.CalibratedRangeQuery, c calibration.Calibration, r rfswitch.Switch, v pocket.VNAService) interface{} {
+func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
 
 	//TODO implement the application of the calibration
 
-	scan := rq
+	// Check port 1 is specified
 
-	scan.Command.Command = "rq"
+	onlyS11 := crq.Select.S11 && !crq.Select.S12 && !crq.Select.S21 && !crq.Select.S22
 
-	v.Request <- scan
+	if !onlyS11 {
+		msg := fmt.Sprintf("Error: calibration is only supported on Port1 (S11). Resend the command with only S11 selected (true). You had S11:%v, S12:%v, S21:%v, S22:%v",
+			crq.Select.S11, crq.Select.S12, crq.Select.S21, crq.Select.S22)
+		return pocket.CustomResult{
+			Message: msg,
+			Command: crq,
+		}
+	}
 
-	return <-v.Response
+	sc, ok := (c.Scan).(pocket.RangeQuery)
+
+	if !ok {
+		return pocket.CustomResult{
+			Message: "No scan command is set. Have you calibrated yet?",
+			Command: crq,
+		}
+	}
+
+	var err error
+	var name string
+
+	switch {
+	case crq.What == "short" || crq.What == "s":
+		name = "short"
+		err = r.SetShort()
+
+	case crq.What == "open" || crq.What == "o":
+		name = "open"
+		err = r.SetOpen()
+
+	case crq.What == "load" || crq.What == "l":
+		name = "load"
+		err = r.SetLoad()
+
+	case crq.What == "dut" || crq.What == "d":
+		name = "dut"
+		err = r.SetDUT()
+	default:
+		name = crq.What
+		err = fmt.Errorf("unrecognised value of what: %s", name)
+	}
+
+	if err != nil {
+		return pocket.CustomResult{
+			Message: "Error setting RF switch to " + name + ": " + err.Error(),
+			Command: crq,
+		}
+	}
+
+	v.Request <- c.Scan
+
+	response := <-v.Response
+
+	rrq, ok := response.(pocket.RangeQuery)
+
+	if !ok {
+		return pocket.CustomResult{
+			Message: "Error measuring " + name,
+			Command: response,
+		}
+	}
+
+	result := rrq.Result
+
+	if len(result) != sc.Size {
+		return pocket.CustomResult{
+			Message: "Error measuring " + name,
+			Command: response,
+		}
+	}
+
+	err = c.SetDUTParam(result)
+
+	if err != nil {
+		return pocket.CustomResult{
+			Message: "Error putting data for " + name + " into cal store as DUT: " + err.Error(),
+			Command: result,
+		}
+	}
+
+	// apply calibration to DUT data
+	calibrated, err := c.Apply()
+
+	if err != nil {
+		return pocket.CustomResult{
+			Message: "Error applying calibration to measured data for " + name + ": " + err.Error(),
+			// don't include result - not in correct format and will be nil anyway
+		}
+	}
+
+	sparams, err := calibration.CalibrationToPocket(calibrated)
+
+	if err != nil {
+		return pocket.CustomResult{
+			Message: "Error converting calibrated data format for " + name + ": " + err.Error(),
+			// don't include result - not in correct format and will be nil anyway
+		}
+	}
+
+	crq.Result = sparams
+
+	return crq
 
 }
 
-func RangeCal(rc pocket.RangeQuery, c calibration.Calibration, r rfswitch.Switch, v pocket.VNAService) interface{} {
+func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
 
 	// Check port 1 is specified
 

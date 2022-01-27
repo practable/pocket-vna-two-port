@@ -8,8 +8,8 @@ import (
 )
 
 type Middle struct {
-	Calibration calibration.Calibration
-	Stream      stream.Stream
-	Switch      rfswitch.Switch
-	VNA         pocket.VNAService
+	Calibration *calibration.Calibration
+	Stream      *stream.Stream
+	Switch      *rfswitch.Switch
+	VNA         *pocket.VNAService
 }
