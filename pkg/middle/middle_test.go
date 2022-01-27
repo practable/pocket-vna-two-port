@@ -352,11 +352,6 @@ func TestMiddle(t *testing.T) {
 
 	New(uc, ur, us, ctx)
 
-	//fmt.Printf("%v\n", middle)
-
-	//time.Sleep(time.Second)
-	//t.Logf("counts: %d/%d/%d\n", mdc.Count(), mdr.Count(), mds.Count())
-
 	/* Test ReasonableFrequencyRange */
 
 	mt := int(websocket.TextMessage)
@@ -377,9 +372,10 @@ func TestMiddle(t *testing.T) {
 
 	case <-time.After(timeout):
 		t.Error("timeout awaiting response")
+
 	case request := <-mds.Next():
 
-		fmt.Printf(string((request.(reconws.WsMessage)).Data))
+		//fmt.Printf(string((request.(reconws.WsMessage)).Data))
 
 		m, ok := request.(reconws.WsMessage)
 

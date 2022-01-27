@@ -13,20 +13,11 @@ import (
 
 func New(uc, ur, us string, ctx context.Context) Middle {
 
-	// placeholders during testing
-	//c := calibration.Calibration{}
-	//r := rfswitch.Switch{}
-	//s := stream.Stream{}
-	//v := pocket.VNAService{}
-
 	c := calibration.New(uc, ctx)
 	r := rfswitch.New(ur, ctx)
 	s := stream.New(us, ctx)
 
 	v := pocket.New(ctx)
-
-	// avoid compile warnings during testing when services commented out
-	//fmt.Printf("cal:    %s\nswitch: %s\nstream: %s\n", uc, ur, us)
 
 	timeout := time.Second
 
@@ -39,13 +30,10 @@ func New(uc, ur, us string, ctx context.Context) Middle {
 
 			case request := <-s.Request:
 
-				//fmt.Printf("Handling Request - STARTING")
-
 				select {
 
 				case s.Response <- HandleRequest(request, c, r, v):
 					// carry on
-					//fmt.Printf("Handling Request - DONE")
 				case <-time.After(requesttimeout):
 					s.Response <- TimeoutMessage(request)
 				}
@@ -81,31 +69,11 @@ func HandleRequest(request interface{}, c calibration.Calibration, r rfswitch.Sw
 
 	switch request.(type) {
 
-	case pocket.ReasonableFrequencyRange:
+	case pocket.ReasonableFrequencyRange, pocket.RangeQuery, pocket.SingleQuery:
 
-		v.Request <- request.(pocket.ReasonableFrequencyRange)
+		v.Request <- request
 
 		return <-v.Response
-
-	case pocket.RangeQuery:
-
-		result, err := v.VNA.RangeQuery(request.(pocket.RangeQuery))
-
-		if err != nil {
-			return pocket.CustomResult{Message: err.Error()}
-		}
-
-		return result
-
-	case pocket.SingleQuery:
-
-		result, err := v.VNA.SingleQuery(request.(pocket.SingleQuery))
-
-		if err != nil {
-			return pocket.CustomResult{Message: err.Error()}
-		}
-
-		return result
 
 	default:
 		return pocket.CustomResult{
