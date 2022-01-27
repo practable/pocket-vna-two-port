@@ -54,6 +54,7 @@ func NewWs(ws chan reconws.WsMessage, ctx context.Context) *Store {
 func New(ch chan interface{}, ctx context.Context) *Store {
 
 	s := Store{
+
 		Ctx: ctx,
 	}
 

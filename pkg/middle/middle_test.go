@@ -148,8 +148,6 @@ func TestMiddle(t *testing.T) {
 		t.Log("This test relies on hardware and succeeds most of the time")
 	}
 
-	maxLoop := 10
-
 	timeout := time.Millisecond * 1000
 
 	ctx := context.Background()
@@ -293,51 +291,31 @@ func TestMiddle(t *testing.T) {
 		t.Error(t, "timeout awaiting send message")
 	}
 
-	// manage variable scope
+	idx, err := mds.LastReadIndex()
+	assert.NoError(t, err)
+	<-time.After(time.Second)
+
+	msgs := mds.All()
+
 	var responseFiltered reconws.WsMessage
-	if verbose {
-		idx, err := mds.LastReadIndex()
-		assert.NoError(t, err)
-		fmt.Printf("Before LOOP1, LastRead Index was %d\n", idx)
-	}
+
 LOOP1:
 
-	for i := 0; i < maxLoop; i++ {
-		if debug {
-			fmt.Printf("FILTERBAD: iteration %d\n", i)
-		}
-		if i >= (maxLoop - 1) {
-			t.Error("timeout awaiting response")
-		}
-		select {
+	for i := idx; i < len(msgs); i++ {
 
-		case <-time.After(timeout):
-			//silently wait - could be a slow scan
-		case response := <-mds.Next():
-
-			m, ok := response.(reconws.WsMessage)
-			assert.True(t, ok)
-
-			if debug {
-				idx, err := mds.LastReadIndex()
-				assert.NoError(t, err)
-				fmt.Printf("BAD-UNFILTERED: %d->%s:\n", idx, m.Data)
-			}
-
-			if string(m.Data) != "{\"cmd\":\"hb\"}" {
-				responseFiltered = m
-				if debug {
-					fmt.Printf("BAD-FILTERED: %s\n", responseFiltered.Data)
-				}
-				break LOOP1
-			}
-		}
-	}
-	if verbose {
-		idx, err := mds.LastReadIndex()
+		response, err := mds.NextNoWait()
 		assert.NoError(t, err)
-		fmt.Printf("After LOOP1, LastRead Index was %d\n", idx)
+		lri, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
+		m, ok := response.(reconws.WsMessage)
+		assert.True(t, ok)
+		if string(m.Data) != "{\"cmd\":\"hb\"}" {
+			responseFiltered = m
+			break LOOP1
+		}
 	}
+
 	var cr pocket.CustomResult
 
 	err = json.Unmarshal(responseFiltered.Data, &cr)
@@ -388,51 +366,29 @@ LOOP1:
 		t.Error(t, "timeout awaiting send message")
 	}
 
+	idx, err = mds.LastReadIndex()
+	assert.NoError(t, err)
+	<-time.After(time.Second)
+
+	msgs = mds.All()
+
 	responseFiltered = reconws.WsMessage{}
-	if verbose {
-		idx, err := mds.LastReadIndex()
-		assert.NoError(t, err)
-		fmt.Printf("Before LOOP2, LastRead Index was %d\n", idx)
-	}
+
 LOOP2:
-	for i := 0; i < maxLoop; i++ {
-		if debug {
-			fmt.Printf("FILTERCRQGOOD: iteration %d\n", i)
-		}
-		if i >= (maxLoop - 1) {
-			t.Error("timeout awaiting response")
-		}
-		select {
 
-		case <-time.After(timeout):
-			//silently wait - could be a slow scan
-		case response := <-mds.Next():
+	for i := idx; i < (len(msgs) - 1); i++ {
 
-			m, ok := response.(reconws.WsMessage)
-			assert.True(t, ok)
-			if debug {
-				idx, err := mds.LastReadIndex()
-				assert.NoError(t, err)
-				fmt.Printf("CRQGOOD-UNFILTERED: %d->%s:\n", idx, m.Data)
-			}
-			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
-				string(m.Data) != "" {
-
-				responseFiltered = m
-				if debug {
-					fmt.Printf("CRGOOD-FILTERED: %s\n", responseFiltered.Data)
-				}
-				break LOOP2
-			}
-		}
-	}
-	if verbose {
-		idx, err := mds.LastReadIndex()
+		response, err := mds.NextNoWait()
 		assert.NoError(t, err)
-		fmt.Printf("After LOOP2, LastRead Index was %d\n", idx)
-	}
-	if debug {
-		fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+		lri, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
+		m, ok := response.(reconws.WsMessage)
+		assert.True(t, ok)
+		if string(m.Data) != "{\"cmd\":\"hb\"}" {
+			responseFiltered = m
+			break LOOP2
+		}
 	}
 
 	// should just be a pocket.RangeQuery result when it is a success
@@ -445,9 +401,6 @@ LOOP2:
 	expectedError = "Error. No existing calibration. Please calibrate with rc command"
 
 	assert.Equal(t, expectedError, cr.Message)
-
-	// pause between tests to identify possible source of unexpected mds.Next() calls
-	<-time.After(time.Second)
 
 	/* Test rangeCal with correct S11 setting */
 
@@ -479,108 +432,86 @@ LOOP2:
 		t.Error(t, "timeout awaiting send message")
 	}
 
+	idx, err = mds.LastReadIndex()
+	assert.NoError(t, err)
+
+	<-time.After(2 * time.Second)
+
+	msgs = mds.All()
+
 	responseFiltered = reconws.WsMessage{}
 
-	if verbose {
-		idx, err := mds.LastReadIndex()
-		assert.NoError(t, err)
-		fmt.Printf("Before LOOP3, LastRead Index was %d\n", idx)
-	}
+	if !mds.IsEmpty() {
 
-LOOP3:
-	for i := 0; i < maxLoop; i++ {
-		if debug {
-			fmt.Printf("FILTERGOOD: iteration %d\n", i)
-		}
-		if i >= (maxLoop - 1) {
-			t.Error("timeout awaiting response")
-		}
-		select {
+		fmt.Printf("i:%d,len(msgs):%d\n", idx+1, len(msgs))
+	LOOP3:
+		for i := idx; i < (len(msgs) - 1); i++ {
 
-		case <-time.After(timeout):
-			//silently wait - could be a slow scan
-		case response := <-mds.Next():
-
+			response, err := mds.NextNoWait()
+			assert.NoError(t, err)
+			lri, err := mds.LastReadIndex()
+			assert.NoError(t, err)
+			fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
 			m, ok := response.(reconws.WsMessage)
 			assert.True(t, ok)
-			if debug {
-				idx, err := mds.LastReadIndex()
-				assert.NoError(t, err)
-				fmt.Printf("GOOD-UNFILTERED: %d->%s:\n", idx, m.Data)
-			} else if verbose {
-				idx, err := mds.LastReadIndex()
-				assert.NoError(t, err)
-				fmt.Printf("LOOP3 read idx: %d\n", idx)
-			}
-			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
-				string(m.Data) != "" {
-
+			if string(m.Data) != "{\"cmd\":\"hb\"}" {
 				responseFiltered = m
-				if debug {
-					fmt.Printf("GOOD-FILTERED: %s\n", responseFiltered.Data)
-				}
 				break LOOP3
 			}
 		}
-	}
 
-	if verbose {
-		idx, err := mds.LastReadIndex()
+		// check for RF switch error
+
+		cr = pocket.CustomResult{}
+
+		err = json.Unmarshal(responseFiltered.Data, &cr)
+
 		assert.NoError(t, err)
-		fmt.Printf("After LOOP3, LastRead Index was %d\n", idx)
-	}
-	// check for RF switch error
 
-	cr = pocket.CustomResult{}
-
-	err = json.Unmarshal(responseFiltered.Data, &cr)
-
-	assert.NoError(t, err)
-
-	if err == nil && cr.Message != "" {
-		if strings.Contains(cr.Message, "Error setting RF switch") {
-			t.Errorf("Hardware issue - repeat test! %s", cr.Message)
+		if err == nil && cr.Message != "" {
+			if strings.Contains(cr.Message, "Error setting RF switch") {
+				t.Errorf("Hardware issue - repeat test! %s", cr.Message)
+			} else {
+				t.Error(cr.Message)
+			}
 		} else {
-			t.Error(cr.Message)
+			if debug {
+				fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+			}
+
+			// should just be a pocket.RangeQuery result when it is a success
+			// unmarshal to get the command info
+
+			err = json.Unmarshal(responseFiltered.Data, &rq)
+
+			assert.NoError(t, err)
+
+			if debug {
+				fmt.Printf("CHECK RECV AGAIN:" + string(responseFiltered.Data) + "\n")
+				fmt.Printf("RQ:%+v\n", rq)
+			}
+
+			assert.Equal(t, "rc", rq.Command.Command)
+			assert.Equal(t, "good", rq.Command.ID)
+
+			if debug {
+				fmt.Printf("MARSHALLED-rq: %+v\n", rq)
+			}
+
+			// check we got some results back
+			assert.Equal(t, 2, len(rq.Result))
+
+			//avoid panic if results are unexpectedly empty, and still fail the test
+			if len(rq.Result) == 2 {
+				assert.Equal(t, 200000, int(rq.Result[0].Freq))
+				assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+			} else {
+				t.Error("Wrong length array, could not check values")
+			}
 		}
 	} else {
-		if debug {
-			fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
-		}
-
-		// should just be a pocket.RangeQuery result when it is a success
-		// unmarshal to get the command info
-
-		err = json.Unmarshal(responseFiltered.Data, &rq)
-
-		assert.NoError(t, err)
-
-		if debug {
-			fmt.Printf("CHECK RECV AGAIN:" + string(responseFiltered.Data) + "\n")
-			fmt.Printf("RQ:%+v\n", rq)
-		}
-
-		assert.Equal(t, "rc", rq.Command.Command)
-		assert.Equal(t, "good", rq.Command.ID)
-
-		if debug {
-			fmt.Printf("MARSHALLED-rq: %+v\n", rq)
-		}
-
-		// check we got some results back
-		assert.Equal(t, 2, len(rq.Result))
-
-		//avoid panic if results are unexpectedly empty, and still fail the test
-		if len(rq.Result) == 2 {
-			assert.Equal(t, 200000, int(rq.Result[0].Freq))
-			assert.Equal(t, 5000000, int(rq.Result[1].Freq))
-		} else {
-			t.Error("Wrong length array, could not check values")
-		}
+		t.Error("No new messages for Test3")
 	}
-
-	// pause between tests to identify possible source of unexpected mds.Next() calls
-	<-time.After(time.Second)
 
 	/* Test calibratedRangeQuery */
 	crq = pocket.CalibratedRangeQuery{
@@ -605,87 +536,71 @@ LOOP3:
 		t.Error(t, "timeout awaiting send message")
 	}
 
+	idx, err = mds.LastReadIndex()
+	assert.NoError(t, err)
+
+	<-time.After(2 * time.Second)
+
+	msgs = mds.All()
+
 	responseFiltered = reconws.WsMessage{}
 
-	if verbose {
-		idx, err := mds.LastReadIndex()
-		assert.NoError(t, err)
-		fmt.Printf("Before LOOP4, LastRead Index was %d\n", idx)
-	}
-LOOP4:
-	for i := 0; i < maxLoop; i++ {
-		if debug {
-			fmt.Printf("FILTERCRQGOOD: iteration %d\n", i)
-		}
-		if i >= (maxLoop - 1) {
-			t.Error("timeout awaiting response")
-		}
-		select {
+	if !mds.IsEmpty() {
+		fmt.Printf("i:%d,len(msgs):%d\n", idx+1, len(msgs))
+	LOOP4:
+		for i := idx; i < (len(msgs) - 1); i++ {
 
-		case <-time.After(timeout):
-			//silently wait - could be a slow scan
-		case response := <-mds.Next():
-
+			response, err := mds.NextNoWait()
+			assert.NoError(t, err)
+			lri, err := mds.LastReadIndex()
+			assert.NoError(t, err)
+			fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
 			m, ok := response.(reconws.WsMessage)
 			assert.True(t, ok)
-			if verbose {
-				idx, err := mds.LastReadIndex()
-				assert.NoError(t, err)
-				fmt.Printf("LOOP4 read idx: %d\n", idx)
-			}
-			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
-				string(m.Data) != "" {
-
+			if string(m.Data) != "{\"cmd\":\"hb\"}" {
 				responseFiltered = m
-				if debug {
-					fmt.Printf("CRGOOD-FILTERED: %s\n", responseFiltered.Data)
-				}
 				break LOOP4
 			}
 		}
-	}
 
-	if verbose {
-		idx, err := mds.LastReadIndex()
+		cr = pocket.CustomResult{}
+		err = json.Unmarshal(responseFiltered.Data, &cr)
+
 		assert.NoError(t, err)
-		fmt.Printf("After LOOP4, LastRead Index was %d\n", idx)
-	}
 
-	cr = pocket.CustomResult{}
-	err = json.Unmarshal(responseFiltered.Data, &cr)
-
-	assert.NoError(t, err)
-
-	if err == nil && cr.Message != "" {
-		if strings.Contains(cr.Message, "Error setting RF switch") {
-			t.Errorf("Hardware issue - repeat test! %s", cr.Message)
+		if err == nil && cr.Message != "" {
+			if strings.Contains(cr.Message, "Error setting RF switch") {
+				t.Errorf("Hardware issue - repeat test! %s", cr.Message)
+			} else {
+				t.Error(cr.Message)
+			}
 		} else {
-			t.Error(cr.Message)
+
+			if debug {
+				fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+			}
+
+			// should just be a pocket.RangeQuery result when it is a success
+			// unmarshal to get the command info
+
+			crq = pocket.CalibratedRangeQuery{}
+
+			err = json.Unmarshal(responseFiltered.Data, &crq)
+
+			assert.NoError(t, err)
+
+			assert.Equal(t, "crq", crq.Command.Command)
+
+			//avoid panic if results are unexpectedly empty, and still fail the test
+			if len(rq.Result) == 2 {
+				assert.Equal(t, 200000, int(rq.Result[0].Freq))
+				assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+			} else {
+				t.Error("Wrong length array, could not check values")
+			}
 		}
 	} else {
-
-		if debug {
-			fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
-		}
-
-		// should just be a pocket.RangeQuery result when it is a success
-		// unmarshal to get the command info
-
-		crq = pocket.CalibratedRangeQuery{}
-
-		err = json.Unmarshal(responseFiltered.Data, &crq)
-
-		assert.NoError(t, err)
-
-		assert.Equal(t, "crq", crq.Command.Command)
-
-		//avoid panic if results are unexpectedly empty, and still fail the test
-		if len(rq.Result) == 2 {
-			assert.Equal(t, 200000, int(rq.Result[0].Freq))
-			assert.Equal(t, 5000000, int(rq.Result[1].Freq))
-		} else {
-			t.Error("Wrong length array, could not check values")
-		}
+		t.Error("No messages received for Test4")
 	}
 
 	if verbose {
