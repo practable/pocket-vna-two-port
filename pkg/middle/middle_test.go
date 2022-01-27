@@ -29,13 +29,17 @@ var debug bool
 func TestMain(m *testing.M) {
 	// Setup  logging
 	debug = false
-	verbose = false
+	verbose = true
 
 	if debug {
 		log.SetLevel(log.InfoLevel)
 		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
 		defer log.SetOutput(os.Stdout)
 
+	} else if !debug && verbose {
+		log.SetLevel(log.InfoLevel)
+		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
+		defer log.SetOutput(os.Stdout)
 	} else {
 		var ignore bytes.Buffer
 		logignore := bufio.NewWriter(&ignore)
@@ -62,7 +66,6 @@ func fakeMiddle(u string, ctx context.Context) stream.Stream {
 
 // This test demonstrates draining the fromClient channel
 // if you don't, the handler throws a test error
-
 func TestFakeMiddle(t *testing.T) {
 
 	timeout := 100 * time.Millisecond
@@ -140,179 +143,12 @@ func TestFakeMiddle(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 }
 
-// this test confirms the stream package is working ok (TODO remove once tests developed)
-func TestStream(t *testing.T) {
-
-	timeout := 100 * time.Millisecond
-
-	toClient := make(chan reconws.WsMessage)
-	fromClient := make(chan reconws.WsMessage)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Create test server with the channel handler.
-	s := httptest.NewServer(http.HandlerFunc(userChannelHandler(t, toClient, fromClient, ctx)))
-
-	//s := httptest.NewServer(http.HandlerFunc(reasonableRange))
-	defer s.Close()
-
-	// Convert http://127.0.0.1 to ws://127.0.0.
-	u := "ws" + strings.TrimPrefix(s.URL, "http")
-
-	//stream := stream.New(u, ctx) //This works
-	stream := fakeMiddle(u, ctx) //this works
-
-	mt := int(websocket.TextMessage)
-
-	/* Test ReasonableFrequencyRange */
-
-	message := []byte("{\"cmd\":\"rr\"}")
-
-	ws := reconws.WsMessage{
-		Data: message,
-		Type: mt,
-	}
-
-	select {
-	case toClient <- ws:
-	case <-time.After(timeout):
-		t.Error(t, "timeout awaiting send message")
-	}
-
-	select {
-
-	case <-time.After(timeout):
-		t.Error("timeout awaiting response")
-	case request := <-stream.Request:
-
-		v, ok := request.(pocket.ReasonableFrequencyRange)
-
-		assert.True(t, ok)
-
-		assert.Equal(t, "rr", v.Command.Command)
-	}
-
-	// Send something back to avoid mock Handler stalling on readmessage
-	select {
-	case stream.Response <- pocket.Command{ID: "0"}:
-	case <-time.After(timeout):
-		t.Error(t, "timeout awaiting send response")
-	}
-
-	// outgoing pipe does not depend on type...
-	// note there is a 1ms timeout in the handler which could be
-	// fragile to slow-running test environments
-	// you will not get messages that were not available to be taken
-	// from the channel within the timelimit (it does not block on that write)
-	// as it is only a testing feature, it does not affect actual operation
-	// there is no message loss in the actual code - just the testing mock
-	// since not all messages need to be sent/received in the tests
-	msg := <-fromClient
-	expected := "{\"id\":\"0\",\"t\":0,\"cmd\":\"\"}"
-	assert.Equal(t, expected, string(msg.Data))
-
-	/* Test rangeQuery */
-	rq := pocket.RangeQuery{
-		Command:         pocket.Command{Command: "rq"},
-		Range:           pocket.Range{Start: 100000, End: 4000000},
-		LogDistribution: true,
-		Avg:             1,
-		Size:            2,
-		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
-	}
-
-	message, err := json.Marshal(rq)
-
-	assert.NoError(t, err)
-
-	ws = reconws.WsMessage{
-		Data: message,
-		Type: mt,
-	}
-
-	select {
-	case toClient <- ws:
-	case <-time.After(timeout):
-		t.Error(t, "timeout awaiting send message")
-	}
-
-	select {
-
-	case <-time.After(timeout):
-		t.Error("timeout awaiting response")
-	case request := <-stream.Request:
-
-		v, ok := request.(pocket.RangeQuery)
-
-		assert.True(t, ok)
-
-		assert.Equal(t, "rq", v.Command.Command)
-
-	}
-	// Send something back to avoid mock Handler stalling on readmessage
-	select {
-	case stream.Response <- pocket.Command{ID: "1"}:
-	case <-time.After(timeout):
-		t.Error(t, "timeout awaiting send response")
-	}
-
-	// outgoing pipe does not depend on type...
-	msg = <-fromClient
-	expected = "{\"id\":\"1\",\"t\":0,\"cmd\":\"\"}"
-	assert.Equal(t, expected, string(msg.Data))
-
-	/* Test calibratedRangeQuery */
-	crq := pocket.CalibratedRangeQuery{
-		Command: pocket.Command{Command: "crq"},
-		Avg:     1,
-		Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
-	}
-
-	message, err = json.Marshal(crq)
-
-	assert.NoError(t, err)
-
-	ws = reconws.WsMessage{
-		Data: message,
-		Type: mt,
-	}
-
-	select {
-	case toClient <- ws:
-	case <-time.After(timeout):
-		t.Error(t, "timeout awaiting send message")
-	}
-
-	select {
-
-	case <-time.After(timeout):
-		t.Error("timeout awaiting response")
-	case request := <-stream.Request:
-
-		v, ok := request.(pocket.CalibratedRangeQuery)
-
-		assert.True(t, ok)
-
-		assert.Equal(t, "crq", v.Command.Command)
-
-	}
-
-	// Send something back to avoid mock Handler stalling on readmessage
-	select {
-	case stream.Response <- pocket.Command{ID: "2"}:
-	case <-time.After(timeout):
-		t.Error(t, "timeout awaiting send response")
-	}
-
-	// outgoing pipe does not depend on type...
-	msg = <-fromClient
-	expected = "{\"id\":\"2\",\"t\":0,\"cmd\":\"\"}"
-	assert.Equal(t, expected, string(msg.Data))
-
-}
-
 func TestMiddle(t *testing.T) {
+	if debug {
+		t.Log("This test relies on hardware and succeeds most of the time")
+	}
+
+	maxLoop := 10
 
 	timeout := time.Millisecond * 1000
 
@@ -434,7 +270,7 @@ func TestMiddle(t *testing.T) {
 	// Should throw an error because S21 is also true, but we only support 1port cal...
 
 	rq = pocket.RangeQuery{
-		Command:         pocket.Command{Command: "rc", ID: "bad"},
+		Command:         pocket.Command{Command: "rc", ID: "bad-port-setting-for-cal"},
 		Range:           pocket.Range{Start: 100000, End: 4000000},
 		LogDistribution: true,
 		Avg:             1,
@@ -459,14 +295,18 @@ func TestMiddle(t *testing.T) {
 
 	// manage variable scope
 	var responseFiltered reconws.WsMessage
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("Before LOOP1, LastRead Index was %d\n", idx)
+	}
+LOOP1:
 
-FILTERBAD:
-
-	for i := 0; i < 5; i++ {
+	for i := 0; i < maxLoop; i++ {
 		if debug {
 			fmt.Printf("FILTERBAD: iteration %d\n", i)
 		}
-		if i > 4 {
+		if i >= (maxLoop - 1) {
 			t.Error("timeout awaiting response")
 		}
 		select {
@@ -489,11 +329,15 @@ FILTERBAD:
 				if debug {
 					fmt.Printf("BAD-FILTERED: %s\n", responseFiltered.Data)
 				}
-				break FILTERBAD
+				break LOOP1
 			}
 		}
 	}
-
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("After LOOP1, LastRead Index was %d\n", idx)
+	}
 	var cr pocket.CustomResult
 
 	err = json.Unmarshal(responseFiltered.Data, &cr)
@@ -511,7 +355,7 @@ FILTERBAD:
 	assert.NoError(t, err)
 
 	assert.Equal(t, "rc", rq.Command.Command)
-	assert.Equal(t, "bad", rq.Command.ID)
+	assert.Equal(t, "bad-port-setting-for-cal", rq.Command.ID)
 
 	// Check the command was sent back to us so we can check it
 	assert.Equal(t, 100000, int(rq.Range.Start))
@@ -523,7 +367,7 @@ FILTERBAD:
 	/* Test calibratedRangeQuery - will fail because there is no cal in place*/
 
 	crq := pocket.CalibratedRangeQuery{
-		Command: pocket.Command{Command: "crq"},
+		Command: pocket.Command{Command: "crq", ID: "crq-before-cal"},
 		What:    "dut",
 		Avg:     1,
 		Select:  pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
@@ -545,13 +389,17 @@ FILTERBAD:
 	}
 
 	responseFiltered = reconws.WsMessage{}
-
-FILTERCRQNOCAL:
-	for i := 0; i < 20; i++ {
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("Before LOOP2, LastRead Index was %d\n", idx)
+	}
+LOOP2:
+	for i := 0; i < maxLoop; i++ {
 		if debug {
 			fmt.Printf("FILTERCRQGOOD: iteration %d\n", i)
 		}
-		if i > 19 {
+		if i >= (maxLoop - 1) {
 			t.Error("timeout awaiting response")
 		}
 		select {
@@ -574,11 +422,15 @@ FILTERCRQNOCAL:
 				if debug {
 					fmt.Printf("CRGOOD-FILTERED: %s\n", responseFiltered.Data)
 				}
-				break FILTERCRQNOCAL
+				break LOOP2
 			}
 		}
 	}
-
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("After LOOP2, LastRead Index was %d\n", idx)
+	}
 	if debug {
 		fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
 	}
@@ -594,7 +446,11 @@ FILTERCRQNOCAL:
 
 	assert.Equal(t, expectedError, cr.Message)
 
+	// pause between tests to identify possible source of unexpected mds.Next() calls
+	<-time.After(time.Second)
+
 	/* Test rangeCal with correct S11 setting */
+
 	rq = pocket.RangeQuery{
 		Command:         pocket.Command{Command: "rc", ID: "good"},
 		Range:           pocket.Range{Start: 200000, End: 5000000},
@@ -625,12 +481,18 @@ FILTERCRQNOCAL:
 
 	responseFiltered = reconws.WsMessage{}
 
-FILTERGOOD:
-	for i := 0; i < 20; i++ {
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("Before LOOP3, LastRead Index was %d\n", idx)
+	}
+
+LOOP3:
+	for i := 0; i < maxLoop; i++ {
 		if debug {
 			fmt.Printf("FILTERGOOD: iteration %d\n", i)
 		}
-		if i > 19 {
+		if i >= (maxLoop - 1) {
 			t.Error("timeout awaiting response")
 		}
 		select {
@@ -645,6 +507,10 @@ FILTERGOOD:
 				idx, err := mds.LastReadIndex()
 				assert.NoError(t, err)
 				fmt.Printf("GOOD-UNFILTERED: %d->%s:\n", idx, m.Data)
+			} else if verbose {
+				idx, err := mds.LastReadIndex()
+				assert.NoError(t, err)
+				fmt.Printf("LOOP3 read idx: %d\n", idx)
 			}
 			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
 				string(m.Data) != "" {
@@ -653,51 +519,68 @@ FILTERGOOD:
 				if debug {
 					fmt.Printf("GOOD-FILTERED: %s\n", responseFiltered.Data)
 				}
-				break FILTERGOOD
+				break LOOP3
 			}
 		}
 	}
 
-	if debug {
-		fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("After LOOP3, LastRead Index was %d\n", idx)
 	}
+	// check for RF switch error
 
-	// should just be a pocket.RangeQuery result when it is a success
-	// unmarshal to get the command info
+	cr = pocket.CustomResult{}
 
-	err = json.Unmarshal(responseFiltered.Data, &rq)
+	err = json.Unmarshal(responseFiltered.Data, &cr)
 
 	assert.NoError(t, err)
 
-	if debug {
-		fmt.Printf("CHECK RECV AGAIN:" + string(responseFiltered.Data) + "\n")
-		fmt.Printf("RQ:%+v\n", rq)
-	}
-
-	assert.Equal(t, "rc", rq.Command.Command)
-	assert.Equal(t, "good", rq.Command.ID)
-
-	if debug {
-		fmt.Printf("MARSHALLED-rq: %+v\n", rq)
-	}
-
-	// check we got some results back
-	assert.Equal(t, 2, len(rq.Result))
-
-	//avoid panic if results are unexpectedly empty, and still fail the test
-	if len(rq.Result) == 2 {
-		assert.Equal(t, 200000, int(rq.Result[0].Freq))
-		assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+	if err == nil && cr.Message != "" {
+		if strings.Contains(cr.Message, "Error setting RF switch") {
+			t.Errorf("Hardware issue - repeat test! %s", cr.Message)
+		} else {
+			t.Error(cr.Message)
+		}
 	} else {
-		t.Error("Wrong length array, could not check values")
-	}
+		if debug {
+			fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+		}
 
-	if debug {
-		for i, msg := range mds.All() {
+		// should just be a pocket.RangeQuery result when it is a success
+		// unmarshal to get the command info
 
-			fmt.Printf("%d: %s\n", i, ((msg.(reconws.WsMessage)).Data))
+		err = json.Unmarshal(responseFiltered.Data, &rq)
+
+		assert.NoError(t, err)
+
+		if debug {
+			fmt.Printf("CHECK RECV AGAIN:" + string(responseFiltered.Data) + "\n")
+			fmt.Printf("RQ:%+v\n", rq)
+		}
+
+		assert.Equal(t, "rc", rq.Command.Command)
+		assert.Equal(t, "good", rq.Command.ID)
+
+		if debug {
+			fmt.Printf("MARSHALLED-rq: %+v\n", rq)
+		}
+
+		// check we got some results back
+		assert.Equal(t, 2, len(rq.Result))
+
+		//avoid panic if results are unexpectedly empty, and still fail the test
+		if len(rq.Result) == 2 {
+			assert.Equal(t, 200000, int(rq.Result[0].Freq))
+			assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+		} else {
+			t.Error("Wrong length array, could not check values")
 		}
 	}
+
+	// pause between tests to identify possible source of unexpected mds.Next() calls
+	<-time.After(time.Second)
 
 	/* Test calibratedRangeQuery */
 	crq = pocket.CalibratedRangeQuery{
@@ -724,12 +607,17 @@ FILTERGOOD:
 
 	responseFiltered = reconws.WsMessage{}
 
-FILTERCRQGOOD:
-	for i := 0; i < 20; i++ {
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("Before LOOP4, LastRead Index was %d\n", idx)
+	}
+LOOP4:
+	for i := 0; i < maxLoop; i++ {
 		if debug {
 			fmt.Printf("FILTERCRQGOOD: iteration %d\n", i)
 		}
-		if i > 19 {
+		if i >= (maxLoop - 1) {
 			t.Error("timeout awaiting response")
 		}
 		select {
@@ -740,10 +628,10 @@ FILTERCRQGOOD:
 
 			m, ok := response.(reconws.WsMessage)
 			assert.True(t, ok)
-			if debug {
+			if verbose {
 				idx, err := mds.LastReadIndex()
 				assert.NoError(t, err)
-				fmt.Printf("CRQGOOD-UNFILTERED: %d->%s:\n", idx, m.Data)
+				fmt.Printf("LOOP4 read idx: %d\n", idx)
 			}
 			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
 				string(m.Data) != "" {
@@ -752,32 +640,59 @@ FILTERCRQGOOD:
 				if debug {
 					fmt.Printf("CRGOOD-FILTERED: %s\n", responseFiltered.Data)
 				}
-				break FILTERCRQGOOD
+				break LOOP4
 			}
 		}
 	}
 
-	if debug {
-		fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+	if verbose {
+		idx, err := mds.LastReadIndex()
+		assert.NoError(t, err)
+		fmt.Printf("After LOOP4, LastRead Index was %d\n", idx)
 	}
 
-	// should just be a pocket.RangeQuery result when it is a success
-	// unmarshal to get the command info
-
-	crq = pocket.CalibratedRangeQuery{}
-
-	err = json.Unmarshal(responseFiltered.Data, &crq)
+	cr = pocket.CustomResult{}
+	err = json.Unmarshal(responseFiltered.Data, &cr)
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, "crq", crq.Command.Command)
-
-	//avoid panic if results are unexpectedly empty, and still fail the test
-	if len(rq.Result) == 2 {
-		assert.Equal(t, 200000, int(rq.Result[0].Freq))
-		assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+	if err == nil && cr.Message != "" {
+		if strings.Contains(cr.Message, "Error setting RF switch") {
+			t.Errorf("Hardware issue - repeat test! %s", cr.Message)
+		} else {
+			t.Error(cr.Message)
+		}
 	} else {
-		t.Error("Wrong length array, could not check values")
+
+		if debug {
+			fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+		}
+
+		// should just be a pocket.RangeQuery result when it is a success
+		// unmarshal to get the command info
+
+		crq = pocket.CalibratedRangeQuery{}
+
+		err = json.Unmarshal(responseFiltered.Data, &crq)
+
+		assert.NoError(t, err)
+
+		assert.Equal(t, "crq", crq.Command.Command)
+
+		//avoid panic if results are unexpectedly empty, and still fail the test
+		if len(rq.Result) == 2 {
+			assert.Equal(t, 200000, int(rq.Result[0].Freq))
+			assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+		} else {
+			t.Error("Wrong length array, could not check values")
+		}
+	}
+
+	if verbose {
+		for i, msg := range mds.All() {
+
+			fmt.Printf("%d: %s\n", i, ((msg.(reconws.WsMessage)).Data))
+		}
 	}
 
 }

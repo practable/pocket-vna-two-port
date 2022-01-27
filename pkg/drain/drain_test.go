@@ -1,12 +1,40 @@
 package drain
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+var debug, verbose bool
+
+func TestMain(m *testing.M) {
+	// Setup  logging
+	debug = false
+	verbose = false
+
+	if debug {
+		log.SetLevel(log.InfoLevel)
+		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
+		defer log.SetOutput(os.Stdout)
+
+	} else if !debug && verbose {
+		log.SetLevel(log.InfoLevel)
+		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
+		defer log.SetOutput(os.Stdout)
+	} else {
+		var ignore bytes.Buffer
+		logignore := bufio.NewWriter(&ignore)
+		log.SetOutput(logignore)
+	}
+}
 
 type foo struct {
 	Str string
@@ -78,9 +106,9 @@ func TestDrain(t *testing.T) {
 	assert.Equal(t, -1, idx)
 
 	go func() {
-		<-time.After(1 * time.Millisecond)
+		<-time.After(time.Millisecond)
 		ch <- a
-		<-time.After(1 * time.Millisecond)
+		<-time.After(time.Millisecond)
 		ch <- b
 	}()
 
@@ -95,6 +123,27 @@ func TestDrain(t *testing.T) {
 		t.Error("timeout waiting for next message")
 	case result := <-s.Next():
 		assert.Equal(t, b, result)
+	}
+
+	for i := 0; i < 50; i++ {
+		ch <- i
+	}
+
+	for i := 0; i < 20; i++ {
+		select {
+		case <-time.After(5 * time.Millisecond):
+			t.Error("timeout waiting for next message")
+		case result := <-s.Next():
+			assert.Equal(t, i, result)
+		}
+	}
+	for i := 20; i < 30; i++ {
+		select {
+		case <-time.After(5 * time.Millisecond):
+			t.Error("timeout waiting for next message")
+		case result := <-s.Next():
+			assert.Equal(t, i, result)
+		}
 	}
 
 }

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 )
 
@@ -101,6 +102,8 @@ func (s *Store) NextNoWait() (interface{}, error) {
 
 		s.LastRead.Idx++
 		lastMsg = s.Msg.Array[s.LastRead.Idx]
+		//TODO reduce to Infof
+		log.Warnf("LastReadIndex:%d", s.LastRead.Idx)
 		err = nil
 
 	}
