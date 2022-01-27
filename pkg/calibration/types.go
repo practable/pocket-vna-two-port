@@ -15,6 +15,7 @@ type Calibration struct {
 	Response chan interface{}
 	Timeout  time.Duration
 	Command  Command
+	Scan     interface{}
 }
 
 /* Command object definition in python calibration service
