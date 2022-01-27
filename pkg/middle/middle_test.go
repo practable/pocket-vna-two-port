@@ -29,7 +29,7 @@ var debug bool
 func TestMain(m *testing.M) {
 	// Setup  logging
 	debug = false
-	verbose = true
+	verbose = false
 
 	if debug {
 		log.SetLevel(log.InfoLevel)
@@ -307,7 +307,7 @@ LOOP1:
 		assert.NoError(t, err)
 		lri, err := mds.LastReadIndex()
 		assert.NoError(t, err)
-		fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
+		log.Infof("Read %d should match LastRead %d\n", i+1, lri)
 		m, ok := response.(reconws.WsMessage)
 		assert.True(t, ok)
 		if string(m.Data) != "{\"cmd\":\"hb\"}" {
@@ -382,7 +382,7 @@ LOOP2:
 		assert.NoError(t, err)
 		lri, err := mds.LastReadIndex()
 		assert.NoError(t, err)
-		fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
+		log.Infof("Read %d should match LastRead %d\n", i+1, lri)
 		m, ok := response.(reconws.WsMessage)
 		assert.True(t, ok)
 		if string(m.Data) != "{\"cmd\":\"hb\"}" {
@@ -422,9 +422,7 @@ LOOP2:
 		Type: mt,
 	}
 
-	if debug {
-		fmt.Printf("SENT:" + string(ws.Data) + "\n")
-	}
+	log.Debugf("SENT:" + string(ws.Data) + "\n")
 
 	select {
 	case streamWrite <- ws:
@@ -443,7 +441,7 @@ LOOP2:
 
 	if !mds.IsEmpty() {
 
-		fmt.Printf("i:%d,len(msgs):%d\n", idx+1, len(msgs))
+		log.Infof("i:%d,len(msgs):%d\n", idx+1, len(msgs))
 	LOOP3:
 		for i := idx; i < (len(msgs) - 1); i++ {
 
@@ -451,7 +449,7 @@ LOOP2:
 			assert.NoError(t, err)
 			lri, err := mds.LastReadIndex()
 			assert.NoError(t, err)
-			fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
+			log.Infof("Read %d should match LastRead %d\n", i+1, lri)
 			m, ok := response.(reconws.WsMessage)
 			assert.True(t, ok)
 			if string(m.Data) != "{\"cmd\":\"hb\"}" {
@@ -475,9 +473,6 @@ LOOP2:
 				t.Error(cr.Message)
 			}
 		} else {
-			if debug {
-				fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
-			}
 
 			// should just be a pocket.RangeQuery result when it is a success
 			// unmarshal to get the command info
@@ -486,17 +481,8 @@ LOOP2:
 
 			assert.NoError(t, err)
 
-			if debug {
-				fmt.Printf("CHECK RECV AGAIN:" + string(responseFiltered.Data) + "\n")
-				fmt.Printf("RQ:%+v\n", rq)
-			}
-
 			assert.Equal(t, "rc", rq.Command.Command)
 			assert.Equal(t, "good", rq.Command.ID)
-
-			if debug {
-				fmt.Printf("MARSHALLED-rq: %+v\n", rq)
-			}
 
 			// check we got some results back
 			assert.Equal(t, 2, len(rq.Result))
@@ -546,7 +532,7 @@ LOOP2:
 	responseFiltered = reconws.WsMessage{}
 
 	if !mds.IsEmpty() {
-		fmt.Printf("i:%d,len(msgs):%d\n", idx+1, len(msgs))
+		log.Infof("i:%d,len(msgs):%d\n", idx+1, len(msgs))
 	LOOP4:
 		for i := idx; i < (len(msgs) - 1); i++ {
 
@@ -554,7 +540,7 @@ LOOP2:
 			assert.NoError(t, err)
 			lri, err := mds.LastReadIndex()
 			assert.NoError(t, err)
-			fmt.Printf("Read %d should match LastRead %d\n", i+1, lri)
+			log.Infof("Read %d should match LastRead %d\n", i+1, lri)
 			m, ok := response.(reconws.WsMessage)
 			assert.True(t, ok)
 			if string(m.Data) != "{\"cmd\":\"hb\"}" {
@@ -575,10 +561,6 @@ LOOP2:
 				t.Error(cr.Message)
 			}
 		} else {
-
-			if debug {
-				fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
-			}
 
 			// should just be a pocket.RangeQuery result when it is a success
 			// unmarshal to get the command info
@@ -606,7 +588,7 @@ LOOP2:
 	if verbose {
 		for i, msg := range mds.All() {
 
-			fmt.Printf("%d: %s\n", i, ((msg.(reconws.WsMessage)).Data))
+			log.Infof("%d: %s\n", i, ((msg.(reconws.WsMessage)).Data))
 		}
 	}
 
@@ -643,7 +625,7 @@ func userChannelHandler(t *testing.T, toClient, fromClient chan reconws.WsMessag
 					break
 				}
 				if verbose {
-					fmt.Printf("userChannelHandler: writing message %s\n", string(msg.Data))
+					log.Infof("userChannelHandler: writing message %s\n", string(msg.Data))
 				}
 
 			} //select
