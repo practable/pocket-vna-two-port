@@ -121,6 +121,120 @@ func TestRangeQuery(t *testing.T) {
 
 }
 
+func TestNewService(t *testing.T) {
+
+	timeout := time.Millisecond * 100
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	v := NewService(ctx)
+
+	// Do GetReasonableFrequencyRange command
+
+	reasonable := Range{}
+
+	id := "123xyz"
+	v.Request <- ReasonableFrequencyRange{Command: Command{ID: id}}
+
+	select {
+	case <-time.After(timeout):
+		t.Error("timeout")
+	case ri := <-v.Response:
+
+		if actual, ok := ri.(ReasonableFrequencyRange); !ok {
+			t.Error("Wrong type returned")
+		} else {
+
+			assert.Equal(t, actual.ID, id)
+			// weak test - with real kit attached, we should get non-zero numbers
+			assert.True(t, actual.Result.Start > 0)
+			assert.True(t, actual.Result.End > actual.Result.Start)
+			reasonable = actual.Result //save for RangeQuery
+			if verbose {
+				fmt.Println(actual.Result)
+			}
+		}
+	}
+
+	// Do SingleQuery command
+
+	id = "456abc"
+	v.Request <- SingleQuery{
+		Command: Command{ID: id},
+		Freq:    200000,
+		Avg:     1,
+		Select:  SParamSelect{true, true, true, true},
+	}
+
+	select {
+	case <-time.After(timeout):
+		t.Error("timeout")
+	case ri := <-v.Response:
+
+		if actual, ok := ri.(SingleQuery); !ok {
+			t.Error("Wrong type returned")
+		} else {
+
+			assert.Equal(t, actual.ID, id)
+			// weak test - with real kit attached, we should get non-zero numbers
+			assert.True(t, actual.Result.S11.Real != 0)
+			if verbose {
+				fmt.Println(actual.Result)
+			}
+		}
+	}
+
+	// Do RangeQuery command
+
+	id = "789def"
+	N := 7 // number of samples
+	v.Request <- RangeQuery{
+		Command:         Command{ID: id},
+		Range:           reasonable,
+		Size:            N,
+		Avg:             1,
+		LogDistribution: true,
+		Select:          SParamSelect{true, true, true, true},
+	}
+
+	timeout = time.Second //need more time for this than a single query
+
+	select {
+	case <-time.After(timeout):
+		t.Error("timeout")
+	case ri := <-v.Response:
+
+		if actual, ok := ri.(RangeQuery); !ok {
+			t.Error("Wrong type returned")
+		} else {
+
+			assert.Equal(t, actual.ID, id)
+			// weak test - with real kit attached, we should get non-zero numbers
+			assert.Equal(t, len(actual.Result), N)
+
+			assert.Equal(t, reasonable.Start, actual.Result[0].Freq)
+			assert.Equal(t, reasonable.End, actual.Result[N-1].Freq)
+
+			expectedFreq := LogFrequency(reasonable.Start, reasonable.End, N)
+
+			for i := 0; i < N; i++ {
+				if verbose {
+					fmt.Printf("%d: %d %d\n", i, int(expectedFreq[i]), int(actual.Result[i].Freq))
+				}
+				assert.Equal(t, int(expectedFreq[i]), int(actual.Result[i].Freq))
+			}
+
+			if verbose {
+				fmt.Println(actual.Result)
+			}
+		}
+	}
+
+	cancel()
+
+}
+
 func TestRun(t *testing.T) {
 
 	timeout := time.Millisecond * 100

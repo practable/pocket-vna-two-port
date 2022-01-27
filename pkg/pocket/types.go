@@ -1,5 +1,18 @@
 package pocket
 
+import (
+	"context"
+	"time"
+)
+
+type VNAService struct {
+	VNA      *VNA
+	Ctx      context.Context
+	Request  chan interface{}
+	Response chan interface{}
+	Timeout  time.Duration
+}
+
 /*
 typedef struct PocketVnaDeviceDesc {
     const char * path;
