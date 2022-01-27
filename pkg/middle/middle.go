@@ -140,7 +140,7 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 
 	if !ok {
 		return pocket.CustomResult{
-			Message: "No scan command is set. Have you calibrated yet?",
+			Message: "Error. No existing calibration. Please calibrate with rc command",
 			Command: crq,
 		}
 	}

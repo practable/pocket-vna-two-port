@@ -494,8 +494,6 @@ FILTERBAD:
 		}
 	}
 
-	//fmt.Printf(string(responseFiltered.Data))
-
 	var cr pocket.CustomResult
 
 	err = json.Unmarshal(responseFiltered.Data, &cr)
@@ -522,11 +520,82 @@ FILTERBAD:
 	// Check the results are empty (as they should be on an error)
 	assert.Equal(t, 0, len(rq.Result))
 
-	/* Test rangeCal with correct S11 setting */
+	/* Test calibratedRangeQuery - will fail because there is no cal in place*/
 
-	// make new variables to rule out irrational thought that compiler optimisations leaving old data in these variables
-	// TODO return to same vars when understand the issue
-	rq2 := pocket.RangeQuery{
+	crq := pocket.CalibratedRangeQuery{
+		Command: pocket.Command{Command: "crq"},
+		What:    "dut",
+		Avg:     1,
+		Select:  pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
+	}
+
+	message, err = json.Marshal(crq)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	responseFiltered = reconws.WsMessage{}
+
+FILTERCRQNOCAL:
+	for i := 0; i < 20; i++ {
+		if debug {
+			fmt.Printf("FILTERCRQGOOD: iteration %d\n", i)
+		}
+		if i > 19 {
+			t.Error("timeout awaiting response")
+		}
+		select {
+
+		case <-time.After(timeout):
+			//silently wait - could be a slow scan
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+			assert.True(t, ok)
+			if debug {
+				idx, err := mds.LastReadIndex()
+				assert.NoError(t, err)
+				fmt.Printf("CRQGOOD-UNFILTERED: %d->%s:\n", idx, m.Data)
+			}
+			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
+				string(m.Data) != "" {
+
+				responseFiltered = m
+				if debug {
+					fmt.Printf("CRGOOD-FILTERED: %s\n", responseFiltered.Data)
+				}
+				break FILTERCRQNOCAL
+			}
+		}
+	}
+
+	if debug {
+		fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+	}
+
+	// should just be a pocket.RangeQuery result when it is a success
+	// unmarshal to get the command info
+
+	err = json.Unmarshal(responseFiltered.Data, &cr)
+
+	assert.NoError(t, err)
+
+	expectedError = "Error. No existing calibration. Please calibrate with rc command"
+
+	assert.Equal(t, expectedError, cr.Message)
+
+	/* Test rangeCal with correct S11 setting */
+	rq = pocket.RangeQuery{
 		Command:         pocket.Command{Command: "rc", ID: "good"},
 		Range:           pocket.Range{Start: 200000, End: 5000000},
 		LogDistribution: true,
@@ -535,21 +604,21 @@ FILTERBAD:
 		Select:          pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
 	}
 
-	message2, err := json.Marshal(rq2)
+	message, err = json.Marshal(rq)
 
 	assert.NoError(t, err)
 
-	ws2 := reconws.WsMessage{
-		Data: message2,
+	ws = reconws.WsMessage{
+		Data: message,
 		Type: mt,
 	}
 
 	if debug {
-		fmt.Printf("SENT:" + string(ws2.Data) + "\n")
+		fmt.Printf("SENT:" + string(ws.Data) + "\n")
 	}
 
 	select {
-	case streamWrite <- ws2:
+	case streamWrite <- ws:
 	case <-time.After(timeout):
 		t.Error(t, "timeout awaiting send message")
 	}
@@ -631,7 +700,7 @@ FILTERGOOD:
 	}
 
 	/* Test calibratedRangeQuery */
-	crq := pocket.CalibratedRangeQuery{
+	crq = pocket.CalibratedRangeQuery{
 		Command: pocket.Command{Command: "crq"},
 		What:    "dut",
 		Avg:     1,
