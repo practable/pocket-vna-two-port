@@ -24,14 +24,15 @@ import (
 )
 
 var verbose bool
+var debug bool
 
 func TestMain(m *testing.M) {
 	// Setup  logging
-	debug := false
+	debug = false
 	verbose = false
 
 	if debug {
-		log.SetLevel(log.TraceLevel)
+		log.SetLevel(log.InfoLevel)
 		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
 		defer log.SetOutput(os.Stdout)
 
@@ -319,26 +320,10 @@ func TestMiddle(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	calWrite := make(chan reconws.WsMessage)
-	calRead := make(chan reconws.WsMessage)
-
-	switchWrite := make(chan reconws.WsMessage)
-	switchRead := make(chan reconws.WsMessage)
-
 	streamWrite := make(chan reconws.WsMessage)
 	streamRead := make(chan reconws.WsMessage)
 
-	mdc := drain.NewWs(calRead, ctx)
-	mdr := drain.NewWs(switchRead, ctx)
 	mds := drain.NewWs(streamRead, ctx)
-
-	// Create test server with the channel handler.
-	sc := httptest.NewServer(http.HandlerFunc(serviceChannelHandler(t, calWrite, calRead, ctx)))
-	defer sc.Close()
-
-	// Create test server with the channel handler.
-	sr := httptest.NewServer(http.HandlerFunc(serviceChannelHandler(t, switchWrite, switchRead, ctx)))
-	defer sr.Close()
 
 	// Create test server with the channel handler.
 	ss := httptest.NewServer(http.HandlerFunc(userChannelHandler(t, streamWrite, streamRead, ctx)))
@@ -346,8 +331,8 @@ func TestMiddle(t *testing.T) {
 
 	// URL only assigned after starting
 	// Convert http://127.0.0.1 to ws://127.0.0.
-	uc := "ws" + strings.TrimPrefix(sc.URL, "http")
-	ur := "ws" + strings.TrimPrefix(sr.URL, "http")
+	uc := "ws://localhost:8888/ws/calibration"
+	ur := "ws://localhost:8888/ws/rfswitch"
 	us := "ws" + strings.TrimPrefix(ss.URL, "http")
 
 	New(uc, ur, us, ctx)
@@ -373,11 +358,11 @@ func TestMiddle(t *testing.T) {
 	case <-time.After(timeout):
 		t.Error("timeout awaiting response")
 
-	case request := <-mds.Next():
+	case response := <-mds.Next():
 
 		//fmt.Printf(string((request.(reconws.WsMessage)).Data))
 
-		m, ok := request.(reconws.WsMessage)
+		m, ok := response.(reconws.WsMessage)
 
 		assert.True(t, ok)
 
@@ -422,9 +407,9 @@ func TestMiddle(t *testing.T) {
 
 	case <-time.After(timeout):
 		t.Error("timeout awaiting response")
-	case request := <-mds.Next():
+	case response := <-mds.Next():
 
-		m, ok := request.(reconws.WsMessage)
+		m, ok := response.(reconws.WsMessage)
 
 		assert.True(t, ok)
 
@@ -446,8 +431,10 @@ func TestMiddle(t *testing.T) {
 
 	/* Test rangeCal */
 
+	// Should throw an error because S21 is also true, but we only support 1port cal...
+
 	rq = pocket.RangeQuery{
-		Command:         pocket.Command{Command: "rc"},
+		Command:         pocket.Command{Command: "rc", ID: "bad"},
 		Range:           pocket.Range{Start: 100000, End: 4000000},
 		LogDistribution: true,
 		Avg:             1,
@@ -470,44 +457,180 @@ func TestMiddle(t *testing.T) {
 		t.Error(t, "timeout awaiting send message")
 	}
 
-	select {
+	// manage variable scope
+	var responseFiltered reconws.WsMessage
 
-	case <-time.After(timeout):
-		t.Error("timeout awaiting response")
-	case request := <-mds.Next():
+FILTERBAD:
 
-		m, ok := request.(reconws.WsMessage)
+	for i := 0; i < 5; i++ {
+		if debug {
+			fmt.Printf("FILTERBAD: iteration %d\n", i)
+		}
+		if i > 4 {
+			t.Error("timeout awaiting response")
+		}
+		select {
 
-		assert.True(t, ok)
+		case <-time.After(timeout):
+			//silently wait - could be a slow scan
+		case response := <-mds.Next():
 
-		// we might get a heartbeat message, if so, ignore
-		if string(m.Data) == "{\"cmd\":\"hb\"}" {
-			t.Log("Heartbeat ignored (all ok)")
-			select {
-			case request := <-mds.Next():
-				m, ok = request.(reconws.WsMessage)
-				assert.True(t, ok)
-				fmt.Printf(string(m.Data))
-			case <-time.After(timeout):
-				t.Error("timeout awaiting response")
+			m, ok := response.(reconws.WsMessage)
+			assert.True(t, ok)
+
+			if debug {
+				idx, err := mds.LastReadIndex()
+				assert.NoError(t, err)
+				fmt.Printf("BAD-UNFILTERED: %d->%s:\n", idx, m.Data)
+			}
+
+			if string(m.Data) != "{\"cmd\":\"hb\"}" {
+				responseFiltered = m
+				if debug {
+					fmt.Printf("BAD-FILTERED: %s\n", responseFiltered.Data)
+				}
+				break FILTERBAD
 			}
 		}
-
-		var rq pocket.RangeQuery
-
-		err := json.Unmarshal(m.Data, &rq)
-
-		assert.NoError(t, err)
-
-		assert.Equal(t, "rq", rq.Command.Command)
-
-		// TODO check message contents are ok
-
-		// cast to int to make human readable in assert error message
-		assert.Equal(t, 100000, int(rq.Result[0].Freq))
-		assert.Equal(t, 4000000, int(rq.Result[1].Freq))
-
 	}
+
+	//fmt.Printf(string(responseFiltered.Data))
+
+	var cr pocket.CustomResult
+
+	err = json.Unmarshal(responseFiltered.Data, &cr)
+
+	assert.NoError(t, err)
+
+	expectedError := "Error: calibration is only supported on Port1 (S11). Resend the command with only S11 selected (true). You had S11:true, S12:false, S21:true, S22:false"
+
+	assert.Equal(t, expectedError, cr.Message)
+
+	// re unmarshal to get the command info
+
+	err = json.Unmarshal(responseFiltered.Data, &rq)
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, "rc", rq.Command.Command)
+	assert.Equal(t, "bad", rq.Command.ID)
+
+	// Check the command was sent back to us so we can check it
+	assert.Equal(t, 100000, int(rq.Range.Start))
+	assert.Equal(t, 4000000, int(rq.Range.End))
+
+	// Check the results are empty (as they should be on an error)
+	assert.Equal(t, 0, len(rq.Result))
+
+	/* Test rangeCal with correct S11 setting */
+
+	// make new variables to rule out irrational thought that compiler optimisations leaving old data in these variables
+	// TODO return to same vars when understand the issue
+	rq2 := pocket.RangeQuery{
+		Command:         pocket.Command{Command: "rc", ID: "good"},
+		Range:           pocket.Range{Start: 200000, End: 5000000},
+		LogDistribution: true,
+		Avg:             1,
+		Size:            2,
+		Select:          pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
+	}
+
+	message2, err := json.Marshal(rq2)
+
+	assert.NoError(t, err)
+
+	ws2 := reconws.WsMessage{
+		Data: message2,
+		Type: mt,
+	}
+
+	if debug {
+		fmt.Printf("SENT:" + string(ws2.Data) + "\n")
+	}
+
+	select {
+	case streamWrite <- ws2:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	responseFiltered = reconws.WsMessage{}
+
+FILTERGOOD:
+	for i := 0; i < 20; i++ {
+		if debug {
+			fmt.Printf("FILTERGOOD: iteration %d\n", i)
+		}
+		if i > 19 {
+			t.Error("timeout awaiting response")
+		}
+		select {
+
+		case <-time.After(timeout):
+			//silently wait - could be a slow scan
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+			assert.True(t, ok)
+			if debug {
+				idx, err := mds.LastReadIndex()
+				assert.NoError(t, err)
+				fmt.Printf("GOOD-UNFILTERED: %d->%s:\n", idx, m.Data)
+			}
+			if string(m.Data) != "{\"cmd\":\"hb\"}" &&
+				string(m.Data) != "" {
+
+				responseFiltered = m
+				if debug {
+					fmt.Printf("GOOD-FILTERED: %s\n", responseFiltered.Data)
+				}
+				break FILTERGOOD
+			}
+		}
+	}
+
+	if debug {
+		fmt.Printf("RECV:" + string(responseFiltered.Data) + "\n")
+	}
+
+	// should just be a pocket.RangeQuery result when it is a success
+	// unmarshal to get the command info
+
+	err = json.Unmarshal(responseFiltered.Data, &rq)
+
+	assert.NoError(t, err)
+
+	if debug {
+		fmt.Printf("CHECK RECV AGAIN:" + string(responseFiltered.Data) + "\n")
+		fmt.Printf("RQ:%+v\n", rq)
+	}
+
+	assert.Equal(t, "rc", rq.Command.Command)
+	assert.Equal(t, "good", rq.Command.ID)
+
+	if debug {
+		fmt.Printf("MARSHALLED-rq: %+v\n", rq)
+	}
+
+	// check we got some results back
+	assert.Equal(t, 2, len(rq.Result))
+
+	//avoid panic if results are unexpectedly empty, and still fail the test
+	if len(rq.Result) == 2 {
+		assert.Equal(t, 200000, int(rq.Result[0].Freq))
+		assert.Equal(t, 5000000, int(rq.Result[1].Freq))
+	} else {
+		t.Error("Wrong length array, could not check values")
+	}
+
+	if debug {
+		for i, msg := range mds.All() {
+
+			fmt.Printf("%d: %s\n", i, ((msg.(reconws.WsMessage)).Data))
+		}
+	}
+
+	//TODO check the results for some data.
 
 	// TODO Test rangecal
 
@@ -569,10 +692,6 @@ func TestMiddle(t *testing.T) {
 	//	assert.Equal(t, 100000, crq.Result[0].Freq)
 	//
 	//}
-
-	// to avoid compiler errors for not using them (yet)
-	mdc.Count()
-	mdr.Count()
 
 }
 
