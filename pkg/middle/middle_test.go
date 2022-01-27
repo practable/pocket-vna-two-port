@@ -313,7 +313,7 @@ func TestStream(t *testing.T) {
 
 func TestMiddle(t *testing.T) {
 
-	timeout := time.Millisecond * 100
+	timeout := time.Millisecond * 1000
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -391,6 +391,119 @@ func TestMiddle(t *testing.T) {
 
 		assert.Equal(t, "rr", rr.Command.Command)
 	}
+
+	/* Test rangeQuery */
+
+	rq := pocket.RangeQuery{
+		Command:         pocket.Command{Command: "rq"},
+		Range:           pocket.Range{Start: 100000, End: 4000000},
+		LogDistribution: true,
+		Avg:             1,
+		Size:            2,
+		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+	}
+
+	message, err := json.Marshal(rq)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case request := <-mds.Next():
+
+		m, ok := request.(reconws.WsMessage)
+
+		assert.True(t, ok)
+
+		var rq pocket.RangeQuery
+
+		err := json.Unmarshal(m.Data, &rq)
+
+		assert.NoError(t, err)
+
+		assert.Equal(t, "rq", rq.Command.Command)
+
+		// TODO check message contents are ok
+
+		// cast to int to make human readable in assert error message
+		assert.Equal(t, 100000, int(rq.Result[0].Freq))
+		assert.Equal(t, 4000000, int(rq.Result[1].Freq))
+
+	}
+
+	// TODO Test rangecal
+
+	///* Test calibratedRangeQuery */
+	//crq := pocket.CalibratedRangeQuery{
+	//	Command: pocket.Command{Command: "crq"},
+	//	Avg:     1,
+	//	Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+	//}
+	//
+	//message, err = json.Marshal(crq)
+	//
+	//assert.NoError(t, err)
+	//
+	//ws = reconws.WsMessage{
+	//	Data: message,
+	//	Type: mt,
+	//}
+	//
+	//select {
+	//case streamWrite <- ws:
+	//case <-time.After(timeout):
+	//	t.Error(t, "timeout awaiting send message")
+	//}
+	//
+	//select {
+	//
+	//case <-time.After(timeout):
+	//	t.Error("timeout awaiting response")
+	//case request := <-mds.Next():
+	//
+	//	m, ok := request.(reconws.WsMessage)
+	//
+	//	assert.True(t, ok)
+	//
+	//	fmt.Printf(string(m.Data))
+	//
+	//	// we might get a heartbeat message, if so, ignore
+	//	if string(m.Data) == "{\"cmd\":\"hb\"}" {
+	//		select {
+	//		case request := <-mds.Next():
+	//			m, ok = request.(reconws.WsMessage)
+	//			assert.True(t, ok)
+	//		case <-time.After(timeout):
+	//			t.Error("timeout awaiting response")
+	//		}
+	//	}
+	//
+	//	var crq pocket.CalibratedRangeQuery
+	//
+	//	err := json.Unmarshal(m.Data, &crq)
+	//
+	//	assert.NoError(t, err)
+	//
+	//	assert.Equal(t, "crq", crq.Command.Command)
+	//
+	//	// TODO check message contents are ok
+	//
+	//	assert.Equal(t, 100000, crq.Result[0].Freq)
+	//
+	//}
 
 	// to avoid compiler errors for not using them (yet)
 	mdc.Count()
