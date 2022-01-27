@@ -6,6 +6,8 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 )
 
 type Store struct {
@@ -22,6 +24,30 @@ type Message struct {
 type Index struct {
 	sync.RWMutex
 	Idx int
+}
+
+func NewWs(ws chan reconws.WsMessage, ctx context.Context) *Store {
+
+	ch := make(chan interface{})
+
+	s := New(ch, ctx)
+
+	// since we cannot cast channels to different types, we instead
+	// forward our messages from websocket channel to the interface channel
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg := <-ws:
+				ch <- msg
+			}
+		}
+
+	}()
+
+	return s
+
 }
 
 func New(ch chan interface{}, ctx context.Context) *Store {
