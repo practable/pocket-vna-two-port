@@ -3,7 +3,7 @@ package middle
 
 import (
 	"context"
-	"fmt"
+	"time"
 
 	"github.com/timdrysdale/go-pocketvna/pkg/calibration"
 	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
@@ -14,50 +14,51 @@ import (
 func New(uc, ur, us string, ctx context.Context) Middle {
 
 	// placeholders during testing
-	c := calibration.Calibration{}
-	r := rfswitch.Switch{}
+	//c := calibration.Calibration{}
+	//r := rfswitch.Switch{}
 	//s := stream.Stream{}
-	v := pocket.VNAService{}
+	//v := pocket.VNAService{}
 
-	//c := calibration.New(uc, ctx)
-	//r := rfswitch.New(ur, ctx)
+	c := calibration.New(uc, ctx)
+	r := rfswitch.New(ur, ctx)
 	s := stream.New(us, ctx)
-	//v := pocket.New(ctx)
+
+	v := pocket.New(ctx)
 
 	// avoid compile warnings during testing when services commented out
-	fmt.Printf("cal:    %s\nswitch: %s\nstream: %s\n", uc, ur, us)
-	/*
+	//fmt.Printf("cal:    %s\nswitch: %s\nstream: %s\n", uc, ur, us)
 
+	timeout := time.Second
 
+	requesttimeout := 2 * time.Minute
 
-		timeout := time.Second
+	go func() {
+		for {
 
-		requesttimeout := 2 * time.Minute
+			select {
 
-			go func() {
-				for {
+			case request := <-s.Request:
 
-					select {
+				//fmt.Printf("Handling Request - STARTING")
 
-					case request := <-s.Request:
+				select {
 
-						select {
+				case s.Response <- HandleRequest(request, c, r, v):
+					// carry on
+					//fmt.Printf("Handling Request - DONE")
+				case <-time.After(requesttimeout):
+					s.Response <- TimeoutMessage(request)
+				}
 
-						case s.Response <- HandleRequest(request, c, r, v):
-							// carry on
-						case <-time.After(requesttimeout):
-							s.Response <- TimeoutMessage(request)
-						}
+			case <-time.After(timeout):
+				//carry on
+			case <-ctx.Done():
+				return
+			}
 
-					case <-time.After(timeout):
-						//carry on
-					case <-ctx.Done():
-						return
-					}
+		} //for
+	}() //func
 
-				} //for
-			}() //func
-	*/
 	return Middle{
 		Calibration: c,
 		Stream:      s,
@@ -82,13 +83,9 @@ func HandleRequest(request interface{}, c calibration.Calibration, r rfswitch.Sw
 
 	case pocket.ReasonableFrequencyRange:
 
-		result, err := v.VNA.GetReasonableFrequencyRange(request.(pocket.ReasonableFrequencyRange))
+		v.Request <- request.(pocket.ReasonableFrequencyRange)
 
-		if err != nil {
-			return pocket.CustomResult{Message: err.Error()}
-		}
-
-		return result
+		return <-v.Response
 
 	case pocket.RangeQuery:
 

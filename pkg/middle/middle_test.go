@@ -1,28 +1,56 @@
 package middle
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/timdrysdale/go-pocketvna/pkg/drain"
 	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
 	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 	"github.com/timdrysdale/go-pocketvna/pkg/stream"
 )
 
-func init() {
-	// suppress info messages above closed connections
-	// when test servers are stopped
-	log.SetLevel(log.WarnLevel)
+var verbose bool
 
+func TestMain(m *testing.M) {
+	// Setup  logging
+	debug := false
+	verbose = false
+
+	if debug {
+		log.SetLevel(log.TraceLevel)
+		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
+		defer log.SetOutput(os.Stdout)
+
+	} else {
+		var ignore bytes.Buffer
+		logignore := bufio.NewWriter(&ignore)
+		log.SetOutput(logignore)
+	}
+
+	err := pocket.ForceUnlockDevices()
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	exitVal := m.Run()
+
+	os.Exit(exitVal)
 }
 
 var upgrader = websocket.Upgrader{}
@@ -283,16 +311,13 @@ func TestStream(t *testing.T) {
 
 }
 
-func testVNA(t *testing.T) {
+func TestMiddle(t *testing.T) {
 
-	//timeout := time.Millisecond * 100
+	timeout := time.Millisecond * 100
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	streamWrite := make(chan reconws.WsMessage)
-	streamRead := make(chan reconws.WsMessage)
 
 	calWrite := make(chan reconws.WsMessage)
 	calRead := make(chan reconws.WsMessage)
@@ -300,138 +325,80 @@ func testVNA(t *testing.T) {
 	switchWrite := make(chan reconws.WsMessage)
 	switchRead := make(chan reconws.WsMessage)
 
+	streamWrite := make(chan reconws.WsMessage)
+	streamRead := make(chan reconws.WsMessage)
+
+	mdc := drain.NewWs(calRead, ctx)
+	mdr := drain.NewWs(switchRead, ctx)
+	mds := drain.NewWs(streamRead, ctx)
+
 	// Create test server with the channel handler.
-	sc := httptest.NewUnstartedServer(http.HandlerFunc(serviceChannelHandler(t, calWrite, calRead, ctx)))
+	sc := httptest.NewServer(http.HandlerFunc(serviceChannelHandler(t, calWrite, calRead, ctx)))
 	defer sc.Close()
 
 	// Create test server with the channel handler.
-	sr := httptest.NewUnstartedServer(http.HandlerFunc(serviceChannelHandler(t, switchWrite, switchRead, ctx)))
+	sr := httptest.NewServer(http.HandlerFunc(serviceChannelHandler(t, switchWrite, switchRead, ctx)))
 	defer sr.Close()
 
 	// Create test server with the channel handler.
 	ss := httptest.NewServer(http.HandlerFunc(userChannelHandler(t, streamWrite, streamRead, ctx)))
 	defer ss.Close()
 
-	// in case we are switching off parts of the middle ware during troubleshooting
-	sc.Start()
-	sr.Start()
-	ss.Start()
-
 	// URL only assigned after starting
 	// Convert http://127.0.0.1 to ws://127.0.0.
-	//uc := "ws" + strings.TrimPrefix(sc.URL, "http")
-	//ur := "ws" + strings.TrimPrefix(sr.URL, "http")
+	uc := "ws" + strings.TrimPrefix(sc.URL, "http")
+	ur := "ws" + strings.TrimPrefix(sr.URL, "http")
 	us := "ws" + strings.TrimPrefix(ss.URL, "http")
 
-	stream := fakeMiddle(us, ctx)
+	New(uc, ur, us, ctx)
 
-	fmt.Printf("%+v", stream)
+	//fmt.Printf("%v\n", middle)
 
-	//_ = New(uc, ur, us, ctx)
+	//time.Sleep(time.Second)
+	//t.Logf("counts: %d/%d/%d\n", mdc.Count(), mdr.Count(), mds.Count())
 
-	time.Sleep(3 * time.Second)
+	/* Test ReasonableFrequencyRange */
 
-	// Do GetReasonableFrequencyRange command
+	mt := int(websocket.TextMessage)
+	message := []byte("{\"cmd\":\"rr\"}")
 
-	//reasonable := Range{}
-	//
-	//id := "123xyz"
-	//v.Request <- ReasonableFrequencyRange{Command: Command{ID: id}}
-	//
-	//select {
-	//case <-time.After(timeout):
-	//	t.Error("timeout")
-	//case ri := <-v.Response:
-	//
-	//	if actual, ok := ri.(ReasonableFrequencyRange); !ok {
-	//		t.Error("Wrong type returned")
-	//	} else {
-	//
-	//		assert.Equal(t, actual.ID, id)
-	//		// weak test - with real kit attached, we should get non-zero numbers
-	//		assert.True(t, actual.Result.Start > 0)
-	//		assert.True(t, actual.Result.End > actual.Result.Start)
-	//		reasonable = actual.Result //save for RangeQuery
-	//		if verbose {
-	//			fmt.Println(actual.Result)
-	//		}
-	//	}
-	//}
-	//
-	//// Do SingleQuery command
-	//
-	//id = "456abc"
-	//v.Request <- SingleQuery{
-	//	Command: Command{ID: id},
-	//	Freq:    200000,
-	//	Avg:     1,
-	//	Select:  SParamSelect{true, true, true, true},
-	//}
-	//
-	//select {
-	//case <-time.After(timeout):
-	//	t.Error("timeout")
-	//case ri := <-v.Response:
-	//
-	//	if actual, ok := ri.(SingleQuery); !ok {
-	//		t.Error("Wrong type returned")
-	//	} else {
-	//
-	//		assert.Equal(t, actual.ID, id)
-	//		// weak test - with real kit attached, we should get non-zero numbers
-	//		assert.True(t, actual.Result.S11.Real != 0)
-	//		if verbose {
-	//			fmt.Println(actual.Result)
-	//		}
-	//	}
-	//}
-	//
-	//// Do RangeQuery command
-	//
-	//id = "789def"
-	//N := 7 // number of samples
-	//v.Request <- RangeQuery{
-	//	Command:         Command{ID: id},
-	//	Range:           reasonable,
-	//	Size:            N,
-	//	Avg:             1,
-	//	LogDistribution: true,
-	//	Select:          SParamSelect{true, true, true, true},
-	//}
-	//
-	//timeout = time.Second //need more time for this than a single query
-	//
-	//select {
-	//case <-time.After(timeout):
-	//	t.Error("timeout")
-	//case ri := <-v.Response:
-	//
-	//	if actual, ok := ri.(RangeQuery); !ok {
-	//		t.Error("Wrong type returned")
-	//	} else {
-	//
-	//		assert.Equal(t, actual.ID, id)
-	//		// weak test - with real kit attached, we should get non-zero numbers
-	//		assert.Equal(t, len(actual.Result), N)
-	//
-	//		assert.Equal(t, reasonable.Start, actual.Result[0].Freq)
-	//		assert.Equal(t, reasonable.End, actual.Result[N-1].Freq)
-	//
-	//		expectedFreq := LogFrequency(reasonable.Start, reasonable.End, N)
-	//
-	//		for i := 0; i < N; i++ {
-	//			if verbose {
-	//				fmt.Printf("%d: %d %d\n", i, int(expectedFreq[i]), int(actual.Result[i].Freq))
-	//			}
-	//			assert.Equal(t, int(expectedFreq[i]), int(actual.Result[i].Freq))
-	//		}
-	//
-	//		if verbose {
-	//			fmt.Println(actual.Result)
-	//		}
-	//	}
-	//}
-	//
+	ws := reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	select {
+
+	case <-time.After(timeout):
+		t.Error("timeout awaiting response")
+	case request := <-mds.Next():
+
+		fmt.Printf(string((request.(reconws.WsMessage)).Data))
+
+		m, ok := request.(reconws.WsMessage)
+
+		assert.True(t, ok)
+
+		var rr pocket.ReasonableFrequencyRange
+
+		err := json.Unmarshal(m.Data, &rr)
+
+		assert.NoError(t, err)
+
+		assert.True(t, ok)
+
+		assert.Equal(t, "rr", rr.Command.Command)
+	}
+
+	// to avoid compiler errors for not using them (yet)
+	mdc.Count()
+	mdr.Count()
 
 }
 
@@ -439,7 +406,8 @@ func userChannelHandler(t *testing.T, toClient, fromClient chan reconws.WsMessag
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		timeout := 1 * time.Millisecond
+		// needs more than 1ms when there are multiple servers to set up, else miss first message - never writes.
+		timeout := 10 * time.Millisecond
 
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -463,6 +431,9 @@ func userChannelHandler(t *testing.T, toClient, fromClient chan reconws.WsMessag
 				err = c.WriteMessage(msg.Type, msg.Data)
 				if err != nil {
 					break
+				}
+				if verbose {
+					fmt.Printf("userChannelHandler: writing message %s\n", string(msg.Data))
 				}
 
 			} //select
