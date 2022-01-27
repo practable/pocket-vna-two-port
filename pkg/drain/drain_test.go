@@ -3,6 +3,7 @@ package drain
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -68,5 +69,32 @@ func TestDrain(t *testing.T) {
 
 	all := s.All()
 	assert.Equal(t, []interface{}{a, b, c}, all)
+
+	s.Flush()
+	assert.Equal(t, 0, s.Count())
+	idx, err = s.LastReadIndex()
+	assert.Error(t, err)
+	assert.Equal(t, "empty store", err.Error())
+	assert.Equal(t, -1, idx)
+
+	go func() {
+		<-time.After(1 * time.Millisecond)
+		ch <- a
+		<-time.After(1 * time.Millisecond)
+		ch <- b
+	}()
+
+	select {
+	case <-time.After(5 * time.Millisecond):
+		t.Error("timeout waiting for next message")
+	case result := <-s.Next():
+		assert.Equal(t, a, result)
+	}
+	select {
+	case <-time.After(5 * time.Millisecond):
+		t.Error("timeout waiting for next message")
+	case result := <-s.Next():
+		assert.Equal(t, b, result)
+	}
 
 }

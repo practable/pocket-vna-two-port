@@ -11,6 +11,7 @@ import (
 type Store struct {
 	LastRead Index
 	Msg      Message
+	Ctx      context.Context
 }
 
 type Message struct {
@@ -25,7 +26,10 @@ type Index struct {
 
 func New(ch chan interface{}, ctx context.Context) *Store {
 
-	s := Store{}
+	s := Store{
+		Ctx: ctx,
+	}
+
 	s.Flush()
 
 	go func() {
@@ -82,22 +86,32 @@ func (s *Store) NextNoWait() (interface{}, error) {
 }
 
 // blocking version of get next message
-func (s *Store) Next(ch chan interface{}, ctx context.Context) <-chan interface{} {
+func (s *Store) Next() <-chan interface{} {
 
 	c := make(chan interface{}, 1)
 
 	go func() {
 
+		msg, err := s.NextNoWait()
+		if err == nil {
+			c <- msg
+			return
+		}
+
+		// message was not immediately available, so check back periodically (every 1ms)
+
 		for {
 
-			msg, err := s.NextNoWait()
-
-			if err == nil {
-				c <- msg
+			select {
+			case <-s.Ctx.Done():
 				return
+			case <-time.After(time.Millisecond):
+				msg, err := s.NextNoWait()
+				if err == nil {
+					c <- msg
+					return
+				}
 			}
-
-			<-time.After(time.Millisecond) // enter blocking state to let the message get sent
 		}
 
 	}()
@@ -142,12 +156,14 @@ func (s *Store) PeekLastRead() (interface{}, error) {
 }
 
 func (s *Store) LastReadIndex() (int, error) {
-	if s.IsEmpty() {
-		return 0, errors.New("empty store")
-	}
 	s.LastRead.RLock()
 	idx := s.LastRead.Idx
 	s.LastRead.RUnlock()
+
+	if s.IsEmpty() {
+		return idx, errors.New("empty store")
+	}
+
 	if idx < 0 {
 		return idx, errors.New("no reads yet")
 	}
