@@ -34,7 +34,7 @@ type VNA struct {
 	handle C.PVNA_DeviceHandler
 }
 
-func NewService(ctx context.Context) VNAService {
+func New(ctx context.Context) VNAService {
 
 	request := make(chan interface{}, 2)
 	response := make(chan interface{}, 2)

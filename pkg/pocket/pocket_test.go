@@ -128,7 +128,7 @@ func TestNewService(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
-	v := NewService(ctx)
+	v := New(ctx)
 
 	// Do GetReasonableFrequencyRange command
 
