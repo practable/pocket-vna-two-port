@@ -141,29 +141,32 @@ func TestNew(t *testing.T) {
 	}
 
 	// check that the commands complete ok when getting the expected response
+	// repeat many times to check for intermittent erros
+	for i := 0; i < 1000; i++ {
 
-	err := rf.SetShort()
+		err := rf.SetShort()
 
-	assert.NoError(t, err)
+		assert.NoError(t, err)
 
-	err = rf.SetOpen()
+		err = rf.SetOpen()
 
-	assert.NoError(t, err)
+		assert.NoError(t, err)
 
-	err = rf.SetLoad()
+		err = rf.SetLoad()
 
-	assert.NoError(t, err)
+		assert.NoError(t, err)
 
-	err = rf.SetDUT()
+		err = rf.SetDUT()
 
-	assert.NoError(t, err)
+		assert.NoError(t, err)
+	}
 
 	cancel_mock() //check commands are asking for the right port
 
 	go rf.SetShort()
 
 	msg := <-fromClient
-	err = json.Unmarshal([]byte(msg.Data), &c)
+	err := json.Unmarshal([]byte(msg.Data), &c)
 	assert.NoError(t, err)
 	assert.Equal(t, "port", c.Set)
 	assert.Equal(t, "short", c.To)
