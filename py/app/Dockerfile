@@ -8,7 +8,7 @@ RUN apt-get update && \
         build-essential \
         make \
         gcc \
-    && pip install -r requirements.txt \
+    && pip install -r /var/www/requirements.txt \
     && apt-get remove -y --purge make gcc build-essential \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
