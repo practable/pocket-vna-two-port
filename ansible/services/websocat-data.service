@@ -1,0 +1,13 @@
+[Unit]
+Description=stream data to session host
+After=network.target session.service
+Wants=session.service
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/bin/websocat-data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=get data from usb 
+After=network.target session.service websocat-data.service
+Wants=session.service websocat-data.service
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/bin/socat-data
+
+[Install]
+WantedBy=multi-user.target

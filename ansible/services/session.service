@@ -1,0 +1,9 @@
+[Unit]
+Description=session host streaming service
+After=network.target
+[Service]
+Restart=on-failure
+ExecStart=/usr/local/bin/session host
+
+[Install]
+WantedBy=multi-user.target session-rules.service

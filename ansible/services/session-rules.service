@@ -1,0 +1,13 @@
+[Unit]
+Description=apply session host streaming rules
+After=network.target session.service
+Wants=session.service
+PartOf=session.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/bin/session-rules
+
+[Install]
+WantedBy=multi-user.target
