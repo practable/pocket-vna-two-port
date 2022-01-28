@@ -26,11 +26,28 @@ import (
 	"context"
 	"errors"
 	"math"
+	"time"
 )
 
 // does not compile if in types.go ("C undefined")
 type VNA struct {
 	handle C.PVNA_DeviceHandler
+}
+
+func New(ctx context.Context) VNAService {
+
+	request := make(chan interface{}, 2)
+	response := make(chan interface{}, 2)
+	v := NewVNA()
+	go v.Run(request, response, ctx)
+
+	return VNAService{
+		VNA:      v,
+		Ctx:      ctx,
+		Request:  request,
+		Response: response,
+		Timeout:  time.Second,
+	}
 }
 
 func NewVNA() *VNA {

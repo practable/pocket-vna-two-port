@@ -48,7 +48,6 @@ func New(ctx context.Context) VNAService {
 		Response: response,
 		Timeout:  time.Second,
 	}
-
 }
 
 func NewVNA() *VNA {
