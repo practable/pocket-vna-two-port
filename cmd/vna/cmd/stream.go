@@ -25,7 +25,7 @@ import (
 	"github.com/ory/viper"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/timdrysdale/go-pocketvna/pkg/stream"
+	"github.com/timdrysdale/go-pocketvna/pkg/middle"
 )
 
 // streamCmd represents the stream command
@@ -83,7 +83,7 @@ export VNA_DEVELOPMENT=true
 			}
 		}()
 
-		go stream.Run(calibration, destination, rfswitch, ctx)
+		middle.New(calibration, rfswitch, destination, ctx)
 
 		<-ctx.Done()
 
