@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -128,10 +129,10 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 			var r Report
 
-			err := json.Unmarshal([]byte(msg.Data), &r)
+			err := json.Unmarshal(msg.Data, &r)
 
 			if err != nil {
-				log.WithField("error", err).Warning("Could not turn unmarshal JSON - invalid report string in JSON?")
+				log.WithField("error", err).Warning(fmt.Sprintf("Could not turn unmarshal JSON - invalid report string in JSON? %s", string(msg.Data)))
 			}
 
 			out <- r
