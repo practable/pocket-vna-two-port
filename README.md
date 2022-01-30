@@ -128,53 +128,27 @@ sudo chmod 666 /var/run/docker.sock #avoid permission denied
 
 Build and start the docker image (use tmux if you are ssh'ing into your rpi, so you can have extra terminals open)
 ```
-cd py/app
-./start/sh
-```
-Note: you might see this error when building on rpi4/rpios(buster)
-
-```
-Fatal Python error: _Py_InitializeMainInterpreter: can't initialize time
-PermissionError: [Errno 1] Operation not permitted
+export platform=linux-amd64  #or linux-arm32v7
+cd py/docker/app-${platform}
+./build.sh && ./start.sh
 ```
 
-An issue with building `time` on rpios (`lsb_release -a` reports I am using buster) is discussed [here](https://community.home-assistant.io/t/migration-to-2021-7-fails-fatal-python-error-init-interp-main-cant-initialize-time/320648/9) and solves the problem:
-```
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 04EE7237B7D453EC 648ACFD622F3D138
-echo "deb http://deb.debian.org/debian buster-backports main" | sudo tee -a /etc/apt/sources.list.d/buster-backports.list
-sudo apt update
-sudo apt install -t buster-backports libseccomp2
-```
-
-numerical libraries are required for [building scipy](https://docs.scipy.org/doc/scipy/reference/building/linux.html)
-```
-sudo apt-get install gcc gfortran python3-dev libopenblas-dev liblapack-dev
-```
-
-
-An issue with building numpy on rpi (many error messages produced) is solved by adding buildtools to the Dockerfile [as described here](https://stackoverflow.com/questions/63971185/unable-to-install-numpy-on-docker-python3-7-slim-in-a-raspberry-pi)
-Change
-```
-RUN pip install -r /var/www/requirements.txt
-```
-to
+You can check the calibration service is up and running by connecting to it with `websocat`
 
 ```
-RUN apt-get update && \
-    apt-get install -y \
-        build-essential \
-        make \
-        gcc \
-    && pip install -r /var/www/requirements.txt \
-    && apt-get remove -y --purge make gcc build-essential \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+$ websocat ws://localhost:8888/ws/calibration -
 ```
 
-The build is much slower on rpi4 than desktop because the python dependencies are being compiled.
+Calibration commands are usually quite long, so here is one with just a single data point
+```
+{"cmd": "oneport", "freq": [1000000.0], "short": {"real": [0.9166423490437918], "imag": [0.65760561459272446]}, "open": {"real": [0.8574903206586918], "imag": [0.43502949254752743]}, "load": {"real": [0.3002840906307519], "imag": [0.297151596182326]}, "dut": {"real": [0.4975782258013943], "imag": [0.4293572766329692]}}
+```
+which will return a response like this:
 
-TODO - confirm here that these steps are sufficient to get the Docker to build on rpi.
 
+```
+{"freq": [1000000.0], "S11": {"Real": 0.032134147957021554, "Imag": 0.0984021118681623}}
+```
 
 ## vna setup
  

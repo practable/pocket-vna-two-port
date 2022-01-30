@@ -10,4 +10,4 @@ dataToken=$(cat "$dataTokenFile")
 dataAccess=$(cat "$dataAccessFile")
 
 curl -X POST -H "Content-Type: application/json" -d '{"stream":"video","destination":"'"${videoAccess}"'","id":"0","token":"'"${videoToken}"'"}' http://localhost:8888/api/destinations
-curl -X POST -H "Content-Type: application/json" -d '{"stream":"pendulum","destination":"'"${dataAccess}"'","id":"1","token":"'"${dataToken}"'"}' http://localhost:8888/api/destinations 
+curl -X POST -H "Content-Type: application/json" -d '{"stream":"data","destination":"'"${dataAccess}"'","id":"1","token":"'"${dataToken}"'"}' http://localhost:8888/api/destinations 

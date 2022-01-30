@@ -1,0 +1,16 @@
+
+[Unit]
+Description=perform calibrations on data from the pocketVNA
+After=network.target session.service docker.service
+Wants=session.service docker.service
+
+[Service]
+Restart=always    
+RestartSec=5s
+ExecStartPre=-/usr/bin/docker stop %n
+ExecStart=/usr/bin/docker run --name %n practable/calibration:arm32v7-3.7-0.1
+
+[Install]
+WantedBy=multi-user.target
+
+

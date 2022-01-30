@@ -1,7 +1,7 @@
 FROM python:3.7-slim
 ADD calibration.py /
 ADD client.py /
-ENV WEBSOCKET ws://localhost:8888/ws/calibration
+ENV WEBSOCKET ws://172.17.0.1:8888/ws/calibration
 COPY ./requirements.txt /var/www/requirements.txt
 RUN apt-get update && \
     apt-get install -y \
