@@ -170,24 +170,81 @@ vna unlock
 vna stream
 ```
 
-socat-data:
+socat-rfswitch:
 ```
 #!/bin/sh
 socat /dev/ttyUSB0,echo=0,b57600,crnl tcp:127.0.0.1:9999
 ```
 
-websocat-data:
+Note you may have to add yourself to the dialout and tty groups.
 ```
-#!/bin/sh
-websocat ws://localhost:8888/ws/data tcp-listen:127.0.0.1:9999 --text
+sudo usermod -a -G dialout pi
+sudo usermod -a -G tty pi
 ```
 
+websocat-rfswitch:
+```
+#!/bin/sh
+websocat ws://localhost:8888/ws/rfswitch tcp-listen:127.0.0.1:9999 --text
+```
+
+You can check the `rfswitch` is running by 
+```
+websocat ws://localhost:8888/ws/rfswitch -
+```
+Issue commands to change the port
+```
+{"set":"port","to":"open"}
+```
+
+should yield a reply of
+```
+{"report":"port","is":"open"}
+```
 
 ### Service files
 
 Service files are in <./ansible/services>. Note most are fairly similar, except `socat-data` which must wait long enough that `websocat-data` has started (ca 10s leaves a safe margin in practice).
 
+### Verifying that the services are working
 
+Connect to `vna` over websocket using `websocat`
+```
+websocat ws://localhost:8888/ws/data -
+```
+Then send a ReasonableFrequencyRange command
+```
+{"cmd":"rr"}
+```
+which should return something like
+```
+{"id":"","t":0,"cmd":"rr","range":{"start":500000,"end":4000000000}}
+```
+
+This confirms that `vna` is up and running, and connected to a pocketVNA.
+
+Now try a command that needs the rfswitch
+```
+{"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":3,"islog":false,"avg":1,"sparam":{"s11":true,"s12":false,"s21":false,"s22":false}}
+```
+should return something like:
+
+```
+{"id":"","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":3,"islog":false,"avg":1,"sparam":{"s11":true,"s12":false,"s21":false,"s22":false},"result":[{"s11":{"real":-0.0007592514157295227,"imag":0.0006944984197616577},"s12":{"real":0,"imag":0},"s21":{"real":0,"imag":0},"s22":{"real":0,"imag":0},"freq":1000000},{"s11":{"real":0.0004634261131286621,"imag":-0.0001447424292564392},"s12":{"real":0,"imag":0},"s21":{"real":0,"imag":0},"s22":{"real":0,"imag":0},"freq":2000500000},{"s11":{"real":0.0024859830737113953,"imag":-0.005337625741958618},"s12":{"real":0,"imag":0},"s21":{"real":0,"imag":0},"s22":{"real":0,"imag":0},"freq":4000000000}]}
+
+```
+
+and a command that needs the calibration service
+
+```
+{"cmd":"crq","what":"dut","avg":1,"sparam":{"s11":true,"s12":false,"s21":false,"s22":false}}
+```
+
+which should return something like:
+
+```
+{"id":"","t":0,"cmd":"crq","what":"dut","avg":1,"sparam":{"s11":true,"s12":false,"s21":false,"s22":false},"result":[{"s11":{"real":1.0031062693348898,"imag":-0.012728241016514735},"s12":{"real":0,"imag":0},"s21":{"real":0,"imag":0},"s22":{"real":0,"imag":0},"freq":1000000},{"s11":{"real":-0.1335237960932827,"imag":-0.09618931729902436},"s12":{"real":0,"imag":0},"s21":{"real":0,"imag":0},"s22":{"real":0,"imag":0},"freq":2000500000},{"s11":{"real":-0.4883905666762738,"imag":-0.13897086282584725},"s12":{"real":0,"imag":0},"s21":{"real":0,"imag":0},"s22":{"real":0,"imag":0},"freq":4000000000}]}
+```
 
 ## Interface 
 
