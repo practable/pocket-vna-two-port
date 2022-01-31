@@ -501,3 +501,14 @@ for example
 ```
 C.enum_PocketVNADistribution(distr), //note we have to add enum_ to access this name
 ```
+
+
+### Preparing PI image
+
+Use [pishrink](https://github.com/Drewsif/PiShrink)
+
+```
+sudo dd if=/dev/sdb of=/home/<user>/rpi-config/vna-cal-2022-01-31.img bs=4M status=progress
+sudo pishrink.sh -p vna-cal-2022-01-31.img vna-cal-2022-01-31-shrunk.img
+```
+
