@@ -18,10 +18,11 @@ type Report struct {
 }
 
 type Switch struct {
-	u        string
-	R        *reconws.ReconWs
-	Ctx      context.Context
-	Request  chan interface{}
-	Response chan interface{}
-	Timeout  time.Duration
+	u            string
+	R            *reconws.ReconWs
+	Ctx          context.Context
+	Request      chan interface{}
+	Response     chan interface{}
+	Timeout      time.Duration
+	DrainTimeout time.Duration
 }

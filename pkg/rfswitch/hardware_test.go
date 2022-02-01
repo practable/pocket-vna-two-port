@@ -2,6 +2,7 @@ package rfswitch
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -9,6 +10,10 @@ import (
 )
 
 func TestHardware(t *testing.T) {
+
+	if os.Getenv("VNA_HARDWAREPRESENT") != "TRUE" {
+		t.Skip("Skipping hardware test (export VNA_HARDWAREPRESENT=TRUE to run test)")
+	}
 
 	ur := "ws://localhost:8888/ws/rfswitch"
 

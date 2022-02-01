@@ -25,12 +25,13 @@ func New(u string, ctx context.Context) Switch {
 	go PipeWsToInterface(r.In, response, ctx)
 
 	return Switch{
-		u:        u,
-		R:        r,
-		Ctx:      ctx,
-		Request:  request,
-		Response: response,
-		Timeout:  time.Second,
+		u:            u,
+		R:            r,
+		Ctx:          ctx,
+		Request:      request,
+		Response:     response,
+		Timeout:      2 * time.Second,
+		DrainTimeout: 10 * time.Millisecond,
 	}
 }
 
@@ -78,18 +79,20 @@ func (s *Switch) SetPort(port string) error {
 					return errors.New("Error" + r.Is)
 				}
 
-				if r.Report == "port" {
-
-					if r.Is == port {
-						return nil
-					} else {
-						return errors.New("Wrong port set")
-					}
+				if r.Report == "port" && r.Is == port {
+					return nil
 				}
 
-			} else {
-				// ignore, probably a blank line
+				// if get to here, then we have a valid response
+				// but with the wrong port, and we'll ignore it
+				// else we throw errors forever after getting one timeout.
+				// Just wait to see if a valid response is given in the
+				// right time frame.
+				// To avoid false positives, we could number requests and responses.
+
 			}
+
+			// not a report message - probably a blank line, ignore
 		}
 	}
 
