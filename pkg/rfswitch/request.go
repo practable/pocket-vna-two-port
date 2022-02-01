@@ -63,33 +63,40 @@ func (s *Switch) SetPort(port string) error {
 		//carry on
 	}
 
-	select {
-	case <-time.After(s.Timeout):
-		return errors.New("timeout receiving response")
-	case response := <-s.Response:
-		r, ok := response.(Report)
+	for i := 0; i < 5; i++ {
 
-		if !ok {
-			return errors.New("Unexpected response")
-		}
+		select {
+		case <-time.After(s.Timeout):
+			return errors.New("timeout receiving response")
+		case response := <-s.Response:
 
-		if r.Report == "error" {
-			return errors.New("Error" + r.Is)
-		}
+			r, ok := response.(Report)
 
-		if r.Report == "port" {
+			if ok {
 
-			if r.Is == port {
-				return nil
+				if r.Report == "error" {
+					return errors.New("Error" + r.Is)
+				}
+
+				if r.Report == "port" {
+
+					if r.Is == port {
+						return nil
+					} else {
+						return errors.New("Wrong port set")
+					}
+				}
+
 			} else {
-				return errors.New("Wrong port set")
+				// ignore, probably a blank line
 			}
 		}
-
-		// catch anything else
-		return errors.New("unexpected response")
-
 	}
+
+	// if we get to here, too many blank lines or non-standard
+	// messages were sent - check arduino software and USB connection?
+	return errors.New("Too many Unexpected responses")
+
 }
 
 func PipeInterfaceToWs(in chan interface{}, out chan reconws.WsMessage, ctx context.Context) {
