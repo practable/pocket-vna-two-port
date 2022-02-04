@@ -476,6 +476,28 @@ Cable connected
 {(-0.0013300031423568726+0.000985749065876007i) (0.0026688948273658752-0.005279362201690674i) (0.002047717571258545-0.006369277834892273i) (-0.0012982413172721863+0.0008942857384681702i)}
 ```
 
+### How to load a touchstone file in pythong
+
+Install [scikit-rf](https://scikit-rf.readthedocs.io/en/latest/tutorials/Installation.html), usually
+```
+pip install scikit-rf
+
+```
+
+start a python session, load and plot your file (change to suit your filename)
+
+```
+import matplotlib.pyplot as plt
+import skrf as rf
+load = rf.Network('dut.s1p')
+dut.plot_s_db()
+plt.savefig('dut_db.png', dpi=300)
+plt.close()
+dut.plot_s_deg()
+plt.savefig('dut_deg.png', dpi=300)
+plt.close()
+```
+
 
 ### API to the API
 
