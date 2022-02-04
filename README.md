@@ -476,7 +476,7 @@ Cable connected
 {(-0.0013300031423568726+0.000985749065876007i) (0.0026688948273658752-0.005279362201690674i) (0.002047717571258545-0.006369277834892273i) (-0.0012982413172721863+0.0008942857384681702i)}
 ```
 
-### How to load a touchstone file in pythong
+### How to load a touchstone file in python
 
 Install [scikit-rf](https://scikit-rf.readthedocs.io/en/latest/tutorials/Installation.html), usually
 ```
