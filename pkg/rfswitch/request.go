@@ -147,9 +147,9 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 			if err != nil {
 				log.WithField("error", err).Warning(fmt.Sprintf("Could not turn unmarshal JSON - invalid report string in JSON? %s", string(msg.Data)))
 			}
-
+			log.Infof("rfswitch: hardware replied: %s", string(msg.Data))
 			out <- r
-
+			log.Tracef("rfswitch: wrote hardware reply to pipe: %s", string(msg.Data))
 		}
 
 	}
