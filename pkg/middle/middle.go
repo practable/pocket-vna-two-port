@@ -289,7 +289,7 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 	rrq, ok := response.(pocket.RangeQuery)
 
 	if !ok {
-		log.Errorf("Middle.RangeCal error with scanning %s was %s", name, err.Error())
+		log.Errorf("Middle.RangeCal error with scanning %s", name)
 		return pocket.CustomResult{
 			Message: "Error measuring " + name,
 			Command: response,
