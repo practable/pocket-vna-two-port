@@ -61,6 +61,7 @@ func (s *Switch) SetPort(port string) error {
 	case <-time.After(s.Timeout):
 		return errors.New("timeout sending request")
 	case s.Request <- request:
+		log.Infof("rfswitch: sent command to pipe %s", port)
 		//carry on
 	}
 
@@ -73,6 +74,8 @@ func (s *Switch) SetPort(port string) error {
 
 		case response := <-s.Response:
 
+			log.Infof("rfswitch: got a response, in raw is %+v", s.Response)
+
 			r, ok := response.(Report)
 
 			if ok {
@@ -83,6 +86,7 @@ func (s *Switch) SetPort(port string) error {
 				}
 
 				if r.Report == "port" && r.Is == port {
+					log.Info("rfswitch: got the response we wanted")
 					return nil
 				}
 				log.Infof("rfswitch set to wrong port, wanted %s got %s on %d loop", r.Is, port, i)
@@ -94,7 +98,7 @@ func (s *Switch) SetPort(port string) error {
 				// To avoid false positives, we could number requests and responses.
 
 			}
-
+			log.Infof("rfswitch - ignoring this reply, probably a blank line")
 			// not a report message - probably a blank line, ignore
 		}
 	}
