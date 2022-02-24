@@ -241,6 +241,7 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 	if !onlyS11 {
 		msg := fmt.Sprintf("Error: calibration is only supported on Port1 (S11). Resend the command with only S11 selected (true). You had S11:%v, S12:%v, S21:%v, S22:%v",
 			rc.Select.S11, rc.Select.S12, rc.Select.S21, rc.Select.S22)
+		log.Errorf("RangeCal %s", msg)
 		return pocket.CustomResult{
 			Message: msg,
 			Command: rc,
@@ -261,22 +262,34 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 
 	name := "short"
 
+	log.Debugf("Middle.RangeCal: setting rfswitch to %s", name)
+
 	err := r.SetShort()
 
 	if err != nil {
+		log.Errorf("Middle.RangeCal error setting %s was %s", name, err.Error())
 		return pocket.CustomResult{
 			Message: "Error setting RF switch to " + name + ": " + err.Error(),
 			Command: rc,
 		}
+	} else {
+		log.Debug("Middle.RangeCal set short ok")
 	}
+
+	log.Debug("Middle.RangeCal requesting scan from VNA")
 
 	v.Request <- scan
 
+	log.Debug("Middle.RangeCal awaiting result from VNA")
+
 	response := <-v.Response
+
+	log.Debug("Middle.RangeCal checking result from VNA")
 
 	rrq, ok := response.(pocket.RangeQuery)
 
 	if !ok {
+		log.Errorf("Middle.RangeCal error with scanning %s was %s", name, err.Error())
 		return pocket.CustomResult{
 			Message: "Error measuring " + name,
 			Command: response,
