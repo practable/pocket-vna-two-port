@@ -68,7 +68,9 @@ func (s *Switch) SetPort(port string) error {
 
 		select {
 		case <-time.After(s.Timeout):
+			log.Infof("timeout setting rfswitch to %s on %d loop", port, i)
 			return errors.New("timeout receiving response")
+
 		case response := <-s.Response:
 
 			r, ok := response.(Report)
@@ -76,13 +78,14 @@ func (s *Switch) SetPort(port string) error {
 			if ok {
 
 				if r.Report == "error" {
+					log.Infof("rfswitch returned error when setting to port %s of %s", port, r.Is)
 					return errors.New("Error" + r.Is)
 				}
 
 				if r.Report == "port" && r.Is == port {
 					return nil
 				}
-
+				log.Infof("rfswitch set to wrong port, wanted %s got %s on %d loop", r.Is, port, i)
 				// if get to here, then we have a valid response
 				// but with the wrong port, and we'll ignore it
 				// else we throw errors forever after getting one timeout.
