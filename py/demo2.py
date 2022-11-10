@@ -58,9 +58,6 @@ cal.run()
 # # apply it to a dut
 dut_cal = cal.apply_cal(twoport_dut)
 
-# # save results for comparison against automated implementation of this approach
-dut_cal.write_touchstone('test/expected/twoport.s2p')
-
 # # check results against supplied data
 
 dut_exp = rf.Network('test/supplied/twoport-dut-cal.s2p', name='supplied by course team')
@@ -128,6 +125,14 @@ cal_s22.run()
 dut_s22 = rf.Network(frequency=f, s=twoport_dut.s[:,1,1], name="scikit-rf OnePort") #name for legend later, not what it is now
 # apply it to a dut
 dut_s22_cal = cal_s22.apply_cal(dut_s22)
+
+
+dut_cal.s[:,0,0] = dut_s11_cal.s[:,0,0]
+dut_cal.s[:,1,1] = dut_s22_cal.s[:,0,0]
+
+# # save results for comparison against automated implementation of this approach
+dut_cal.write_touchstone('test/expected/twoport.s2p')
+
 
 # check results against supplied data
 
