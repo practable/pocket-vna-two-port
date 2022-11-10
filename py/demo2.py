@@ -12,7 +12,7 @@ Modified 2022-11-10 from demo.py
 
 """
 
-
+import json
 import skrf as rf
 from skrf.calibration import OnePort, TwelveTerm, SOLT
 from skrf.media import DefinedGammaZ0
@@ -181,76 +181,126 @@ dut_exp.plot_s_db(0,1)
 plt.savefig("img/twoport-demo-s12s21-db-supplied.png",dpi=300)
 plt.show()
 plt.close()
-# plt.figure()
-# dut_caled.plot_s_deg()
-# expected1port.plot_s_deg()
-# plt.savefig("img/demo-deg.png",dpi=300)
-# plt.show()
-# plt.close()
-
-# plt.figure()
-# scdb = np.squeeze(dut_caled.s_db)
-# mcdb = np.squeeze(expected1port.s_db)
-# plt.plot(dut_caled.f, scdb-mcdb)
-# plt.xlabel("Frequency (Hz)")
-# plt.ylabel("Error (dB)")
-# plt.savefig("img/demo-db-error.png",dpi=300)
-# plt.show()
-# plt.close()
-
-# plt.figure()
-# scdeg = np.squeeze(dut_caled.s_deg)
-# mcdeg = np.squeeze(expected1port.s_deg)
-# plt.plot(dut_caled.f, scdeg-mcdeg)
-# plt.ylim([-180,180])
-# plt.xlabel("Frequency (Hz)")
-# plt.ylabel("Error (deg)")
-# plt.savefig("img/demo-deg-error.png",dpi=300)
-# plt.show()
-# plt.close()
 
 
-# ## prep for the JSON DEMO ... do it all again, but with JSON.
+## prep for the JSON DEMO ... do it all again, but with JSON.
 
-# # get our arrays out of the network models
-# f = meas1port[0].f.tolist()
-# mssr = np.squeeze(meas1port[0].s_re).tolist()
-# mssi = np.squeeze(meas1port[0].s_im).tolist()
+def s11re(n):
+    return n.s_re[:,0,0].tolist()
+def s11im(n):
+    return n.s_im[:,0,0].tolist()
+def s12re(n):
+    return n.s_re[:,0,1].tolist()
+def s12im(n):
+    return n.s_im[:,0,1].tolist()
+def s21re(n):
+    return n.s_re[:,1,0].tolist()
+def s21im(n):
+    return n.s_im[:,1,0].tolist()
+def s22re(n):
+    return n.s_re[:,1,1].tolist()
+def s22im(n):
+    return n.s_im[:,1,1].tolist()
 
-# msor = np.squeeze(meas1port[1].s_re).tolist()
-# msoi = np.squeeze(meas1port[1].s_im).tolist()
+request = {
+        "cmd":"twoport",
+        "freq":f.f.tolist(),
+        "short":{
+            "s11": {
+            "real": s11re(twoport_short),
+            "imag": s11im(twoport_short)
+            },
+            "s12": {
+            "real": s12re(twoport_short),
+            "imag": s12im(twoport_short)
+            },            
+            "s21": {
+            "real": s21re(twoport_short),
+            "imag": s21im(twoport_short)
+            },           
+            "s22": {
+            "real": s22re(twoport_short),
+            "imag": s22im(twoport_short)
+            }   
+        },
+          "open": {
+                "s11": {
+                    "real": s11re(twoport_open),
+                    "imag": s11im(twoport_open)
+                },
+                "s12": {
+                    "real": s12re(twoport_open),
+                    "imag": s12im(twoport_open)
+                },            
+                "s21": {
+                    "real": s21re(twoport_open),
+                    "imag": s21im(twoport_open)
+                },           
+                "s22": {
+                    "real": s22re(twoport_open),
+                    "imag": s22im(twoport_open)
+                }
+          },    
+              
+          "load": {
+               "s11": {
+                    "real": s11re(twoport_load),
+                    "imag": s11im(twoport_load)
+                },
+                "s12": {
+                    "real": s12re(twoport_load),
+                    "imag": s12im(twoport_load)
+                },            
+                "s21": {
+                    "real": s21re(twoport_load),
+                    "imag": s21im(twoport_load)
+                },           
+                "s22": {
+                    "real": s22re(twoport_load),
+                    "imag": s22im(twoport_load)
+                } 
+             }, 
+            "thru":{
+                "s11": {
+                    "real": s11re(twoport_thru),
+                    "imag": s11im(twoport_thru)
+                },
+                "s12": {
+                    "real": s12re(twoport_thru),
+                    "imag": s12im(twoport_thru)
+                },            
+                "s21": {
+                    "real": s21re(twoport_thru),
+                    "imag": s21im(twoport_thru)
+                },           
+                "s22": {
+                    "real": s22re(twoport_thru),
+                    "imag": s22im(twoport_thru)
+                }    
+            },
+            "dut":{
+                "s11": {
+                    "real": s11re(twoport_dut),
+                    "imag": s11im(twoport_dut)
+                },
+                "s12": {
+                    "real": s12re(twoport_dut),
+                    "imag": s12im(twoport_dut)
+                },            
+                "s21": {
+                    "real": s21re(twoport_dut),
+                    "imag": s21im(twoport_dut)
+                },           
+                "s22": {
+                    "real": s22re(twoport_dut),
+                    "imag": s22im(twoport_dut)
+                }    
+            }  
+        }
 
-# mslr = np.squeeze(meas1port[2].s_re).tolist()
-# msli = np.squeeze(meas1port[2].s_im).tolist()
 
-# msdr = np.squeeze(dut1port.s_re).tolist()
-# msdi = np.squeeze(dut1port.s_im).tolist()
-
-
-# request = {
-#         "cmd":"oneport",
-#         "freq":f,
-#         "short":{
-#             "real":mssr,
-#             "imag":mssi
-#                 },
-#          "open":{
-#             "real":msor,
-#             "imag":msoi
-#                 },               
-#          "load":{
-#             "real":mslr,
-#             "imag":msli
-#                 },                 
-#          "dut":{
-#             "real":msdr,
-#             "imag":msdi
-#                 }  
-#         }
-
-# import json
-# with open('test/json/oneport.json', 'w') as f:
-#     json.dump(request, f)
+with open('test/json/twoport.json', 'w') as f:
+     json.dump(request, f)
 
 
 
