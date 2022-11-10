@@ -8,7 +8,7 @@ websocket client for calculating calibrations
 @author: timothy.d.drysdale@gmail.com
 """
 
-from calibration import clean_oneport, make_networks, apply_cal, network_to_result
+from calibration import * 
 import json
 import _thread
 import time
@@ -17,18 +17,33 @@ import websocket
 
 def on_message(ws, message):
     
-   
-    try:
 
-        obj = clean_oneport(json.loads(message))
-        dut, ideal, meas = make_networks(obj)
-        calibrated = apply_cal(dut, ideal, meas)
-        result = network_to_result(calibrated)
-        ws.send(json.dumps(result))        
+
+    try:
+        obj = json.loads(message)
         
+        if get_cmd(obj)=="oneport":
+        
+            obj = clean_oneport(obj)
+            dut, ideal, meas = make_networks(obj)
+            calibrated = apply_cal(dut, ideal, meas)
+            result = network_to_result(calibrated)
+            ws.send(json.dumps(result)) 
+            
+        elif get_cmd(obj)=="twoport":
+
+            obj = clean_twoport(obj)
+            dut, ideal, meas = make_networks2(obj)
+            calibrated = apply_cal2(dut, ideal, meas)
+            result = network_to_result2(calibrated)
+            ws.send(json.dumps(result)) 
+            
     except Exception as e:
         print(e)
         traceback.print_stack()
+            
+
+  
 
 def on_error(ws, error):
     print(error)

@@ -42,23 +42,6 @@ cal_dut= "dut"
 # keys for the 2-port cal params
 cal_thru="thru"
 
-# TODO delete - probably don't need these now
-# cal_short_s11="short_s11"
-# cal_short_s22="short_s22"
-# cal_open_s11="open_s11"
-# cal_open_s22="open_s22"
-# cal_load_s11="load_s11"
-# cal_load_s22="load_s22"
-# cal_thru_s11="thru_s11"
-# cal_thru_s12="thru_s12"
-# cal_thru_s21="thru_s21"
-# cal_thru_s22="thru_s22"
-# cal_dut_s11="dut_s11"
-# cal_dut_s12="dut_s12"
-# cal_dut_s21="dut_s21"
-# cal_dut_s22="dut_s22"
-
-
 # common elements
 parts = (cal_real, cal_imag)
 
