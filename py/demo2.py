@@ -14,40 +14,17 @@ Modified 2022-11-10 from demo.py
 
 
 import skrf as rf
-from skrf.calibration import TwelveTerm, SOLT
+from skrf.calibration import OnePort, TwelveTerm, SOLT
 from skrf.media import DefinedGammaZ0
 import matplotlib.pyplot as plt
 import numpy as np
 
 # measured files supplied from pocket-VNA measurement
-
-
-# sp1 =  rf.Network('test/measured/twoport-short-p1.s2p')
-# sp2 =  rf.Network('test/measured/twoport-short-p1.s2p')
-# op1 =  rf.Network('test/measured/twoport-open-p1.s2p')
-# op2 =  rf.Network('test/measured/twoport-open-p2.s2p')
-# lp1 =  rf.Network('test/measured/twoport-load-p1.s2p')
-# lp2 =  rf.Network('test/measured/twoport-load-p2.s2p')
-        
-
-
-# ss =np.zeros((len(f), 2, 2), dtype=complex)
-# ss[:,0,0] = sp1.s[:,0,0]
-# ss[:,1,1] = sp2.s[:,0,0]
-
-# os =np.zeros((len(f), 2, 2), dtype=complex)
-# os[:,0,0] = op1.s[:,0,0]
-# os[:,1,1] = op2.s[:,0,0]
-
-# ls =np.zeros((len(f), 2, 2), dtype=complex)
-# ls[:,0,0] = lp1.s[:,0,0]
-# ls[:,1,1] = lp2.s[:,0,0]
-
 twoport_short = rf.Network('test/measured/twoport-short-p1.s2p', name="short")
 twoport_open = rf.Network('test/measured/twoport-open-p1.s2p', name="open")
 twoport_load = rf.Network('test/measured/twoport-load-p1.s2p', name="load")
 twoport_thru = rf.Network('test/measured/twoport-thru.s2p', name="thru")
-twoport_dut  = rf.Network('test/measured/twoport-dut.s2p', name="Scikit-RF TwelveTerm")
+twoport_dut  = rf.Network('test/measured/twoport-dut.s2p', name="scikit-rf TwelveTerm") #Name for legend later, not what it is now
 
 measured = [\
             twoport_short,
@@ -89,6 +66,71 @@ dut_cal.write_touchstone('test/expected/twoport.s2p')
 
 dut_exp = rf.Network('test/supplied/twoport-dut-cal.s2p', name='supplied by course team')
 
+## Try the 3-term calibration on the same data, for S11
+
+# measured files supplied from pocket-VNA measurement
+meas2port = [\
+        rf.Network('test/measured/short.s2p'),
+        rf.Network('test/measured/open.s2p'),
+        rf.Network('test/measured/load.s2p'),
+        ]
+# the data we want is S11
+
+oneport_short_s11 = rf.Network(frequency=f, s=twoport_short.s[:,0,0], name="short")
+oneport_open_s11 = rf.Network(frequency=f, s=twoport_open.s[:,0,0], name="open")
+oneport_load_s11 = rf.Network(frequency=f, s=twoport_load.s[:,0,0], name="load")
+
+meas_s11 = [\
+         oneport_short_s11,
+         oneport_open_s11,
+         oneport_load_s11,
+         ]
+
+ideals1 = [\
+        standard.short(),
+        standard.open(),
+        standard.load(1e-99), #noreflection Gamma -> 0 (can't be zero, div by zero error)
+        ]
+
+
+## create a Calibration instance
+cal_s11 = OnePort(\
+        ideals = ideals1,
+        measured = meas_s11,
+        )
+# run calibration algorithm
+cal_s11.run()
+
+dut_s11 = rf.Network(frequency=f, s=twoport_dut.s[:,0,0], name="scikit-rf OnePort") #name for legend later, not what it is now
+# apply it to a dut
+dut_s11_cal = cal_s11.apply_cal(dut_s11)
+
+# save results for comparison against automated implementation of this approach
+dut_s11_cal.write_touchstone('test/expected/twoport_s11_OnePort.s1p')
+
+# now check S22
+oneport_short_s22 = rf.Network(frequency=f, s=twoport_short.s[:,1,1], name="short")
+oneport_open_s22 = rf.Network(frequency=f, s=twoport_open.s[:,1,1], name="open")
+oneport_load_s22 = rf.Network(frequency=f, s=twoport_load.s[:,1,1], name="load")
+
+meas_s22 = [\
+         oneport_short_s22,
+         oneport_open_s22,
+         oneport_load_s22,
+         ]
+## create a Calibration instance
+cal_s22 = OnePort(\
+        ideals = ideals1,
+        measured = meas_s22,
+        )
+# run calibration algorithm
+cal_s22.run()
+
+dut_s22 = rf.Network(frequency=f, s=twoport_dut.s[:,1,1], name="scikit-rf OnePort") #name for legend later, not what it is now
+# apply it to a dut
+dut_s22_cal = cal_s22.apply_cal(dut_s22)
+
+# check results against supplied data
 
 plt.figure()
 plt.title("S21")
@@ -110,6 +152,7 @@ plt.figure()
 plt.title("S11")
 dut_cal.plot_s_db(0,0)
 dut_exp.plot_s_db(0,0)
+dut_s11_cal.plot_s_db(0,0)
 plt.savefig("img/twoport-demo-s11-db.png",dpi=300)
 plt.show()
 plt.close()
@@ -118,10 +161,26 @@ plt.figure()
 plt.title("S22")
 dut_cal.plot_s_db(1,1)
 dut_exp.plot_s_db(1,1)
+dut_s22_cal.plot_s_db(0,0)
 plt.savefig("img/twoport-demo-s22-db.png",dpi=300)
 plt.show()
 plt.close()
 
+plt.figure()
+plt.title("S12, S21")
+dut_cal.plot_s_db(0,1)
+dut_cal.plot_s_db(1,0)
+plt.savefig("img/twoport-demo-s12s21-db-twelveterm.png",dpi=300)
+plt.show()
+plt.close()
+
+plt.figure()
+plt.title("S12, S21")
+dut_exp.plot_s_db(1,0)
+dut_exp.plot_s_db(0,1)
+plt.savefig("img/twoport-demo-s12s21-db-supplied.png",dpi=300)
+plt.show()
+plt.close()
 # plt.figure()
 # dut_caled.plot_s_deg()
 # expected1port.plot_s_deg()
