@@ -14,10 +14,9 @@ Modified 2022-11-10 from demo.py
 
 import json
 import skrf as rf
-from skrf.calibration import OnePort, TwelveTerm, SOLT
+from skrf.calibration import OnePort, TwelveTerm
 from skrf.media import DefinedGammaZ0
 import matplotlib.pyplot as plt
-import numpy as np
 
 # measured files supplied from pocket-VNA measurement
 twoport_short = rf.Network('test/measured/twoport-short-p1.s2p', name="short")
