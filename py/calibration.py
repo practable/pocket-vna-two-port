@@ -170,7 +170,7 @@ def clean_twoport(obj):
     obj[cal_freq] = np.array(obj[cal_freq])[ok_index].tolist() 
         
     is_twoport(obj) #throws exception if array lengths no longer consistent
-           
+      
     return {
             "freq":  np.array(obj[cal_freq]),
             "short":{
@@ -233,6 +233,7 @@ def test_object(N):
     }
 
 def test_object2(N):
+    #use lists so we can serialise for writing to file
     return {
         "cmd":"twoport",
         "freq": np.linspace(1e6,100e6,num=N).tolist(),
@@ -602,24 +603,24 @@ def network_to_result(network):
                    }
     }
 
-def network2_to_result(network):
+def network_to_result2(network):
     return {
            "freq": network.f.tolist(),
            "S11": {
-                       "Real": np.squeeze(network.s_re[0,0]).tolist(),
-                       "Imag": np.squeeze(network.s_im[0,0]).tolist(),
+                       "Real": np.squeeze(network.s_re[:,0,0]).tolist(),
+                       "Imag": np.squeeze(network.s_im[:,0,0]).tolist(),
                    },
            "S12": {
-                       "Real": np.squeeze(network.s_re[0,1]).tolist(),
-                       "Imag": np.squeeze(network.s_im[0,1]).tolist(),
+                       "Real": np.squeeze(network.s_re[:,0,1]).tolist(),
+                       "Imag": np.squeeze(network.s_im[:,0,1]).tolist(),
                    },
            "S21": {
-                       "Real": np.squeeze(network.s_re[1,0]).tolist(),
-                       "Imag": np.squeeze(network.s_im[1,0]).tolist(),
+                       "Real": np.squeeze(network.s_re[:,1,0]).tolist(),
+                       "Imag": np.squeeze(network.s_im[:,1,0]).tolist(),
                    },
            "S22": {
-                       "Real": np.squeeze(network.s_re[1,1]).tolist(),
-                       "Imag": np.squeeze(network.s_im[1,1]).tolist(),
+                       "Real": np.squeeze(network.s_re[:,1,1]).tolist(),
+                       "Imag": np.squeeze(network.s_im[:,1,1]).tolist(),
                    },
     }
         
@@ -927,11 +928,11 @@ if __name__ == "__main__":
     
     time_start = time.time()
     
-    cal, cal_s11, cal_s22 = make_cal2(ideal, meas)
+    cal, cal_for_s11, cal_for_s22 = make_cal2(ideal, meas)
     
     time_cal = time.time()
      
-    result = use_cal2(cal, cal_s11, cal_s22, dut) #use 2port version
+    result = use_cal2(cal, cal_for_s11, cal_for_s22, dut) #use 2port version
     
     time_result = time.time()
     
@@ -980,58 +981,67 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
     
-    # N = len(dut_exp.f)
+    N = len(dut_exp.f)
         
-    # max_db_error = np.ones(N)*0.1
+    max_db_error = np.ones(N)*0.1
     
-    # actual_db_error = np.abs(np.squeeze(expected.s_db[:,0,0]) - np.squeeze(data.s_db[:,0,0]))
-    # assert np.all(np.less_equal(actual_db_error, max_db_error))
+    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,0,0]) - np.squeeze(dut_cal.s_db[:,0,0]))
+    assert np.all(np.less_equal(actual_db_error, max_db_error))
     
-    # actual_db_error = np.abs(np.squeeze(expected.s_db[:,0,1]) - np.squeeze(data.s_db[:,0,1]))
-    # assert np.all(np.less_equal(actual_db_error, max_db_error))
-    
-    # actual_db_error = np.abs(np.squeeze(expected.s_db[:,1,0]) - np.squeeze(data.s_db[:,1,0]))
-    # assert np.all(np.less_equal(actual_db_error, max_db_error))
-    
-    # actual_db_error = np.abs(np.squeeze(expected.s_db[:,1,1]) - np.squeeze(data.s_db[:,1,1]))
-    # assert np.all(np.less_equal(actual_db_error, max_db_error))
-    
-    # max_deg_error = np.ones(N)
-    
-    # actual_deg_error = np.abs(np.squeeze(expected.s_deg[:,0,0]) - np.squeeze(data.s_deg[:,0,0]))
-    # assert np.all(np.less_equal(actual_deg_error, max_deg_error))
+    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,0,1]) - np.squeeze(dut_cal.s_db[:,0,1]))
+    assert np.all(np.less_equal(actual_db_error, max_db_error))
 
-    # actual_deg_error = np.abs(np.squeeze(expected.s_deg[:,0,1]) - np.squeeze(data.s_deg[:,0,1]))
-    # assert np.all(np.less_equal(actual_deg_error, max_deg_error))
+    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,1,0]) - np.squeeze(dut_cal.s_db[:,1,0]))
+    assert np.all(np.less_equal(actual_db_error, max_db_error))
+
+    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,1,1]) - np.squeeze(dut_cal.s_db[:,1,1]))
+    assert np.all(np.less_equal(actual_db_error, max_db_error))    
     
-    # actual_deg_error = np.abs(np.squeeze(expected.s_deg[:,1,0]) - np.squeeze(data.s_deg[:,1,0]))
-    # assert np.all(np.less_equal(actual_deg_error, max_deg_error))
+    max_deg_error = np.ones(N)
     
-    # actual_deg_error = np.abs(np.squeeze(expected.s_deg[:,1,1]) - np.squeeze(data.s_deg[:,1,1]))
-    # assert np.all(np.less_equal(actual_deg_error, max_deg_error))
+    actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,0,0]) - np.squeeze(dut_cal.s_deg[:,0,0]))
+    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
+
+    actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,0,1]) - np.squeeze(dut_cal.s_deg[:,0,1]))
+    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
     
-    # # check result_to_json
-    # result = network_to_result(data)
+    actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,1,0]) - np.squeeze(dut_cal.s_deg[:,1,0]))
+    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
     
-    # assert np.array_equal(result["freq"], data.f)
-    # assert np.array_equal(result["S11"]["Real"], np.squeeze(data.s_re))
-    # assert np.array_equal(result["S11"]["Imag"], np.squeeze(data.s_im))
+    actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,1,1]) - np.squeeze(dut_cal.s_deg[:,1,1]))
+    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
     
-    # # make small json file for testing (and to check serialisation)
-    # obj = clean_twoport(test_object2(10))
-    # dut, ideal, meas = make_networks2(obj)
-    # data = apply_cal2(dut, ideal, meas)
-    # result = network2_to_result(data)
+    # check result_to_json
+    result = network_to_result2(dut_cal)
     
-    # with open('test/json/result2.json', 'w') as f:
-    #     json.dump(result, f)
+    assert np.array_equal(result["freq"], dut_cal.f)
+    assert np.array_equal(result["S11"]["Real"], np.squeeze(dut_cal.s_re[:,0,0]))
+    assert np.array_equal(result["S11"]["Imag"], np.squeeze(dut_cal.s_im[:,0,0]))
+    assert np.array_equal(result["S12"]["Real"], np.squeeze(dut_cal.s_re[:,0,1]))
+    assert np.array_equal(result["S12"]["Imag"], np.squeeze(dut_cal.s_im[:,0,1]))
+    assert np.array_equal(result["S21"]["Real"], np.squeeze(dut_cal.s_re[:,1,0]))
+    assert np.array_equal(result["S21"]["Imag"], np.squeeze(dut_cal.s_im[:,1,0]))
+    assert np.array_equal(result["S22"]["Real"], np.squeeze(dut_cal.s_re[:,1,1]))
+    assert np.array_equal(result["S22"]["Imag"], np.squeeze(dut_cal.s_im[:,1,1]))    
     
-    # # make a small input file for testing websocket interface
-    # obj = test_object(10)
-    # with open('test/json/test2.json', 'w') as f:
-    #     json.dump(obj, f)
-        
-    # # test the test file
-    # test = '{"cmd": "oneport", "freq": [1000000.0, 12000000.0, 23000000.0, 34000000.0, 45000000.0, 56000000.0, 67000000.0, 78000000.0, 89000000.0, 100000000.0], "short": {"real": [0.16039036792339345, 0.5976873413214076, 0.8329869561763907, 0.3632685710600716, 0.291974032483566, 0.40373224059079027, 0.31292545994460963, 0.6152865378289137, 0.10048725234864964, 0.37351939769296627], "imag": [0.189163890844127, 0.5724452385390489, 0.6267571329911495, 0.2639295007809461, 0.6593732039775437, 0.7783445696862374, 0.783076487771806, 0.804688644344, 0.5623621494218922, 0.3862616197557537]}, "open": {"real": [0.9319954420272576, 0.23082952748682928, 0.17132885145217236, 0.6263633833844254, 0.3990915928806996, 0.6202114392564174, 0.7902464722778033, 0.5773940295267551, 0.06208212179318873, 0.7113602777345744], "imag": [0.6833593050494419, 0.9585408787572861, 0.4924999609945958, 0.6369321377956018, 0.5001621474258618, 0.3137951208455947, 0.3747666930821534, 0.022789746635661023, 0.6207930270913493, 0.8046747192984681]}, "load": {"real": [0.5130937226468185, 0.8263480492152019, 0.6249310064069589, 0.7219952766605156, 0.9806134950633044, 0.9732456064297136, 0.33481221535955774, 0.963575339952412, 0.3153019581201433, 0.1455041936747512], "imag": [0.021596161696429417, 0.27190521527394673, 0.5143147186790451, 0.7469481866947372, 0.8968161666645258, 0.5244011364805536, 0.32627405576132407, 0.6113578500659708, 0.9560667800301624, 0.8819825508704627]}, "dut": {"real": [0.3846485029200616, 0.9866224144218543, 0.22520530189759902, 0.42007624963627843, 0.492184292394408, 0.8807271109985295, 0.02996227785649319, 0.9300122489501913, 0.8650807033211915, 0.1842493672879949], "imag": [0.2291021720232519, 0.6050682338747037, 0.8239899826080297, 0.10248054661636785, 0.9935036057620639, 0.6697206261228016, 0.9932594323400147, 0.3647521295447481, 0.6899004876103721, 0.6561124167518747]}}'
-    # clean_oneport(json.loads(test))
+    
+    # make small json file for testing (and to check serialisation)
+    obj = clean_twoport(test_object2(10))
+    dut, ideal, meas = make_networks2(obj)
+    data = apply_cal2(dut, ideal, meas)
+    result = network_to_result2(data)
+    
+    with open('test/json/result2.json', 'w') as f:
+        json.dump(result, f)
+    
+    # make a small input file for testing websocket interface
+    obj = test_object2(10) #don't clean it, as must stay list
+    with open('test/json/test2.json', 'w') as f:
+        json.dump(obj, f)
+
+    # Opening JSON file
+    f = open('test/json/test2.json')
+    test = json.load(f)  
+    # test the test file
+    clean_twoport(test)
 
