@@ -36,9 +36,22 @@ func TestHardware(t *testing.T) {
 		err = r.SetLoad()
 		assert.NoError(t, err)
 		<-time.After(delay)
-		err = r.SetDUT()
+		err = r.SetThru()
 		assert.NoError(t, err)
 		<-time.After(delay)
+		err = r.SetDUT1()
+		assert.NoError(t, err)
+		<-time.After(delay)
+		err = r.SetDUT2()
+		assert.NoError(t, err)
+		<-time.After(delay)
+		err = r.SetDUT3()
+		assert.NoError(t, err)
+		<-time.After(delay)
+		err = r.SetDUT4()
+		assert.NoError(t, err)
+		<-time.After(delay)
+
 	}
 
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
 )
 
 type Command struct {

@@ -9,7 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
-	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
 )
 
 func New(u string, ctx context.Context) Switch {
@@ -47,8 +47,20 @@ func (s *Switch) SetLoad() error {
 	return s.SetPort("load")
 }
 
-func (s *Switch) SetDUT() error {
-	return s.SetPort("dut")
+func (s *Switch) SetThru() error {
+	return s.SetPort("thru")
+}
+func (s *Switch) SetDUT1() error {
+	return s.SetPort("dut1")
+}
+func (s *Switch) SetDUT2() error {
+	return s.SetPort("dut2")
+}
+func (s *Switch) SetDUT3() error {
+	return s.SetPort("dut3")
+}
+func (s *Switch) SetDUT4() error {
+	return s.SetPort("dut4")
 }
 
 func (s *Switch) SetPort(port string) error {

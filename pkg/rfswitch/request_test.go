@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
 )
 
 func init() {
@@ -48,7 +48,7 @@ func TestNew(t *testing.T) {
 
 	rf := New(u, ctx)
 
-	ports := []string{"short", "open", "load", "dut"}
+	ports := []string{"short", "open", "load", "thru", "dut1", "dut2", "dut3", "dut4"}
 
 	for _, port := range ports {
 
@@ -154,14 +154,13 @@ func TestNew(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	err = rf.SetDUT()
+	err = rf.SetDUT1()
 
 	assert.NoError(t, err)
 
 	cancel_mock() //check commands are asking for the right port
 
 	go rf.SetShort()
-
 	msg := <-fromClient
 	err = json.Unmarshal([]byte(msg.Data), &c)
 	assert.NoError(t, err)
@@ -169,7 +168,6 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "short", c.To)
 
 	go rf.SetOpen()
-
 	msg = <-fromClient
 	err = json.Unmarshal([]byte(msg.Data), &c)
 	assert.NoError(t, err)
@@ -177,20 +175,46 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "open", c.To)
 
 	go rf.SetLoad()
-
 	msg = <-fromClient
 	err = json.Unmarshal([]byte(msg.Data), &c)
 	assert.NoError(t, err)
 	assert.Equal(t, "port", c.Set)
 	assert.Equal(t, "load", c.To)
 
-	go rf.SetDUT()
-
+	go rf.SetThru()
 	msg = <-fromClient
 	err = json.Unmarshal([]byte(msg.Data), &c)
 	assert.NoError(t, err)
 	assert.Equal(t, "port", c.Set)
-	assert.Equal(t, "dut", c.To)
+	assert.Equal(t, "thru", c.To)
+
+	go rf.SetDUT1()
+	msg = <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "dut1", c.To)
+
+	go rf.SetDUT2()
+	msg = <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "dut2", c.To)
+
+	go rf.SetDUT3()
+	msg = <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "dut3", c.To)
+
+	go rf.SetDUT4()
+	msg = <-fromClient
+	err = json.Unmarshal([]byte(msg.Data), &c)
+	assert.NoError(t, err)
+	assert.Equal(t, "port", c.Set)
+	assert.Equal(t, "dut4", c.To)
 
 }
 
@@ -293,8 +317,16 @@ func switchMock(request, response chan reconws.WsMessage, ctx context.Context) {
 						message = []byte("{\"report\":\"port\",\"is\":\"open\"}")
 					case "load":
 						message = []byte("{\"report\":\"port\",\"is\":\"load\"}")
-					case "dut":
-						message = []byte("{\"report\":\"port\",\"is\":\"dut\"}")
+					case "thru":
+						message = []byte("{\"report\":\"port\",\"is\":\"thru\"}")
+					case "dut1":
+						message = []byte("{\"report\":\"port\",\"is\":\"dut1\"}")
+					case "dut2":
+						message = []byte("{\"report\":\"port\",\"is\":\"dut2\"}")
+					case "dut3":
+						message = []byte("{\"report\":\"port\",\"is\":\"dut3\"}")
+					case "dut4":
+						message = []byte("{\"report\":\"port\",\"is\":\"dut4\"}")
 					default:
 						message = []byte("{\"report\":\"error\",\"is\":\"unrecognised port\"}")
 					}
