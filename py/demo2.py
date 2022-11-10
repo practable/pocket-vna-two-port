@@ -14,7 +14,7 @@ Modified 2022-11-10 from demo.py
 
 
 import skrf as rf
-from skrf.calibration import TwelveTerm
+from skrf.calibration import TwelveTerm, SOLT
 from skrf.media import DefinedGammaZ0
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,32 +22,32 @@ import numpy as np
 # measured files supplied from pocket-VNA measurement
 
 
-sp1 =  rf.Network('test/measured/twoport-short-p1.s2p')
-sp2 =  rf.Network('test/measured/twoport-short-p1.s2p')
-op1 =  rf.Network('test/measured/twoport-open-p1.s2p')
-op2 =  rf.Network('test/measured/twoport-open-p2.s2p')
-lp1 =  rf.Network('test/measured/twoport-load-p1.s2p')
-lp2 =  rf.Network('test/measured/twoport-load-p2.s2p')
+# sp1 =  rf.Network('test/measured/twoport-short-p1.s2p')
+# sp2 =  rf.Network('test/measured/twoport-short-p1.s2p')
+# op1 =  rf.Network('test/measured/twoport-open-p1.s2p')
+# op2 =  rf.Network('test/measured/twoport-open-p2.s2p')
+# lp1 =  rf.Network('test/measured/twoport-load-p1.s2p')
+# lp2 =  rf.Network('test/measured/twoport-load-p2.s2p')
         
-f = sp1.frequency
 
-ss =np.zeros((len(f), 2, 2), dtype=complex)
-ss[:,0,0] = sp1.s[:,0,0]
-ss[:,1,1] = sp2.s[:,0,0]
 
-os =np.zeros((len(f), 2, 2), dtype=complex)
-os[:,0,0] = op1.s[:,0,0]
-os[:,1,1] = op2.s[:,0,0]
+# ss =np.zeros((len(f), 2, 2), dtype=complex)
+# ss[:,0,0] = sp1.s[:,0,0]
+# ss[:,1,1] = sp2.s[:,0,0]
 
-ls =np.zeros((len(f), 2, 2), dtype=complex)
-ls[:,0,0] = lp1.s[:,0,0]
-ls[:,1,1] = lp2.s[:,0,0]
+# os =np.zeros((len(f), 2, 2), dtype=complex)
+# os[:,0,0] = op1.s[:,0,0]
+# os[:,1,1] = op2.s[:,0,0]
 
-twoport_short = rf.Network(frequency=f, s=ss, name="short")
-twoport_open = rf.Network(frequency=f, s=ss, name="open")
-twoport_load = rf.Network(frequency=f, s=ss, name="load")
+# ls =np.zeros((len(f), 2, 2), dtype=complex)
+# ls[:,0,0] = lp1.s[:,0,0]
+# ls[:,1,1] = lp2.s[:,0,0]
+
+twoport_short = rf.Network('test/measured/twoport-short-p1.s2p', name="short")
+twoport_open = rf.Network('test/measured/twoport-open-p1.s2p', name="open")
+twoport_load = rf.Network('test/measured/twoport-load-p1.s2p', name="load")
 twoport_thru = rf.Network('test/measured/twoport-thru.s2p', name="thru")
-twoport_dut  = rf.Network('test/measured/twoport-dut.s2p', name="dut")
+twoport_dut  = rf.Network('test/measured/twoport-dut.s2p', name="Scikit-RF TwelveTerm")
 
 measured = [\
             twoport_short,
@@ -56,6 +56,7 @@ measured = [\
             twoport_thru
            ]
 
+f = twoport_short.frequency
 standard = DefinedGammaZ0(f)
 
 ideals = [\
@@ -79,24 +80,47 @@ cal = TwelveTerm(\
 cal.run()
 
 # # apply it to a dut
-# dut2port = rf.Network('test/supplied/DUTuncal.s2p')
-# dut1port = rf.Network(frequency=dut2port.frequency, s=dut2port.s[:,0,0], name="scikit cal")
-# dut_caled = cal.apply_cal(dut1port)
+dut_cal = cal.apply_cal(twoport_dut)
 
 # # save results for comparison against automated implementation of this approach
-# dut_caled.write_touchstone('test/expected/expected.s1p')
+dut_cal.write_touchstone('test/expected/twoport.s2p')
 
 # # check results against supplied data
 
-# expected2port = rf.Network('test/supplied/DUTcal.s2p')
-# expected1port = rf.Network(frequency=expected2port.frequency, s=expected2port.s[:,0,0], name="matlab cal")
+dut_exp = rf.Network('test/supplied/twoport-dut-cal.s2p', name='supplied by course team')
 
-# plt.figure()
-# dut_caled.plot_s_db()
-# expected1port.plot_s_db()
-# plt.savefig("img/demo-db.png",dpi=300)
-# plt.show()
-# plt.close()
+
+plt.figure()
+plt.title("S21")
+dut_cal.plot_s_db(1,0)
+dut_exp.plot_s_db(1,0)
+plt.savefig("img/twoport-demo-s21-db.png",dpi=300)
+plt.show()
+plt.close()
+
+plt.figure()
+plt.title("S12")
+dut_cal.plot_s_db(0,1)
+dut_exp.plot_s_db(0,1)
+plt.savefig("img/twoport-demo-s12-db.png",dpi=300)
+plt.show()
+plt.close()
+
+plt.figure()
+plt.title("S11")
+dut_cal.plot_s_db(0,0)
+dut_exp.plot_s_db(0,0)
+plt.savefig("img/twoport-demo-s11-db.png",dpi=300)
+plt.show()
+plt.close()
+
+plt.figure()
+plt.title("S22")
+dut_cal.plot_s_db(1,1)
+dut_exp.plot_s_db(1,1)
+plt.savefig("img/twoport-demo-s22-db.png",dpi=300)
+plt.show()
+plt.close()
 
 # plt.figure()
 # dut_caled.plot_s_deg()
