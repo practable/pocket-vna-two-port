@@ -14,7 +14,7 @@ Created 2022-02-20
 
 import json
 import numpy as np
-from skrf.calibration import OnePort
+from skrf.calibration import OnePort, TwelveTerm
 from skrf.media import DefinedGammaZ0
 import skrf as rf
 import time
@@ -22,24 +22,57 @@ import warnings
 
 
 #define keys as variables so that mistypes throw an error
+# keys common to all cals
 cal_cmd = "cmd"
 cal_freq = "freq"
+cal_real = "real"
+cal_imag = "imag"
+
+# keys for 1-port cal params
 cal_short = "short"
 cal_open = "open"
 cal_load = "load"
 cal_dut= "dut"
-cal_real = "real"
-cal_imag = "imag"
 
+# keys for the 2-port cal params
+cal_short_s11="short_s11"
+cal_short_s22="short_s22"
+cal_open_s11="open_s11"
+cal_open_s22="open_s22"
+cal_load_s11="load_s11"
+cal_load_s22="load_s22"
+cal_thru_s11="thru_s11"
+cal_thru_s12="thru_s12"
+cal_thru_s21="thru_s21"
+cal_thru_s22="thru_s22"
+cal_dut_s11="dut_s11"
+cal_dut_s12="dut_s12"
+cal_dut_s21="dut_s21"
+cal_dut_s22="dut_s22"
+
+
+# common elements
+parts = (cal_real, cal_imag)
+
+# for one port
 required = (cal_cmd,cal_freq,cal_short,cal_open,cal_load,cal_dut)   
 params = (cal_short,cal_open,cal_load,cal_dut)
-parts = (cal_real, cal_imag)
+
+# for two port
+required2 = (cal_cmd, cal_freq, cal_short_s11, cal_open_s11, cal_load_s11, cal_short_s22, cal_open_s22, cal_load_s22,
+             cal_thru_s11, cal_thru_s12, cal_thru_s21, cal_thru_s22, cal_dut_s11, cal_dut_s12, cal_dut_s21, cal_dut_s22)
+params2 = (cal_short_s11, cal_open_s11, cal_load_s11, cal_short_s22, cal_open_s22, cal_load_s22,
+           cal_thru_s11, cal_thru_s12, cal_thru_s21, cal_thru_s22, cal_dut_s11, cal_dut_s12, cal_dut_s21, cal_dut_s22)
 
 def load_json(filename):
     with open(filename, 'r') as f:
         return json.load(f)
     
 
+def get_cmd(obj):
+    return obj[cal_cmd].lower()
+
+    
 def is_oneport(obj):
     #https://stackoverflow.com/questions/40659212/futurewarning-elementwise-comparison-failed-returning-scalar-but-in-the-futur
     with warnings.catch_warnings():
@@ -47,7 +80,7 @@ def is_oneport(obj):
         if not all(key in obj for key in required):
             raise KeyError('Missing one or more required keys')
         
-    if not obj[cal_cmd].lower() == "oneport":
+    if not get_cmd(obj) == "oneport":
         raise ValueError("cmd is not oneport")
         
     #check all lengths are consistent    
@@ -58,7 +91,23 @@ def is_oneport(obj):
             if not len(obj[param][part])==N:
                 raise ValueError("Inconsistent sized data arrays")
                 
-                     
+def is_twoport(obj):
+    #https://stackoverflow.com/questions/40659212/futurewarning-elementwise-comparison-failed-returning-scalar-but-in-the-futur
+    with warnings.catch_warnings():
+        warnings.simplefilter(action='ignore', category=FutureWarning)
+        if not all(key in obj for key in required):
+            raise KeyError('Missing one or more required keys')
+        
+    if not get_cmd(obj) == "twoport":
+        raise ValueError("cmd is not twoport")
+        
+    #check all lengths are consistent    
+    N = len(obj["freq"])
+    
+    for param in params:
+        for part in parts:
+            if not len(obj[param][part])==N:
+                raise ValueError("Inconsistent sized data arrays")                    
         
 def clean_oneport(obj):
     
@@ -89,9 +138,49 @@ def clean_oneport(obj):
             "load":  np.array(obj[cal_load][cal_real]) + 1j * np.array(obj[cal_load][cal_imag]),
             "dut":   np.array(obj[cal_dut][cal_real]) + 1j * np.array(obj[cal_dut][cal_imag]),
             }
+
+def clean_twoport(obj):
+    
+    is_twoport(obj) #throws exception if not a two-port
+
+    #find nans
+    nan_index = np.isnan(obj[cal_freq])
+    
+    for param in params2:
+        for part in parts:
+            nan_index = nan_index | np.isnan(obj[param][part])
+            
+    #delete all (frequency,param) tuples which have a nan in any part of them
+    ok_index = (~nan_index).tolist()
+    for param in params2:
+        for part in parts:
+            obj[param][part] = np.array(obj[param][part])[ok_index].tolist()   
+            
+    obj[cal_freq] = np.array(obj[cal_freq])[ok_index].tolist() 
+        
+    is_twoport(obj) #throws exception if array lengths no longer consistent
+           
+    return {
+            "freq":  np.array(obj[cal_freq]),
+            "short_s11": np.array(obj[cal_short_s11][cal_real]) + 1j * np.array(obj[cal_short_s11][cal_imag]),
+            "short_s22": np.array(obj[cal_short_s22][cal_real]) + 1j * np.array(obj[cal_short_s22][cal_imag]),
+            "open_s11": np.array(obj[cal_open_s11][cal_real]) + 1j * np.array(obj[cal_open_s11][cal_imag]),
+            "open_s22": np.array(obj[cal_open_s22][cal_real]) + 1j * np.array(obj[cal_open_s22][cal_imag]),
+            "load_s11": np.array(obj[cal_load_s11][cal_real]) + 1j * np.array(obj[cal_load_s11][cal_imag]),
+            "load_s22": np.array(obj[cal_load_s22][cal_real]) + 1j * np.array(obj[cal_load_s22][cal_imag]),
+            "thru_s11": np.array(obj[cal_thru_s11][cal_real]) + 1j * np.array(obj[cal_thru_s11][cal_imag]),       
+            "thru_s12": np.array(obj[cal_thru_s12][cal_real]) + 1j * np.array(obj[cal_thru_s12][cal_imag]),
+            "thru_s21": np.array(obj[cal_thru_s21][cal_real]) + 1j * np.array(obj[cal_thru_s21][cal_imag]),
+            "thru_s22": np.array(obj[cal_thru_s22][cal_real]) + 1j * np.array(obj[cal_thru_s22][cal_imag]),
+            "dut_s11": np.array(obj[cal_dut_s11][cal_real]) + 1j * np.array(obj[cal_dut_s11][cal_imag]),       
+            "dut_s12": np.array(obj[cal_dut_s12][cal_real]) + 1j * np.array(obj[cal_dut_s12][cal_imag]),
+            "dut_s21": np.array(obj[cal_dut_s21][cal_real]) + 1j * np.array(obj[cal_dut_s21][cal_imag]),
+            "dut_s22": np.array(obj[cal_dut_s22][cal_real]) + 1j * np.array(obj[cal_dut_s22][cal_imag]),        
+           }
+
   
 def test_object(N):
-    #make these lists so we can serialise this for writing to file
+    #use lists so we can serialise for writing to file
       return {
     "cmd":"oneport",
     "freq": np.linspace(1e6,100e6,num=N).tolist(),
@@ -111,7 +200,70 @@ def test_object(N):
         "real":np.random.rand(N).tolist(),
         "imag":np.random.rand(N).tolist(),
             }  
-    } 
+    }
+
+def test_object2(N):
+      return {
+    "cmd":"twoport",
+    "freq": np.linspace(1e6,100e6,num=N).tolist(),
+    "short_s11":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },
+     "open_s11":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },               
+     "load_s11":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },
+    "short_s22":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },
+     "open_s22":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },               
+     "load_s22":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },
+     "thru_s11":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },           
+     "thru_s12":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },
+     "thru_s21":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+               },
+     "thru_s22":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },
+    "dut_s11":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },           
+     "dut_s12":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            },
+     "dut_s21":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+               },
+     "dut_s22":{
+        "real":np.random.rand(N).tolist(),
+        "imag":np.random.rand(N).tolist(),
+            } 
+    }
+  
      
 def make_networks(obj):
     
@@ -136,16 +288,90 @@ def make_networks(obj):
        
     dut = rf.Network(frequency=f, s=obj["dut"], name="dut")
 
-    return dut, ideal, meas 
+    return dut, ideal, meas
+
+def make_networks2(obj):
+    
+    #create frequency using data points in object
+    f = rf.Frequency()
+    f.f = obj["freq"]
+
+    sp_short =np.zeros((len(f), 2, 2), dtype=complex)
+    sp_short[:,0,0] = obj[cal_short_s11]
+    sp_short[:,1,1] = obj[cal_short_s22]
+
+    sp_open =np.zeros((len(f), 2, 2), dtype=complex)
+    sp_open[:,0,0] = obj[cal_open_s11]
+    sp_open[:,1,1] = obj[cal_open_s22]
+    
+    sp_load =np.zeros((len(f), 2, 2), dtype=complex)
+    sp_load[:,0,0] = obj[cal_load_s11]
+    sp_load[:,1,1] = obj[cal_load_s22]
+
+    sp_thru =np.zeros((len(f), 2, 2), dtype=complex)
+    sp_thru[:,0,0] = obj[cal_thru_s11]
+    sp_thru[:,0,1] = obj[cal_thru_s12]
+    sp_thru[:,1,0] = obj[cal_thru_s21]
+    sp_thru[:,1,1] = obj[cal_thru_s22]
+    
+    sp_dut =np.zeros((len(f), 2, 2), dtype=complex)
+    sp_dut[:,0,0] = obj[cal_dut_s11]
+    sp_dut[:,0,1] = obj[cal_dut_s12]
+    sp_dut[:,1,0] = obj[cal_dut_s21]
+    sp_dut[:,1,1] = obj[cal_dut_s22]
+    
+    #measured cal networks
+    meas = [
+            rf.Network(frequency=f,s=sp_short,name="meas_short"),
+            rf.Network(frequency=f,s=sp_open,name="meas_open"),
+            rf.Network(frequency=f,s=sp_load,name="meas_load"),
+            rf.Network(frequency=f,s=sp_thru,name="meas_thru"),
+            ]
+    # ideal cal networks
+    standard = DefinedGammaZ0(f)
+ 
+    ideal = [
+            standard.short(),
+            standard.open(),
+            standard.load(1e-99),
+            standard.thru(),
+            ]
+       
+    dut = rf.Network(frequency=f, s=sp_dut, name="dut")
+
+    return dut, ideal, meas
+
      
 def apply_cal(dut, ideal, meas):
      cal = OnePort(ideals = ideal, measured = meas)
+     cal.run()
+     return cal.apply_cal(dut)
+
+def apply_cal2(dut, ideal, meas):
+     cal = TwelveTerm(ideals = ideal, measured = meas)
      cal.run()
      return cal.apply_cal(dut)
  
 def time_apply_cal(dut, ideal, meas):
     
      cal = OnePort(ideals = ideal, measured = meas)
+     
+     time_start = time.time()
+     
+     cal.run()
+     
+     time_cal = time.time()
+     
+     cal.apply_cal(dut)
+     
+     time_apply = time.time()
+     
+     return np.diff([time_start, time_cal, time_apply])
+
+  
+def time_apply_cal2(dut, ideal, meas):
+    
+     cal = TwelveTerm(ideals = ideal, measured = meas)
      
      time_start = time.time()
      
