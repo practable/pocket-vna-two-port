@@ -1,9 +1,10 @@
 /*
- * Remote Lab: RF Switch controller
+ * Remote Lab: RF Switch controller (2-port)
  * Timothy D. Drysdale
  * timothy.d.drysdale@gmail.com
  *
- * Created by Timothy D. Drysdale 25 Jan 2022 - Initial implemention based on github.com/practable/penduino and demo code from Maksim Kuznetcov
+ * Created by Timothy D. Drysdale 25 Jan 2022 - Initial implemention based on github.com/practable/penduino
+ * Modified to support 2-Port operation 10 November 2022
  *
  */
 
@@ -20,13 +21,17 @@
   *  {"set":"port","to":"short"} 
   *  {"set":"port","to":"open"} 
   *  {"set":"port","to":"load"} 
-  *  {"set":"port","to":"dut"} 
+  *  {"set":"port","to":"thru"} 
+  *  {"set":"port","to":"dut1"} 
+  *  {"set":"port","to":"dut2"} 
+  *  {"set":"port","to":"dut3"} 
+  *  {"set":"port","to":"dut4"} 
   *  You will get a confirmation message everytime you change the port setting
   *  {"report":"port","is":"short"}
   *  {"report":"port","is":"open"}
   *  {"report":"port","is":"load"}  
-  *  {"report":"port","is":"dut"}  
-  *    
+  *  {"report":"port","is":"dut1"}  
+  *  etc  
   */
 
 
@@ -45,29 +50,56 @@ bool trace = false;
 
 
 /********** RF SWITCH ***********/
-// define such that A=low, B=high gives RF Port 2.
-#define SWITCH_V1 8
-#define SWITCH_V2 12
+// TODO check which way round power pins are - but both are always on
+// so no issue 
+#define SWITCH_P1_A      8
+#define SWITCH_P1_B      9
+#define SWITCH_P1_C      10
+#define SWITCH_P1_POWER  3
+#define SWITCH_P2_A      4
+#define SWITCH_P2_B      5
+#define SWITCH_P2_C      6
+#define SWITCH_P2_POWER  2
+
+#define PORT_LED     15
+#define POWER_LED    16
 
 /********* RF PORTS ************/
-// Check the port number on the RF switch 
+// Check the RF output number on the RF switch 
 // and see where each standard/dut is connected
-enum port {
-  PORT_SHORT = 1,
-  PORT_OPEN = 2,
-  PORT_LOAD = 3,
-  PORT_DUT = 4,
+
+enum port1 {
+  PORT1_SHORT = 2,
+  PORT1_OPEN =  3,
+  PORT1_LOAD =  4,
+  PORT1_THRU =  5,
+  PORT1_DUT1 =  6,
+  PORT1_DUT2 =  7,
+  PORT1_DUT3 =  8,
+  PORT1_DUT4 =  1,
 };
 
-
+enum port2 {
+  PORT2_SHORT = 5,
+  PORT2_OPEN =  6,
+  PORT2_LOAD =  7,
+  PORT2_THRU =  4,
+  PORT2_DUT1 =  3,
+  PORT2_DUT2 =  2,
+  PORT2_DUT3 =  1,
+  PORT2_DUT4 =  8,
+};
 
 
 /********* RF PORT NAME ************/
 static const char name_short[] = "short";
 static const char name_open[] = "open";
 static const char name_load[] = "load";
-static const char name_dut[] = "dut";
-
+static const char name_thru[] = "thru";
+static const char name_dut1[] = "dut1";
+static const char name_dut2[] = "dut2";
+static const char name_dut3[] = "dut3";
+static const char name_dut4[] = "dut4";
 
 /*********** LED DISPLAY ***********/
 #define LED_SWITCH 13
@@ -79,7 +111,11 @@ enum blinkCode {
   BLINK_SHORT = 1,
   BLINK_OPEN = 2,
   BLINK_LOAD = 3,
-  BLINK_DUT = 4,
+  BLINK_THRU = 4,
+  BLINK_DUT1 = 5,
+  BLINK_DUT2 = 6,
+  BLINK_DUT3 = 7,
+  BLINK_DUT4 = 8,  
 };
 
 /********** TIMER *****************/
@@ -107,16 +143,23 @@ bool writing;//for serial semaphore
 long int count; //counter for displaying port set as blinks.
 int blink; //current port state to blink according to blink enum
 
+// pins struct represents RF switch control pin settings
+struct pins {
+    bool a, b, c;
+};
+
+typedef struct pins Pins;
+
 //=============================================================
 // Function Prototypes
 //=============================================================
 
-void setRFPort(int port);
+void setRFPort(int port1, int port2);
 void reportRFPort(const char *name); //const since not modifying the string
 void requestSerial(void);
 void releaseSerial(void);
 bool blinkState(long int count, int blink);
-
+Pins getPins(int port);
 
 /**
  * Defines the valid states for the state machine
@@ -130,8 +173,16 @@ typedef enum
   STATE_OPEN_DURING,
   STATE_LOAD_BEFORE,
   STATE_LOAD_DURING,
-  STATE_DUT_BEFORE,
-  STATE_DUT_DURING,
+  STATE_THRU_BEFORE,
+  STATE_THRU_DURING,  
+  STATE_DUT1_BEFORE,
+  STATE_DUT1_DURING,
+  STATE_DUT2_BEFORE,
+  STATE_DUT2_DURING,
+  STATE_DUT3_BEFORE,
+  STATE_DUT3_DURING,
+  STATE_DUT4_BEFORE,
+  STATE_DUT4_DURING,  
  } StateType;
 
 //state Machine function prototypes
@@ -142,8 +193,16 @@ void stateOpenBefore(void);
 void stateOpenDuring(void);
 void stateLoadBefore(void);
 void stateLoadDuring(void);
-void stateDUTBefore(void);
-void stateDUTDuring(void);
+void stateThruBefore(void);
+void stateThruDuring(void);
+void stateDUT1Before(void);
+void stateDUT1During(void);
+void stateDUT2Before(void);
+void stateDUT2During(void);
+void stateDUT3Before(void);
+void stateDUT3During(void);
+void stateDUT4Before(void);
+void stateDUT4During(void);
 
 /**
  * Type definition used to define the state
@@ -167,11 +226,19 @@ StateMachineType StateMachine[] =
   {STATE_OPEN_DURING, stateOpenDuring}, 
   {STATE_LOAD_BEFORE, stateLoadBefore},
   {STATE_LOAD_DURING, stateLoadDuring},
-  {STATE_DUT_BEFORE, stateDUTBefore},  
-  {STATE_DUT_DURING, stateDUTDuring},  
+  {STATE_THRU_BEFORE, stateThruBefore},
+  {STATE_THRU_DURING, stateThruDuring},  
+  {STATE_DUT1_BEFORE, stateDUT1Before},  
+  {STATE_DUT1_DURING, stateDUT1During},  
+  {STATE_DUT2_BEFORE, stateDUT2Before},  
+  {STATE_DUT2_DURING, stateDUT2During},  
+  {STATE_DUT3_BEFORE, stateDUT3Before},  
+  {STATE_DUT3_DURING, stateDUT3During},  
+  {STATE_DUT4_BEFORE, stateDUT4Before},  
+  {STATE_DUT4_DURING, stateDUT4During},        
 };
 
-int numStates = 8;
+int numStates = 16;
 
 /**
  * Stores the current state of the state machine
@@ -218,7 +285,7 @@ StateType state = STATE_SHORT_BEFORE;    //Start with the first cal standard
 void stateShortBefore(void) {
 
   state = STATE_SHORT_DURING;
-  setRFPort(PORT_SHORT);
+  setRFPort(PORT1_SHORT, PORT2_SHORT);
   reportRFPort(name_short);
   blink = BLINK_SHORT;
 }
@@ -226,7 +293,7 @@ void stateShortBefore(void) {
 void stateOpenBefore(void) {
 
   state = STATE_OPEN_DURING;
-  setRFPort(PORT_OPEN);
+  setRFPort(PORT1_OPEN, PORT2_OPEN);
   reportRFPort(name_open);
   blink = BLINK_OPEN;
 }
@@ -234,20 +301,52 @@ void stateOpenBefore(void) {
 void stateLoadBefore(void) {
 
   state = STATE_LOAD_DURING;
-  setRFPort(PORT_LOAD);
+  setRFPort(PORT1_LOAD,PORT2_LOAD);
   reportRFPort(name_load);
   blink = BLINK_LOAD;
 }
 
-void stateDUTBefore(void) {
 
-  state = STATE_DUT_DURING;
-  setRFPort(PORT_DUT);
-  reportRFPort(name_dut);
-  blink = BLINK_DUT;
+void stateThruBefore(void) {
+
+  state = STATE_THRU_DURING;
+  setRFPort(PORT1_THRU,PORT2_THRU);
+  reportRFPort(name_thru);
+  blink = BLINK_THRU;
 }
 
 
+void stateDUT1Before(void) {
+
+  state = STATE_DUT1_DURING;
+  setRFPort(PORT1_DUT1, PORT2_DUT1);
+  reportRFPort(name_dut1);
+  blink = BLINK_DUT1;
+}
+
+void stateDUT2Before(void) {
+
+  state = STATE_DUT2_DURING;
+  setRFPort(PORT1_DUT2, PORT2_DUT2);
+  reportRFPort(name_dut2);
+  blink = BLINK_DUT2;
+}
+
+void stateDUT3Before(void) {
+
+  state = STATE_DUT3_DURING;
+  setRFPort(PORT1_DUT3, PORT2_DUT3);
+  reportRFPort(name_dut3);
+  blink = BLINK_DUT3;
+}
+
+void stateDUT4Before(void) {
+
+  state = STATE_DUT4_DURING;
+  setRFPort(PORT1_DUT4, PORT2_DUT4);
+  reportRFPort(name_dut4);
+  blink = BLINK_DUT4;
+}
 void stateShortDuring(void) {
 
   state = STATE_SHORT_DURING;
@@ -267,48 +366,51 @@ void stateLoadDuring(void) {
   // do nothing
 }
 
-void stateDUTDuring(void) {
+void stateThruDuring(void) {
 
-  state = STATE_DUT_DURING;
+  state = STATE_THRU_DURING;
+  // do nothing
+}
+
+void stateDUT1During(void) {
+
+  state = STATE_DUT1_DURING;
+  // do nothing
+}
+
+void stateDUT2During(void) {
+
+  state = STATE_DUT2_DURING;
+  // do nothing
+}
+
+void stateDUT3During(void) {
+
+  state = STATE_DUT3_DURING;
+  // do nothing
+}
+
+void stateDUT4During(void) {
+
+  state = STATE_DUT4_DURING;
   // do nothing
 }
 
 
-void setRFPort(int port){
 
-  /*
-   *  Table 5. Truth Table
-   * State V1 V2
-   * RF1 on 0 0
-   * RF2 on 1 0
-   * RF3 on 0 1
-   * RF4 on 1 1
-   * 
-  */
+void setRFPort(int port1, int port2){
 
-  switch(port) {
-    case 1:
-      digitalWrite(SWITCH_V1, LOW);
-      digitalWrite(SWITCH_V2, LOW); 
-      break;
-    case 2:
-      digitalWrite(SWITCH_V1, HIGH);
-      digitalWrite(SWITCH_V2, LOW);
-      break;
-    case 3:
-      digitalWrite(SWITCH_V1, LOW);
-      digitalWrite(SWITCH_V2, HIGH);   
-      break;
-    case 4:  
-      digitalWrite(SWITCH_V1, HIGH);  
-      digitalWrite(SWITCH_V2, HIGH); 
-      break;
-    default:
-      Serial.print("{\"report\":\"error\",\"is\":\"Port ");
-      Serial.print(port);
-      Serial.println(" is not known\"}");
-              
-  } 
+  Pins p1, p2;
+  p1 = getPins(port1);
+  p2 = getPins(port2);
+
+  digitalWrite(SWITCH_P1_A, p1.a);
+  digitalWrite(SWITCH_P1_B, p1.b);
+  digitalWrite(SWITCH_P1_C, p1.c);
+  digitalWrite(SWITCH_P2_A, p2.a);
+  digitalWrite(SWITCH_P2_B, p2.b);
+  digitalWrite(SWITCH_P2_C, p2.c);
+  
 }
 
 void reportRFPort(const char *name){
@@ -323,20 +425,28 @@ void reportRFPort(const char *name){
 bool blinkState(long int count, int blink){
 
   // we want a pattern like this
-  // SHORT: (10)(00)(00)(00)(delay)
-  // OPEN:  (10)(10)(00)(00)(delay)
-  // LOAD:  (10)(10)(10)(00)(delay)
-  // DUT:   (10)(10)(10)(10)(delay) 
+  // SHORT: (10)(00)(00)(00)(00)(00)(00)(00)(delay)
+  // OPEN:  (10)(10)(00)(00)(00)(00)(00)(00)(delay)
+  // LOAD:  (10)(10)(10)(00)(00)(00)(00)(00)(delay)
+  // THRU:  (10)(10)(10)(10)(00)(00)(00)(00)(delay)
+  // DUT1:  (10)(10)(10)(10)(10)(00)(00)(00)(delay) 
+  // DUT2:  (10)(10)(10)(10)(10)(10)(00)(00)(delay) 
+  // DUT3:  (10)(10)(10)(10)(10)(10)(10)(00)(delay) 
+  // DUT4:  (10)(10)(10)(10)(10)(10)(10)(10)(delay)   
   // where delay is the same length again.
 
-  switch (count%12){
+  switch (count%24){
       case 0:
         return true;
       case 2:
         switch (blink){
             case BLINK_OPEN:
             case BLINK_LOAD:
-            case BLINK_DUT:
+            case BLINK_THRU:
+            case BLINK_DUT1:
+            case BLINK_DUT2:
+            case BLINK_DUT3:
+            case BLINK_DUT4:            
               return true;            
             default:
               return false;  
@@ -344,18 +454,60 @@ bool blinkState(long int count, int blink){
       case 4:
         switch (blink){
             case BLINK_LOAD:
-            case BLINK_DUT:
+            case BLINK_THRU:
+            case BLINK_DUT1:
+            case BLINK_DUT2:
+            case BLINK_DUT3:
+            case BLINK_DUT4: 
               return true;            
             default:
               return false;  
         }  
        case 6:
         switch (blink){
-            case BLINK_DUT:
+            case BLINK_THRU:
+            case BLINK_DUT1:
+            case BLINK_DUT2:
+            case BLINK_DUT3:
+            case BLINK_DUT4: 
               return true;            
             default:
               return false;  
-        }              
+        } 
+       case 8:
+        switch (blink){
+            case BLINK_DUT1:
+            case BLINK_DUT2:
+            case BLINK_DUT3:
+            case BLINK_DUT4: 
+              return true;            
+            default:
+              return false;  
+        } 
+       case 10:
+        switch (blink){
+            case BLINK_DUT2:
+            case BLINK_DUT3:
+            case BLINK_DUT4: 
+              return true;            
+            default:
+              return false;  
+        }      
+       case 12:
+        switch (blink){
+            case BLINK_DUT3:
+            case BLINK_DUT4: 
+              return true;            
+            default:
+              return false;  
+        }  
+       case 14:
+        switch (blink){
+            case BLINK_DUT4: 
+              return true;            
+            default:
+              return false;  
+        }                             
       default: 
         return false;
   }
@@ -363,6 +515,19 @@ bool blinkState(long int count, int blink){
 
   
 }
+
+Pins getPins(int port) {
+ 
+  Pins p;
+
+  p.a = (port & ( 1 << 0 )) >> 0;
+  p.b = (port & ( 1 << 1 )) >> 1;
+  p.c = (port & ( 1 << 2 )) >> 2;
+
+  return p;
+    
+}
+
   
 //*****************************************************************************
 
@@ -385,8 +550,10 @@ void SMRun(void)
 //This function is run on a timer interrupt 
 void TimerHandler()
 {
-    digitalWrite(LED_SWITCH,blinkState(count, blink));
+    digitalWrite(PORT_LED,blinkState(count, blink));
     count++;
+    
+    digitalWrite(POWER_LED, digitalRead(SWITCH_P1_POWER)&&digitalRead(SWITCH_P2_POWER));
 }
 
 //===================================================================================
@@ -395,12 +562,25 @@ void TimerHandler()
 
 void setup() {
 
+  // pins for RF swith power
+  pinMode(SWITCH_P1_POWER, OUTPUT);  
+  pinMode(SWITCH_P2_POWER, OUTPUT);     
+    
   // pins for the RF switch control
-  pinMode(SWITCH_V1, OUTPUT);
-  pinMode(SWITCH_V2, OUTPUT);
-  
+  pinMode(SWITCH_P1_A, OUTPUT);
+  pinMode(SWITCH_P1_B, OUTPUT);
+  pinMode(SWITCH_P1_C, OUTPUT);
+  pinMode(SWITCH_P2_A, OUTPUT);
+  pinMode(SWITCH_P2_B, OUTPUT);
+  pinMode(SWITCH_P2_C, OUTPUT);
+    
   // pins for LED display
-  pinMode(LED_SWITCH, OUTPUT);
+  pinMode(PORT_LED, OUTPUT);
+  pinMode(POWER_LED, OUTPUT);
+
+  // Turn on the RF switches
+  digitalWrite(SWITCH_P1_POWER,1);
+  digitalWrite(SWITCH_P2_POWER,1);
 
   // Init timer ITimer1
   ITimer1.init();
@@ -483,10 +663,22 @@ StateType readSerialJSON(StateType state) {
         }
         else if(strcmp(port, name_load) == 0) {
           state = STATE_LOAD_BEFORE;
-        }       
-        else if(strcmp(port, name_dut) == 0) {
-          state = STATE_DUT_BEFORE;
+        }    
+        else if(strcmp(port, name_thru) == 0) {
+          state = STATE_THRU_BEFORE;
+        }             
+        else if(strcmp(port, name_dut1) == 0) {
+          state = STATE_DUT1_BEFORE;
         }          
+        else if(strcmp(port, name_dut2) == 0) {
+          state = STATE_DUT2_BEFORE;
+        } 
+        else if(strcmp(port, name_dut3) == 0) {
+          state = STATE_DUT3_BEFORE;
+        } 
+        else if(strcmp(port, name_dut4) == 0) {
+          state = STATE_DUT4_BEFORE;
+        } 
     }
   }
  

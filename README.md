@@ -2,6 +2,100 @@
 
 A golang-based web service for the pocketvna.com](https://pocketvna.com/) vector network analyser, with an automated one-port calibration facility provided by additional RF hardware, for use with the open-source [practable.io](https://practable.io] remote lab ecosystem. The user interface is similar to [this](https://github.com/dpreid/pidui), although not yet publically released by the developer (coming soon!)
 
+## Two port set up
+
+## Pin connections
+
+| Pin | Connection      |
+|-----|-----------------|
+| 2   | Switch Power    |
+| 3   | Switch Power    |
+| 4   | Port 2 Switch A |
+| 5   | Port 2 Switch B |
+| 6   | Port 2 Switch C |
+| 8   | Port 1 Switch A |
+| 9   | Port 1 Switch B |
+| 10  | Port 1 Switch C |
+| 15  | Port 2 LED      |
+| 16  | Port 1 LED      |
+
+## Switch Configuration
+
+The states available in the prototype firmware were:
+
+| State       | P1-A (D8) | P1-B (D9) | P1-C (D10) | P2-A (D4) | P2-B (D5) | P2-C (D6) |
+|-------------|-----------|-----------|------------|-----------|-----------|-----------|
+| P1 Short    | 0         | 0         | 1          | X         | X         | X         |
+| P1 Open     | 0         | 1         | 0          | X         | X         | X         |
+| P1 Load     | 0         | 1         | 1          | X         | X         | X         |
+| P2 Short    | X         | X         | X          | 1         | 0         | 0         |
+| P2 Open     | X         | X         | X          | 1         | 0         | 1         |
+| P2 Load     | X         | X         | X          | 1         | 1         | 0         |
+| Thru        | 1         | 0         | 0          | 0         | 1         | 1         |
+| DUT-1 (5-2) | 1         | 0         | 1          | 0         | 1         | 0         |
+| Ch0 P2      | X         | X         | X          | 0         | 0         | 0         |
+| Ch1 P2      | X         | X         | X          | 0         | 0         | 1         |
+| Ch7 P2      | X         | X         | X          | 1         | 1         | 1         |
+| Ch0 P1      | 0         | 0         | 0          | X         | X         | X         |
+| Ch6 P1      | 1         | 1         | 0          | X         | X         | X         |
+| Ch7 P1      | 1         | 1         | 1          | X         | X         | X         |
+| DUT-2 (6-1) | 1         | 1         | 0          | 0         | 0         | 1         |
+| DUT-3 (7-0) | 1         | 1         | 1          | 0         | 0         | 0         |
+| DUT-4 (0-7) | 0         | 0         | 0          | 1         | 1         | 1         |
+
+The revised, minimal states are:
+
+| State       | P1-A (D8) | P1-B (D9) | P1-C (D10) | P2-A (D4) | P2-B (D5) | P2-C (D6) |
+|-------------|-----------|-----------|------------|-----------|-----------|-----------|
+| P1 Short    | 0         | 0         | 1          | X         | X         | X         |
+| P1 Open     | 0         | 1         | 0          | X         | X         | X         |
+| P1 Load     | 0         | 1         | 1          | X         | X         | X         |
+| P2 Short    | X         | X         | X          | 1         | 0         | 0         |
+| P2 Open     | X         | X         | X          | 1         | 0         | 1         |
+| P2 Load     | X         | X         | X          | 1         | 1         | 0         |
+| Thru        | 1         | 0         | 0          | 0         | 1         | 1         |
+| DUT-1       | 1         | 0         | 1          | 0         | 1         | 0         |
+| DUT-2       | 1         | 1         | 0          | 0         | 0         | 1         |
+| DUT-3       | 1         | 1         | 1          | 0         | 0         | 0         |
+| DUT-4       | 0         | 0         | 0          | 1         | 1         | 1         |
+
+This table implies the following connections:
+
+### Port 1
+
+| Channel   | Connection |
+|-----------|------------|
+| RF1       | DUT-4      |
+| RF2       | Short      |
+| RF3       | Open       |
+| RF4       | Load       |
+| RF5       | Thru       |
+| RF6       | DUT-1      |
+| RF7       | DUT-2      |
+| RF8       | DUT-3      |
+
+### Port 2
+
+| Channel   | Connection |
+|-----------|------------|
+| RF1       | DUT-3      |
+| RF2       | DUT-2      |
+| RF3       | DUT-1      |
+| RF4       | Thru       |
+| RF5       | Short      |
+| RF6       | Open       |
+| RF7       | Load       |
+| RF8       | DUT-4      |
+
+These connections tally with the prototype.
+
+Note that the connection on the HM321 RF chip on the datasheet.
+
+
+![hm321](./img/hm321.png)
+
+
+
 ## Overview
 
 This repo contains code and design files for the key parts of the system.
