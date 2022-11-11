@@ -234,19 +234,7 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 
 func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
 
-	// Check port 1 is specified
-
-	onlyS11 := rc.Select.S11 && !rc.Select.S12 && !rc.Select.S21 && !rc.Select.S22
-
-	if !onlyS11 {
-		msg := fmt.Sprintf("Error: calibration is only supported on Port1 (S11). Resend the command with only S11 selected (true). You had S11:%v, S12:%v, S21:%v, S22:%v",
-			rc.Select.S11, rc.Select.S12, rc.Select.S21, rc.Select.S22)
-		log.Errorf("RangeCal %s", msg)
-		return pocket.CustomResult{
-			Message: msg,
-			Command: rc,
-		}
-	}
+	// do a full calibration regardless of ports were requested
 
 	// clear previous cal
 	c.Clear()

@@ -43,24 +43,47 @@ func MakeOnePort(pshort, popen, pload, pdut []pocket.SParam) (Command, error) {
 
 }
 
-func PocketToCalibration(p []pocket.SParam) ([]uint64, ComplexArray) {
+// PocketToCalibration changes the array structure to better suit our
+// usages of the results (e.g. calibration calculations, and presentation
+// in the user interface both need a frequency list so let's prepare that now
+// for efficiency)
+func PocketToCalibration(p []pocket.SParam) ([]uint64, SParam) {
 
 	// we'll use append rather than assuming max-length array
 	var freq []uint64
-	var real, imag []float64
+	var s11_real, s11_imag, s12_real, s12_imag, s21_real, s21_imag, s22_real, s22_imag []float64
 
 	for _, param := range p {
 		freq = append(freq, param.Freq)
-		real = append(real, param.S11.Real)
-		imag = append(imag, param.S11.Imag)
+		s11_real = append(real, param.S11.Real)
+		s11_imag = append(imag, param.S11.Imag)
+		s12_real = append(real, param.S12.Real)
+		s12_imag = append(imag, param.S12.Imag)
+		s21_real = append(real, param.S21.Real)
+		s21_imag = append(imag, param.S21.Imag)
+		s22_real = append(real, param.S22.Real)
+		s22_imag = append(imag, param.S22.Imag)
 	}
 
-	ca := ComplexArray{
-		Real: real,
-		Imag: imag,
+	sp := SParam{
+		S11: ComplexArray{
+			Real: s11_real,
+			Imag: s11_imag,
+		},
+		S12: ComplexArray{
+			Real: s12_real,
+			Imag: s12_imag,
+		},
+		S21: ComplexArray{
+			Real: s21_real,
+			Imag: s21_imag,
+		},
+		S22: ComplexArray{
+			Real: s22_real,
+			Imag: s22_imag,
+		},
 	}
-
-	return freq, ca
+	return freq, sp
 
 }
 
@@ -68,7 +91,10 @@ func PocketToResult(p []pocket.SParam) Result {
 	freq, ca := PocketToCalibration(p)
 	return Result{
 		Freq: freq,
-		S11:  ca,
+		S11:  sp.S11,
+		S12:  sp.S12,
+		S21:  sp.S21,
+		S22:  sp.S22,
 	}
 }
 

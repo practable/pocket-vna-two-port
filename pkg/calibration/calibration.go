@@ -13,6 +13,9 @@ import (
 	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
 )
 
+// New creates a Calibration object and the channels
+// needed to communicate with the calibration server
+// which are request, response
 func New(u string, ctx context.Context) Calibration {
 
 	request := make(chan interface{})
@@ -41,23 +44,62 @@ func New(u string, ctx context.Context) Calibration {
 
 }
 
-// we only have one calibration method for now
-// so we can set the command up front
+// For this two-port experiment, we assume
+// a twoport calibration every time
+// Any corrections requiring the use of a one-port
+// cal as part of that two port cal, are handled
+// internal to the calibration service.
 func (c *Calibration) Clear() {
 	c.Command = Command{
-		Command: "oneport",
+		Command: "twoport",
 	}
 }
 
+// Check ensures the results are consistent lengths
 func (r *Result) Check() error {
 
 	if len(r.S11.Real) != len(r.S11.Imag) {
-		err := errors.New("Real and Imag are different lengths")
+		err := errors.New("S11 Real and Imag are different lengths")
+		return err
+	}
+	if len(r.Freq) != len(r.S11.Real) {
+		err := errors.New("Freq and S11 Real/Imag are different lengths")
 		return err
 	}
 
+	if len(r.S11.Real) != len(r.S11.Imag) {
+		err := errors.New("S11 Real and Imag are different lengths")
+		return err
+	}
 	if len(r.Freq) != len(r.S11.Real) {
-		err := errors.New("Freq and Real/Imag are different lengths")
+		err := errors.New("Freq and S11 Real/Imag are different lengths")
+		return err
+	}
+
+	if len(r.S12.Real) != len(r.S12.Imag) {
+		err := errors.New("S12 Real and Imag are different lengths")
+		return err
+	}
+	if len(r.Freq) != len(r.S12.Real) {
+		err := errors.New("Freq and S12 Real/Imag are different lengths")
+		return err
+	}
+
+	if len(r.S21.Real) != len(r.S21.Imag) {
+		err := errors.New("S11 Real and Imag are different lengths")
+		return err
+	}
+	if len(r.Freq) != len(r.S11.Real) {
+		err := errors.New("Freq and S11 Real/Imag are different lengths")
+		return err
+	}
+
+	if len(r.S22.Real) != len(r.S22.Imag) {
+		err := errors.New("S11 Real and Imag are different lengths")
+		return err
+	}
+	if len(r.Freq) != len(r.S22.Real) {
+		err := errors.New("Freq and S11 Real/Imag are different lengths")
 		return err
 	}
 
@@ -65,15 +107,11 @@ func (r *Result) Check() error {
 
 }
 
-// Just in case there are some odd calculation errors in generating
-// the frequency points between runs
-
-func UnequalFreq(a, b, thresh uint64) bool {
-
-	return ((a - b) >= thresh)
-
-}
-
+// CompareFreq compares two lists using a threshold to judge equivalance.
+// This is because there are some small differences in calculating
+// intermediate frequencies in ranges on different hardware,
+// we can run a check that accepts numerical differences that are too
+// small to be scientifically relevant
 func (r *Result) CompareFreq(freq []uint64) error {
 
 	if len(r.Freq) != len(freq) {
@@ -85,7 +123,7 @@ func (r *Result) CompareFreq(freq []uint64) error {
 
 	for i, f := range r.Freq {
 
-		if UnequalFreq(f, freq[i], thresh) {
+		if (f - freq[i]) >= thresh {
 			err := fmt.Errorf("Frequency point %d differs by more than %d Hz (%d vs %d)", i, thresh, f, freq[i])
 			return err
 		}
@@ -95,6 +133,7 @@ func (r *Result) CompareFreq(freq []uint64) error {
 	return nil
 }
 
+// TODO check array format for full 2-port S-params
 func (c *Calibration) SetShortParam(p []pocket.SParam) error {
 	return c.SetShort(PocketToResult(p))
 }
@@ -107,25 +146,41 @@ func (c *Calibration) SetLoadParam(p []pocket.SParam) error {
 	return c.SetLoad(PocketToResult(p))
 }
 
+func (c *Calibration) SetThruParam(p []pocket.SParam) error {
+	return c.SetThru(PocketToResult(p))
+}
+
 func (c *Calibration) SetDUTParam(p []pocket.SParam) error {
 	return c.SetDUT(PocketToResult(p))
 }
 
+// SetShort adds the measurement for the standard short to the cal object
 func (c *Calibration) SetShort(result Result) error {
 	return c.Set("short", result)
 }
 
+//SetOpen adds the measurement for the standard open to the cal object
 func (c *Calibration) SetOpen(result Result) error {
 	return c.Set("open", result)
 }
+
+//SetLoad adds the measurement for the standard load to the cal object
 func (c *Calibration) SetLoad(result Result) error {
 	return c.Set("load", result)
 }
 
+//SetThru adds the measurement for the standard thru to the cal object
+func (c *Calibration) SetThru(result Result) error {
+	return c.Set("thru", result)
+}
+
+// SetDUT adds the measurement for the DUT to the cal object
 func (c *Calibration) SetDUT(result Result) error {
 	return c.Set("dut", result)
 }
 
+// Set adds results to the cal object, ensuring that the frequency
+// field is populated
 func (c *Calibration) Set(target string, result Result) error {
 
 	err := result.CompareFreq(c.Command.Freq)
@@ -141,15 +196,17 @@ func (c *Calibration) Set(target string, result Result) error {
 
 	switch {
 	case target == "short":
-		c.Command.Short = result.S11
+		c.Command.Short = result
 	case target == "open":
-		c.Command.Open = result.S11
+		c.Command.Open = result
 	case target == "load":
-		c.Command.Load = result.S11
+		c.Command.Load = result
+	case target == "thru":
+		c.Command.Thru = result
 	case target == "dut":
-		c.Command.DUT = result.S11
+		c.Command.DUT = result
 	default:
-		return fmt.Errorf("Unknown measurement: %s. Should be short, open, load, or dut.", target)
+		return fmt.Errorf("Unknown measurement: %s. Should be short, open, load, thru, or dut.", target)
 	}
 
 	return nil
@@ -157,7 +214,7 @@ func (c *Calibration) Set(target string, result Result) error {
 }
 
 // no need for errors with messages - should have found these out by now -
-// this is mainly a check that all requirement elements are present
+// this is mainly a check that all required elements are present
 // but adding the belt and braces of checking individual array lengths
 func (ca *ComplexArray) BadLen(freq []uint64) bool {
 
@@ -187,7 +244,9 @@ func (c *Calibration) Apply() (Result, error) {
 	if c.Command.Load.BadLen(c.Command.Freq) {
 		return result, errors.New("Wrong number of samples in Load data")
 	}
-
+	if c.Command.Thru.BadLen(c.Command.Freq) {
+		return result, errors.New("Wrong number of samples in Thru data")
+	}
 	if c.Command.DUT.BadLen(c.Command.Freq) {
 		return result, errors.New("Wrong number of samples in DUT data")
 	}

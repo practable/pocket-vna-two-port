@@ -21,51 +21,79 @@ type Calibration struct {
 /* Command object definition in python calibration service
 
    {
-    "cmd":"oneport",
+    "cmd":"twoportport",
     "freq": np.linspace(1e6,100e6,num=N),
     "short":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
+        "s11": {
+            "real":np.random.rand(N),
+            "imag":np.random.rand(N),
             },
-     "open":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
+         "s12" : {
+            "real":np.random.rand(N),
+            "imag":np.random.rand(N),
             },
-     "load":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
+        "s21": {
+            "real":np.random.rand(N),
+            "imag":np.random.rand(N),
             },
-     "dut":{
-        "real":np.random.rand(N),
-        "imag":np.random.rand(N),
-            }
+         "s22" : {
+            "real":np.random.rand(N),
+            "imag":np.random.rand(N),
+            },
+      },
+     "open":{ //as for short  },
+     "load":{ // as for short },
+     "load":{ // as for short },
+     "dut":{ // as for short  }
     }
 */
 
-// this command only has enough fields to support a oneport calibration
-// will need extending for two port, or other more exotic calibrations
+// Command represents a twoport calibration command (request)
 type Command struct {
-	Command string       `json:"cmd"`
-	Freq    []uint64     `json:"freq"`
-	Short   ComplexArray `json:"short"`
-	Open    ComplexArray `json:"open"`
-	Load    ComplexArray `json:"load"`
-	DUT     ComplexArray `json:"dut"`
+	Command string   `json:"cmd"`
+	Freq    []uint64 `json:"freq"`
+	Short   SParam   `json:"short"`
+	Open    SParam   `json:"open"`
+	Load    SParam   `json:"load"`
+	Through SParam   `json:"thru"`
+	DUT     SParam   `json:"dut"`
 }
 
-/* Result object definition in python calibration service
+/* 2-port Result object definition in python calibration service
 {
-          "freq": network.f,
-          "s11": {
-                      "real": np.squeeze(network.s_re),
-                      "imag": np.squeeze(network.s_im),
-                  }
+   "freq": network.f,
+   "s11": {
+      "real": np.squeeze(network.s_re[:,0,0]),
+      "imag": np.squeeze(network.s_im[:,0,0]),
+           },
+  "s12" : {
+      "real": np.squeeze(network.s_re[:,0,1]),
+      "imag": np.squeeze(network.s_im[:,0,1]),
+     },
+ "s21": {
+      "real": np.squeeze(network.s_re[:,1,0]),
+      "imag": np.squeeze(network.s_im[:,1,0]),
+     },
+  "s22" : {
+      "real": np.squeeze(network.s_re[:,1,1]),
+      "imag": np.squeeze(network.s_im[:,1,1]),
+     },
    }
 */
 
 type Result struct {
 	Freq []uint64     `json:"freq"`
 	S11  ComplexArray `json:"s11"`
+	S12  ComplexArray `json:"s12"`
+	S21  ComplexArray `json:"s21"`
+	S22  ComplexArray `json:"s22"`
+}
+
+type SParam struct {
+	S11 ComplexArray `json:"s11"`
+	S12 ComplexArray `json:"s12"`
+	S21 ComplexArray `json:"s21"`
+	S22 ComplexArray `json:"s22"`
 }
 
 type ComplexArray struct {
