@@ -19,7 +19,6 @@ from skrf.media import DefinedGammaZ0
 import skrf as rf
 import time
 import warnings
-import matplotlib.pyplot as plt
 
 
 #define keys as variables so that mistypes throw an error
@@ -928,41 +927,43 @@ if __name__ == "__main__":
     
     # check the cal result against the one we calculated and manually
     # compared to the matlab version earlier
+    
+    # remove these to avoid needing matplotlib in the docker container
     dut_exp = rf.Network('test/expected/twoport.s2p', name="validated python demo")
     dut_cal = result
     dut_cal.Name="calibration service"
     
-    plt.figure()
-    plt.title("S21")
-    dut_cal.plot_s_db(1,0)
-    dut_exp.plot_s_db(1,0)
-    plt.savefig("img/twoport-cal-s21-db.png",dpi=300)
-    plt.show()
-    plt.close()
+    # plt.figure()
+    # plt.title("S21")
+    # dut_cal.plot_s_db(1,0)
+    # dut_exp.plot_s_db(1,0)
+    # plt.savefig("img/twoport-cal-s21-db.png",dpi=300)
+    # plt.show()
+    # plt.close()
 
-    plt.figure()
-    plt.title("S12")
-    dut_cal.plot_s_db(0,1)
-    dut_exp.plot_s_db(0,1)
-    plt.savefig("img/twoport-cal-s12-db.png",dpi=300)
-    plt.show()
-    plt.close()
+    # plt.figure()
+    # plt.title("S12")
+    # dut_cal.plot_s_db(0,1)
+    # dut_exp.plot_s_db(0,1)
+    # plt.savefig("img/twoport-cal-s12-db.png",dpi=300)
+    # plt.show()
+    # plt.close()
 
-    plt.figure()
-    plt.title("S11")
-    dut_cal.plot_s_db(0,0)
-    dut_exp.plot_s_db(0,0)
-    plt.savefig("img/twoport-cal-s11-db.png",dpi=300)
-    plt.show()
-    plt.close()
+    # plt.figure()
+    # plt.title("S11")
+    # dut_cal.plot_s_db(0,0)
+    # dut_exp.plot_s_db(0,0)
+    # plt.savefig("img/twoport-cal-s11-db.png",dpi=300)
+    # plt.show()
+    # plt.close()
 
-    plt.figure()
-    plt.title("S22")
-    dut_cal.plot_s_db(1,1)
-    dut_exp.plot_s_db(1,1)
-    plt.savefig("img/twoport-cal-s22-db.png",dpi=300)
-    plt.show()
-    plt.close()
+    # plt.figure()
+    # plt.title("S22")
+    # dut_cal.plot_s_db(1,1)
+    # dut_exp.plot_s_db(1,1)
+    # plt.savefig("img/twoport-cal-s22-db.png",dpi=300)
+    # plt.show()
+    # plt.close()
     
     N = len(dut_exp.f)
         

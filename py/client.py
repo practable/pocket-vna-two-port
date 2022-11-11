@@ -10,6 +10,7 @@ websocket client for calculating calibrations
 
 from calibration import * 
 import json
+import os
 import _thread
 import time
 import traceback
@@ -66,8 +67,10 @@ if __name__ == "__main__":
     print("$ session relay")
     print("$ websocat ws://localhost:8888/ws/calibration readfile:./test/json/oneport.json -B 999999")
     
-    websocket.enableTrace(True)
-    ws = websocket.WebSocketApp("ws://localhost:8888/ws/calibration",
+    url = os.environ.get("SESSION_URL","ws://172.17.0.1:8888/ws/calibration")
+
+    websocket.enableTrace(False)
+    ws = websocket.WebSocketApp(url,
                               #on_open=on_open,
                               on_message=on_message,
                               on_error=on_error,

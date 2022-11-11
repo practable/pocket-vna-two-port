@@ -6,3 +6,4 @@ RUN pip install numpy
 RUN pip install scipy
 RUN pip install scikit-rf
 RUN pip install websocket-client
+RUN pip install matplotlib
