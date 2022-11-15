@@ -19,11 +19,11 @@ from skrf.media import DefinedGammaZ0
 import matplotlib.pyplot as plt
 
 # measured files supplied from pocket-VNA measurement
-twoport_short = rf.Network('test/measured/twoport-short-p1.s2p', name="short")
-twoport_open = rf.Network('test/measured/twoport-open-p1.s2p', name="open")
-twoport_load = rf.Network('test/measured/twoport-load-p1.s2p', name="load")
-twoport_thru = rf.Network('test/measured/twoport-thru.s2p', name="thru")
-twoport_dut  = rf.Network('test/measured/twoport-dut.s2p', name="scikit-rf TwelveTerm") #Name for legend later, not what it is now
+twoport_short = rf.Network('test/measured/twoport-dataset-1/twoport-short-p1.s2p', name="short")
+twoport_open = rf.Network('test/measured/twoport-dataset-1/twoport-open-p1.s2p', name="open")
+twoport_load = rf.Network('test/measured/twoport-dataset-1/twoport-load-p1.s2p', name="load")
+twoport_thru = rf.Network('test/measured/twoport-dataset-1/twoport-thru.s2p', name="thru")
+twoport_dut  = rf.Network('test/measured/twoport-dataset-1/twoport-dut.s2p', name="scikit-rf TwelveTerm") #Name for legend later, not what it is now
 
 measured = [\
             twoport_short,
@@ -60,18 +60,11 @@ dut_cal = cal.apply_cal(twoport_dut)
 
 # # check results against supplied data
 
-dut_exp = rf.Network('test/supplied/twoport-dut-cal.s2p', name='supplied by course team')
+dut_exp = rf.Network('test/supplied/twoport-dataset-1/twoport-dut-cal.s2p', name='supplied by course team')
 
 ## Try the 3-term calibration on the same data, for S11
 
-# measured files supplied from pocket-VNA measurement
-meas2port = [\
-        rf.Network('test/measured/short.s2p'),
-        rf.Network('test/measured/open.s2p'),
-        rf.Network('test/measured/load.s2p'),
-        ]
 # the data we want is S11
-
 oneport_short_s11 = rf.Network(frequency=f, s=twoport_short.s[:,0,0], name="short")
 oneport_open_s11 = rf.Network(frequency=f, s=twoport_open.s[:,0,0], name="open")
 oneport_load_s11 = rf.Network(frequency=f, s=twoport_load.s[:,0,0], name="load")
@@ -102,7 +95,7 @@ dut_s11 = rf.Network(frequency=f, s=twoport_dut.s[:,0,0], name="scikit-rf OnePor
 dut_s11_cal = cal_s11.apply_cal(dut_s11)
 
 # save results for comparison against automated implementation of this approach
-dut_s11_cal.write_touchstone('test/expected/twoport_s11_OnePort.s1p')
+dut_s11_cal.write_touchstone('test/expected/twoport-dataset-1/twoport_s11_OnePort.s1p')
 
 # now check S22
 oneport_short_s22 = rf.Network(frequency=f, s=twoport_short.s[:,1,1], name="short")
@@ -131,7 +124,7 @@ dut_cal.s[:,0,0] = dut_s11_cal.s[:,0,0]
 dut_cal.s[:,1,1] = dut_s22_cal.s[:,0,0]
 
 # # save results for comparison against automated implementation of this approach
-dut_cal.write_touchstone('test/expected/twoport.s2p')
+dut_cal.write_touchstone('test/expected/twoport-dataset-1/twoport.s2p')
 
 
 # check results against supplied data
@@ -140,7 +133,7 @@ plt.figure()
 plt.title("S21")
 dut_cal.plot_s_db(1,0)
 dut_exp.plot_s_db(1,0)
-plt.savefig("img/twoport-demo-s21-db.png",dpi=300)
+plt.savefig("img/twoport-dataset-1/twoport-demo-s21-db.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -148,7 +141,7 @@ plt.figure()
 plt.title("S12")
 dut_cal.plot_s_db(0,1)
 dut_exp.plot_s_db(0,1)
-plt.savefig("img/twoport-demo-s12-db.png",dpi=300)
+plt.savefig("img/twoport-dataset-1/twoport-demo-s12-db.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -157,7 +150,7 @@ plt.title("S11")
 dut_cal.plot_s_db(0,0)
 dut_exp.plot_s_db(0,0)
 dut_s11_cal.plot_s_db(0,0)
-plt.savefig("img/twoport-demo-s11-db.png",dpi=300)
+plt.savefig("img/twoport-dataset-1/twoport-demo-s11-db.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -166,7 +159,7 @@ plt.title("S22")
 dut_cal.plot_s_db(1,1)
 dut_exp.plot_s_db(1,1)
 dut_s22_cal.plot_s_db(0,0)
-plt.savefig("img/twoport-demo-s22-db.png",dpi=300)
+plt.savefig("img/twoport-dataset-1/twoport-demo-s22-db.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -174,7 +167,7 @@ plt.figure()
 plt.title("S12, S21")
 dut_cal.plot_s_db(0,1)
 dut_cal.plot_s_db(1,0)
-plt.savefig("img/twoport-demo-s12s21-db-twelveterm.png",dpi=300)
+plt.savefig("img/twoport-dataset-1/twoport-demo-s12s21-db-twelveterm.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -182,7 +175,7 @@ plt.figure()
 plt.title("S12, S21")
 dut_exp.plot_s_db(1,0)
 dut_exp.plot_s_db(0,1)
-plt.savefig("img/twoport-demo-s12s21-db-supplied.png",dpi=300)
+plt.savefig("img/twoport-dataset-1/twoport-demo-s12s21-db-supplied.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -303,7 +296,7 @@ request = {
         }
 
 
-with open('test/json/twoport.json', 'w') as f:
+with open('test/json/twoport-dataset-1/twoport.json', 'w') as f:
      json.dump(request, f)
 
 

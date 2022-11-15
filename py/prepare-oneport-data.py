@@ -21,9 +21,9 @@ import numpy as np
 
 # measured files supplied from pocket-VNA measurement
 meas2port = [\
-        rf.Network('test/measured/short.s2p'),
-        rf.Network('test/measured/open.s2p'),
-        rf.Network('test/measured/load.s2p'),
+        rf.Network('test/measured/oneport/short.s2p'),
+        rf.Network('test/measured/oneport/open.s2p'),
+        rf.Network('test/measured/oneport/load.s2p'),
         ]
 # the data we want is S11
 
@@ -54,29 +54,29 @@ cal = OnePort(\
 cal.run()
 
 # apply it to a dut
-dut2port = rf.Network('test/supplied/DUTuncal.s2p')
+dut2port = rf.Network('test/supplied/oneport/DUTuncal.s2p')
 dut1port = rf.Network(frequency=dut2port.frequency, s=dut2port.s[:,0,0], name="scikit cal")
 dut_caled = cal.apply_cal(dut1port)
 
 # save results for comparison against automated implementation of this approach
-dut_caled.write_touchstone('test/expected/expected.s1p')
+dut_caled.write_touchstone('test/expected/oneport/expected.s1p')
 
 # check results against supplied data
 
-expected2port = rf.Network('test/supplied/DUTcal.s2p')
+expected2port = rf.Network('test/supplied/oneport/DUTcal.s2p')
 expected1port = rf.Network(frequency=expected2port.frequency, s=expected2port.s[:,0,0], name="matlab cal")
 
 plt.figure()
 dut_caled.plot_s_db()
 expected1port.plot_s_db()
-plt.savefig("img/demo-db.png",dpi=300)
+plt.savefig("img/oneport/demo-db.png",dpi=300)
 plt.show()
 plt.close()
 
 plt.figure()
 dut_caled.plot_s_deg()
 expected1port.plot_s_deg()
-plt.savefig("img/demo-deg.png",dpi=300)
+plt.savefig("img/oneport/demo-deg.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -86,7 +86,7 @@ mcdb = np.squeeze(expected1port.s_db)
 plt.plot(dut_caled.f, scdb-mcdb)
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Error (dB)")
-plt.savefig("img/demo-db-error.png",dpi=300)
+plt.savefig("img/oneport/demo-db-error.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -97,7 +97,7 @@ plt.plot(dut_caled.f, scdeg-mcdeg)
 plt.ylim([-180,180])
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Error (deg)")
-plt.savefig("img/demo-deg-error.png",dpi=300)
+plt.savefig("img/oneport/demo-deg-error.png",dpi=300)
 plt.show()
 plt.close()
 
@@ -141,7 +141,7 @@ request = {
         }
 
 import json
-with open('test/json/oneport.json', 'w') as f:
+with open('test/json/oneport/oneport.json', 'w') as f:
     json.dump(request, f)
 
 

@@ -890,7 +890,7 @@ if __name__ == "__main__":
     
     time_start = time.time()
     
-    obj = clean_twoport(load_json('test/json/twoport.json'))
+    obj = clean_twoport(load_json('test/json/twoport-dataset-2/twoport.json'))
  
     time_load = time.time()
     
@@ -929,7 +929,7 @@ if __name__ == "__main__":
     # compared to the matlab version earlier
     
     # remove these to avoid needing matplotlib in the docker container
-    dut_exp = rf.Network('test/expected/twoport.s2p', name="validated python demo")
+    dut_exp = rf.Network('test/expected/twoport-dataset-1/twoport.s2p', name="validated python demo")
     dut_cal = result
     dut_cal.Name="calibration service"
     
