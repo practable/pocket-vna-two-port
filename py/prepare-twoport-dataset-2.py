@@ -347,7 +347,7 @@ s11_3t_error = dut_sup.s_db[:,0,0] - dut_cal_hybrid.s_db[:,0,0]
 s22_3t_error = dut_sup.s_db[:,1,1] - dut_cal_hybrid.s_db[:,1,1] 
     
     
-if False:
+if True:
     fig = plt.figure()
     plt.title("S11 error")
 
@@ -526,7 +526,23 @@ request = {
 with open('test/json/twoport-dataset-2/twoport.json', 'w') as f:
       json.dump(request, f)
 
+# Try a cal when we request just one measurement
 
+sop = twoport_dut.s #this is a reference not a copy
+sop[:,0,1]=0*sop[:,0,1] #modify twoport_dut by reference
+sop[:,1,0]=0*sop[:,0,1]
+sop[:,1,1]=0*sop[:,1,1]
+dut_1p = cal12t.apply_cal(twoport_dut) #this is now modified
 
+if False:
+    fig = plt.figure()
+    plt.title("S11")
+    dut_1p.plot_s_db(0,0)
+    dut_sup.plot_s_db(0,0)
+    scale_frequency_ticks(fig.gca(), "GHz")
+    plt.xlabel("Frequency (GHz)")
+    plt.savefig("img/twoport-dataset-2/1p-12t-vs-sup-s11-db.png",dpi=300)
+    plt.show()
+    plt.close()
 
 
