@@ -12,15 +12,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
-	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
-
-	//"github.com/timdrysdale/go-pocketvna/pkg/calibration"
-	//"github.com/timdrysdale/go-pocketvna/pkg/rfswitch"
-
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
 )
+
+type Stream struct {
+	u        string
+	R        *reconws.ReconWs
+	Ctx      context.Context
+	Request  chan interface{}
+	Response chan interface{}
+	Timeout  time.Duration
+}
 
 // TODO duplicate the testing applied to RunDirect
 func New(u string, ctx context.Context) Stream {

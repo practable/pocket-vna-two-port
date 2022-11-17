@@ -14,8 +14,8 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
-	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
 )
 
 func init() {

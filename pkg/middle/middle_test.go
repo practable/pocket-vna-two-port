@@ -111,13 +111,15 @@ func TestFakeMiddle(t *testing.T) {
 		v, ok := request.(pocket.ReasonableFrequencyRange)
 
 		assert.True(t, ok)
-
+		if debug {
+			t.Log(v)
+		}
 		assert.Equal(t, "rr", v.Command.Command)
 	}
 
 	// Send something back to avoid mock Handler stalling on readmessage
 	select {
-	case stream.Response <- pocket.Command{ID: "0"}:
+	case stream.Response <- pocket.Command{ID: "1"}:
 	case <-time.After(timeout):
 		t.Error(t, "timeout awaiting send response")
 	}
@@ -140,7 +142,7 @@ func TestFakeMiddle(t *testing.T) {
 		}()
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 }
 
 func TestMiddle(t *testing.T) {
@@ -252,14 +254,18 @@ func TestMiddle(t *testing.T) {
 		err := json.Unmarshal(m.Data, &rq)
 
 		assert.NoError(t, err)
-
+		t.Log(rq)
 		assert.Equal(t, "rq", rq.Command.Command)
 
 		// TODO check message contents are ok
 
 		// cast to int to make human readable in assert error message
-		assert.Equal(t, 100000, int(rq.Result[0].Freq))
-		assert.Equal(t, 4000000, int(rq.Result[1].Freq))
+		if len(rq.Result) == 2 {
+			assert.Equal(t, 100000, int(rq.Result[0].Freq))
+			assert.Equal(t, 4000000, int(rq.Result[1].Freq))
+		} else {
+			t.Fatal("wrong length results")
+		}
 
 	}
 

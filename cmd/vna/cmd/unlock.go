@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
 )
 
 // unlockCmd represents the unlock command

@@ -25,7 +25,7 @@ import (
 	"github.com/ory/viper"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/timdrysdale/go-pocketvna/pkg/middle"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/middle"
 )
 
 // streamCmd represents the stream command
