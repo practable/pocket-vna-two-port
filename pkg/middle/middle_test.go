@@ -26,6 +26,16 @@ import (
 var verbose bool
 var debug bool
 
+/*
+to setup for the test:
+connect rfswitch
+sessionrelay host&
+cd pkg/rfswitch
+./connectlocalswitch.sh /dev/ttyUSB1 #runs in background (check correct /dev/? for RF switch with dmesg)
+cd ../../py
+python client.py & #run the calibration service
+*/
+
 func TestMain(m *testing.M) {
 	// Setup  logging
 	debug = false
@@ -254,7 +264,6 @@ func TestMiddle(t *testing.T) {
 		err := json.Unmarshal(m.Data, &rq)
 
 		assert.NoError(t, err)
-		t.Log(rq)
 		assert.Equal(t, "rq", rq.Command.Command)
 
 		// TODO check message contents are ok
@@ -271,82 +280,8 @@ func TestMiddle(t *testing.T) {
 
 	/* Test rangeCal */
 
-	// Should work because we ignore the Select settings and do a full two-port cal
-
-	rq = pocket.RangeQuery{
-		Command:         pocket.Command{Command: "rc", ID: "ignores-bad-port-setting-for-cal"},
-		Range:           pocket.Range{Start: 100000, End: 4000000},
-		LogDistribution: true,
-		Avg:             1,
-		Size:            2,
-		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
-	}
-
-	message, err = json.Marshal(rq)
-
-	assert.NoError(t, err)
-
-	ws = reconws.WsMessage{
-		Data: message,
-		Type: mt,
-	}
-
-	select {
-	case streamWrite <- ws:
-	case <-time.After(timeout):
-		t.Error(t, "timeout awaiting send message")
-	}
-
-	idx, err := mds.LastReadIndex()
-	assert.NoError(t, err)
-	<-time.After(time.Second)
-
-	msgs := mds.All()
-
-	var responseFiltered reconws.WsMessage
-
-LOOP1:
-
-	for i := idx; i < len(msgs); i++ {
-
-		response, err := mds.NextNoWait()
-		assert.NoError(t, err)
-		lri, err := mds.LastReadIndex()
-		assert.NoError(t, err)
-		log.Infof("Read %d should match LastRead %d\n", i+1, lri)
-		m, ok := response.(reconws.WsMessage)
-		assert.True(t, ok)
-		if string(m.Data) != "{\"cmd\":\"hb\"}" {
-			responseFiltered = m
-			break LOOP1
-		}
-	}
-
-	var cr pocket.CustomResult
-
-	err = json.Unmarshal(responseFiltered.Data, &cr)
-
-	assert.NoError(t, err)
-
-	expectedError := "Error: calibration is only supported on Port1 (S11). Resend the command with only S11 selected (true). You had S11:true, S12:false, S21:true, S22:false"
-
-	assert.Equal(t, expectedError, cr.Message)
-
-	// re unmarshal to get the command info
-
-	err = json.Unmarshal(responseFiltered.Data, &rq)
-
-	assert.NoError(t, err)
-
-	assert.Equal(t, "rc", rq.Command.Command)
-	assert.Equal(t, "bad-port-setting-for-cal", rq.Command.ID)
-
-	// Check the command was sent back to us so we can check it
-	assert.Equal(t, 100000, int(rq.Range.Start))
-	assert.Equal(t, 4000000, int(rq.Range.End))
-
-	// Check the results are empty (as they should be on an error)
-	assert.Equal(t, 0, len(rq.Result))
+	// TODO - consider replacment test. Now won't fail on incorrect Select though
+	// so do test later to avoid messing up next test ...
 
 	/* Test calibratedRangeQuery - will fail because there is no cal in place*/
 
@@ -372,13 +307,13 @@ LOOP1:
 		t.Error(t, "timeout awaiting send message")
 	}
 
-	idx, err = mds.LastReadIndex()
+	idx, err := mds.LastReadIndex()
 	assert.NoError(t, err)
 	<-time.After(time.Second)
 
-	msgs = mds.All()
+	msgs := mds.All()
 
-	responseFiltered = reconws.WsMessage{}
+	var responseFiltered reconws.WsMessage
 
 LOOP2:
 
@@ -400,15 +335,17 @@ LOOP2:
 	// should just be a pocket.RangeQuery result when it is a success
 	// unmarshal to get the command info
 
+	var cr pocket.CustomResult
+
 	err = json.Unmarshal(responseFiltered.Data, &cr)
 
 	assert.NoError(t, err)
 
-	expectedError = "Error. No existing calibration. Please calibrate with rc command"
+	expectedError := "Error. No existing calibration. Please calibrate with rc command"
 
 	assert.Equal(t, expectedError, cr.Message)
 
-	/* Test rangeCal with correct S11 setting */
+	/* Test rangeCal */
 
 	rq = pocket.RangeQuery{
 		Command:         pocket.Command{Command: "rc", ID: "good"},
@@ -416,7 +353,7 @@ LOOP2:
 		LogDistribution: true,
 		Avg:             1,
 		Size:            2,
-		Select:          pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
+		// no need for Select because cal routine handles it
 	}
 
 	message, err = json.Marshal(rq)
@@ -439,7 +376,7 @@ LOOP2:
 	idx, err = mds.LastReadIndex()
 	assert.NoError(t, err)
 
-	<-time.After(2 * time.Second)
+	<-time.After(5 * time.Second)
 
 	msgs = mds.All()
 
@@ -458,7 +395,7 @@ LOOP2:
 			log.Infof("Read %d should match LastRead %d\n", i+1, lri)
 			m, ok := response.(reconws.WsMessage)
 			assert.True(t, ok)
-			if string(m.Data) != "{\"cmd\":\"hb\"}" {
+			if string(m.Data) != "{\"cmd\":\"hb\"}" { //hb is heartbeat
 				responseFiltered = m
 				break LOOP3
 			}
@@ -508,7 +445,7 @@ LOOP2:
 	/* Test calibratedRangeQuery */
 	crq = pocket.CalibratedRangeQuery{
 		Command: pocket.Command{Command: "crq"},
-		What:    "dut",
+		What:    "dut1",
 		Avg:     1,
 		Select:  pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
 	}

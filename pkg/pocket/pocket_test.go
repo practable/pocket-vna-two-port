@@ -18,8 +18,8 @@ var verbose bool
 
 func TestMain(m *testing.M) {
 	// Setup  logging
-	debug := true
-	verbose = true
+	debug := false
+	verbose = false
 
 	if debug {
 		log.SetLevel(log.TraceLevel)
