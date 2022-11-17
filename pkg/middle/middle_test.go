@@ -17,10 +17,10 @@ import (
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/timdrysdale/go-pocketvna/pkg/drain"
-	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
-	"github.com/timdrysdale/go-pocketvna/pkg/reconws"
-	"github.com/timdrysdale/go-pocketvna/pkg/stream"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/drain"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/stream"
 )
 
 var verbose bool
@@ -265,10 +265,10 @@ func TestMiddle(t *testing.T) {
 
 	/* Test rangeCal */
 
-	// Should throw an error because S21 is also true, but we only support 1port cal...
+	// Should work because we ignore the Select settings and do a full two-port cal
 
 	rq = pocket.RangeQuery{
-		Command:         pocket.Command{Command: "rc", ID: "bad-port-setting-for-cal"},
+		Command:         pocket.Command{Command: "rc", ID: "ignores-bad-port-setting-for-cal"},
 		Range:           pocket.Range{Start: 100000, End: 4000000},
 		LogDistribution: true,
 		Avg:             1,

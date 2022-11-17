@@ -7,11 +7,18 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/timdrysdale/go-pocketvna/pkg/calibration"
-	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
-	"github.com/timdrysdale/go-pocketvna/pkg/rfswitch"
-	"github.com/timdrysdale/go-pocketvna/pkg/stream"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/calibration"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/rfswitch"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/stream"
 )
+
+type Middle struct {
+	Calibration *calibration.Calibration
+	Stream      *stream.Stream
+	Switch      *rfswitch.Switch
+	VNA         *pocket.VNAService
+}
 
 func New(uc, ur, us string, ctx context.Context) Middle {
 
@@ -121,22 +128,9 @@ func HandleRequest(request interface{}, c *calibration.Calibration, r *rfswitch.
 
 func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
 
-	//TODO implement the application of the calibration
-
-	// Check port 1 is specified
-
-	onlyS11 := crq.Select.S11 && !crq.Select.S12 && !crq.Select.S21 && !crq.Select.S22
-
-	if !onlyS11 {
-		msg := fmt.Sprintf("Error: calibration is only supported on Port1 (S11). Resend the command with only S11 selected (true). You had S11:%v, S12:%v, S21:%v, S22:%v",
-			crq.Select.S11, crq.Select.S12, crq.Select.S21, crq.Select.S22)
-		return pocket.CustomResult{
-			Message: msg,
-			Command: crq,
-		}
-	}
-
 	sc, ok := (c.Scan).(pocket.RangeQuery)
+
+	// Scan.Select can have any value, because we did a two-port calibration
 
 	if !ok {
 		return pocket.CustomResult{
@@ -161,9 +155,25 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 		name = "load"
 		err = r.SetLoad()
 
-	case crq.What == "dut" || crq.What == "d":
-		name = "dut"
-		err = r.SetDUT()
+	case crq.What == "thru" || crq.What == "t":
+		name = "thru"
+		err = r.SetThru()
+
+	case crq.What == "dut1" || crq.What == "1":
+		name = "dut1"
+		err = r.SetDUT1()
+
+	case crq.What == "dut2" || crq.What == "2":
+		name = "dut2"
+		err = r.SetDUT2()
+
+	case crq.What == "dut3" || crq.What == "3":
+		name = "dut3"
+		err = r.SetDUT3()
+
+	case crq.What == "dut4" || crq.What == "4":
+		name = "dut4"
+		err = r.SetDUT4()
 	default:
 		name = crq.What
 		err = fmt.Errorf("unrecognised value of what: %s", name)
@@ -234,8 +244,6 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 
 func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
 
-	// do a full calibration regardless of ports were requested
-
 	// clear previous cal
 	c.Clear()
 
@@ -249,6 +257,11 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 	// SHORT
 
 	name := "short"
+
+	scan.Select = pocket.SParamSelect{
+		S11: true,
+		S22: true,
+	}
 
 	log.Debugf("Middle.RangeCal: setting rfswitch to %s", name)
 
@@ -305,7 +318,10 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 	// OPEN
 
 	name = "open"
-
+	scan.Select = pocket.SParamSelect{
+		S11: true,
+		S22: true,
+	}
 	err = r.SetOpen()
 
 	if err != nil {
@@ -349,7 +365,10 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 	// LOAD
 
 	name = "load"
-
+	scan.Select = pocket.SParamSelect{
+		S11: true,
+		S22: true,
+	}
 	err = r.SetLoad()
 
 	if err != nil {
@@ -382,6 +401,54 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 	}
 
 	err = c.SetLoadParam(result)
+
+	if err != nil {
+		return pocket.CustomResult{
+			Message: "Error putting data for " + name + " into cal store: " + err.Error(),
+			Command: result,
+		}
+	}
+
+	// THRU
+	name = "thru"
+	scan.Select = pocket.SParamSelect{
+		S11: true,
+		S12: true,
+		S21: true,
+		S22: true,
+	}
+	err = r.SetThru()
+
+	if err != nil {
+		return pocket.CustomResult{
+			Message: "Error setting RF switch to " + name + ": " + err.Error(),
+			Command: rc,
+		}
+	}
+
+	v.Request <- scan
+
+	response = <-v.Response
+
+	rrq, ok = response.(pocket.RangeQuery)
+
+	if !ok {
+		return pocket.CustomResult{
+			Message: "Error measuring " + name,
+			Command: response,
+		}
+	}
+
+	result = rrq.Result
+
+	if len(result) != rc.Size {
+		return pocket.CustomResult{
+			Message: "Error measuring " + name,
+			Command: response,
+		}
+	}
+
+	err = c.SetThruParam(result)
 
 	if err != nil {
 		return pocket.CustomResult{
