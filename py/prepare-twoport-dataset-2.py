@@ -15,7 +15,8 @@ Modified 2022-11-10 from prepare-twoport-dataset-1.py
 import json
 import numpy as np
 import skrf as rf
-from skrf.calibration import OnePort, TwelveTerm
+from skrf.plotting import scale_frequency_ticks, add_markers_to_lines
+from skrf.calibration import OnePort, TwelveTerm, EightTerm, SOLT
 from skrf.media import DefinedGammaZ0
 import matplotlib.pyplot as plt
 
@@ -27,7 +28,7 @@ oneport_open_2 = rf.Network('test/measured/twoport-dataset-2/open2.s1p', name="o
 oneport_load_1 = rf.Network('test/measured/twoport-dataset-2/load1.s1p', name="load1")
 oneport_load_2 = rf.Network('test/measured/twoport-dataset-2/load2.s1p', name="load2")
 twoport_thru = rf.Network('test/measured/twoport-dataset-2/thru.s2p', name="thru")
-twoport_dut  = rf.Network('test/measured/twoport-dataset-2/dut.s2p', name="scikit-rf TwelveTerm") #Name for legend later, not what it is now
+twoport_dut  = rf.Network('test/measured/twoport-dataset-2/dut.s2p', name="dut")
 
 f = oneport_short_1.frequency # wants frequency object, not just the array in .f
 
@@ -83,7 +84,7 @@ ideals = [\
 
 
 ## create a Calibration instance
-cal = TwelveTerm(\
+cal12t = TwelveTerm(\
         ideals = ideals,
         measured = measured,
         n_thrus=1,
@@ -92,11 +93,36 @@ cal = TwelveTerm(\
 ## run, and apply calibration to a DUT
 
 # run calibration algorithm
-cal.run()
+cal12t.run()
 
 # # apply it to a dut
-dut_cal = cal.apply_cal(twoport_dut)
+dut_cal12t = cal12t.apply_cal(twoport_dut)
+dut_cal12t.name = "scikit-rf 12-term"
 
+# Eight Term Cal
+cal8t = EightTerm(\
+        ideals = ideals,
+        measured = measured,
+        n_thrus=1,
+        )
+    
+cal8t.run()    
+
+dut_cal8t = cal8t.apply_cal(twoport_dut)
+dut_cal8t.name="scikit-rf 8-term"
+
+# SOLT cal
+
+calsolt = SOLT(\
+        ideals = ideals,
+        measured = measured,
+        n_thrus=1,
+        )
+    
+calsolt.run()
+
+dut_calsolt = calsolt.apply_cal(twoport_dut) 
+dut_calsolt.name = "scikit-rf SOLT"
 
 
 # # # check results against supplied data
@@ -104,76 +130,122 @@ dut_sup = rf.Network('test/supplied/twoport-dataset-2/dut_cor.s2p', name='suppli
 
 # # check results against supplied data
 
-plt.figure()
+fig = plt.figure()
 plt.title("S21")
-dut_cal.plot_s_db(1,0)
+dut_cal12t.plot_s_db(1,0)
 dut_sup.plot_s_db(1,0)
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s21-db.png",dpi=300)
 plt.show()
 plt.close()
 
-plt.figure()
+fig = plt.figure()
 plt.title("S21")
-dut_cal.plot_s_db(1,0)
+dut_cal12t.plot_s_db(1,0)
 dut_sup.plot_s_db(1,0)
 plt.xlim([4e8,6e8])
 plt.ylim([-3.3,-1.1])
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s21-db-zoom.png",dpi=300)
 plt.show()
 plt.close()
 
-plt.figure()
+fig = plt.figure()
 plt.title("S12")
-dut_cal.plot_s_db(0,1)
+dut_cal12t.plot_s_db(0,1)
 dut_sup.plot_s_db(0,1)
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s12-db.png",dpi=300)
 plt.show()
 plt.close()
 
-plt.figure()
+fig = plt.figure()
 plt.title("S12")
-dut_cal.plot_s_db(0,1)
+dut_cal12t.plot_s_db(0,1)
 dut_sup.plot_s_db(0,1)
 plt.xlim([4e8,6e8])
 plt.ylim([-3.3,-1.1])
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s12-db-zoom.png",dpi=300)
 plt.show()
 plt.close()
 
-
-plt.figure()
+fig = plt.figure()
 plt.title("S11")
-dut_cal.plot_s_db(0,0)
+dut_cal12t.plot_s_db(0,0)
 dut_sup.plot_s_db(0,0)
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s11-db.png",dpi=300)
 plt.show()
 plt.close()
 
-plt.figure()
+fig = plt.figure()
 plt.title("S22")
-dut_cal.plot_s_db(1,1)
+dut_cal12t.plot_s_db(1,1)
 dut_sup.plot_s_db(1,1)
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s22-db.png",dpi=300)
 plt.show()
 plt.close()
 
-plt.figure()
+fig = plt.figure()
 plt.title("S12, S21")
-dut_cal.plot_s_db(0,1)
-dut_cal.plot_s_db(1,0)
+dut_cal12t.plot_s_db(0,1)
+dut_cal12t.plot_s_db(1,0)
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s12s21-db-twelveterm.png",dpi=300)
 plt.show()
 plt.close()
 
-plt.figure()
+fig = plt.figure()
 plt.title("S12, S21")
 dut_sup.plot_s_db(1,0)
 dut_sup.plot_s_db(0,1)
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
 plt.savefig("img/twoport-dataset-2/12t-vs-sup-s12s21-db-supplied.png",dpi=300)
 plt.show()
 plt.close()
 
 
+fig = plt.figure()
+plt.title("S21")
+dut_cal8t.plot_s_db(1,0)
+dut_cal12t.plot_s_db(1,0)
+dut_calsolt.plot_s_db(1,0)
+dut_sup.plot_s_db(1,0)
+plt.xlim([4e8,6e8])
+plt.ylim([-3.3,-1.1])
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
+add_markers_to_lines(ax=fig.gca())
+plt.legend() #call again to show markers
+plt.savefig("img/twoport-dataset-2/8t-12t-solt-vs-sup-s21-db-zoom.png",dpi=300)
+plt.show()
+plt.close()
+
+fig = plt.figure()
+plt.title("S12")
+dut_cal8t.plot_s_db(0,1)
+dut_cal12t.plot_s_db(0,1)
+dut_calsolt.plot_s_db(0,1)
+dut_sup.plot_s_db(0,1)
+plt.xlim([4e8,6e8])
+plt.ylim([-3.3,-1.1])
+scale_frequency_ticks(fig.gca(), "GHz")
+plt.xlabel("Frequency (GHz)")
+add_markers_to_lines(ax=fig.gca())
+plt.legend()#call again to show markers
+plt.savefig("img/twoport-dataset-2/8t-12t-solt-vs-sup-s12-db-zoom.png",dpi=300)
+plt.show()
+plt.close()
 
 
 
