@@ -609,7 +609,7 @@ def network_to_result2(network):
 
 if __name__ == "__main__":
     
-    obj = clean_oneport(load_json('test/json/oneport.json'))
+    obj = clean_oneport(load_json('test/json/oneport/oneport.json'))
     
     # do tests:
     #check clean of good object
@@ -709,7 +709,7 @@ if __name__ == "__main__":
     
     time_start = time.time()
     
-    obj = clean_oneport(load_json('test/json/oneport.json'))
+    obj = clean_oneport(load_json('test/json/oneport/oneport.json'))
  
     time_load = time.time()
     
@@ -755,7 +755,7 @@ if __name__ == "__main__":
     
     # check the cal result against the one we calculated and manually
     # compared to the matlab version earlier
-    expected = rf.Network('test/expected/expected.s1p')
+    expected = rf.Network('test/expected/oneport/expected.s1p')
     
     N = len(expected.f)
     
@@ -784,12 +784,12 @@ if __name__ == "__main__":
     data = apply_cal(dut, ideal, meas)
     result = network_to_result(data)
     
-    with open('test/json/result.json', 'w') as f:
+    with open('test/json/oneport/result.json', 'w') as f:
         json.dump(result, f)
     
     # make a small input file for testing websocket interface
     obj = test_object(10)
-    with open('test/json/test.json', 'w') as f:
+    with open('test/json/oneport/test.json', 'w') as f:
         json.dump(obj, f)
         
     # test the test file
@@ -927,43 +927,10 @@ if __name__ == "__main__":
     
     # check the cal result against the one we calculated and manually
     # compared to the matlab version earlier
-    
-    # remove these to avoid needing matplotlib in the docker container
-    dut_exp = rf.Network('test/expected/twoport-dataset-1/twoport.s2p', name="validated python demo")
+
+    dut_exp = rf.Network('test/expected/twoport-dataset-2/twoport.s2p', name="validated python demo")
     dut_cal = result
     dut_cal.Name="calibration service"
-    
-    # plt.figure()
-    # plt.title("S21")
-    # dut_cal.plot_s_db(1,0)
-    # dut_exp.plot_s_db(1,0)
-    # plt.savefig("img/twoport-cal-s21-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
-
-    # plt.figure()
-    # plt.title("S12")
-    # dut_cal.plot_s_db(0,1)
-    # dut_exp.plot_s_db(0,1)
-    # plt.savefig("img/twoport-cal-s12-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
-
-    # plt.figure()
-    # plt.title("S11")
-    # dut_cal.plot_s_db(0,0)
-    # dut_exp.plot_s_db(0,0)
-    # plt.savefig("img/twoport-cal-s11-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
-
-    # plt.figure()
-    # plt.title("S22")
-    # dut_cal.plot_s_db(1,1)
-    # dut_exp.plot_s_db(1,1)
-    # plt.savefig("img/twoport-cal-s22-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
     
     N = len(dut_exp.f)
         
