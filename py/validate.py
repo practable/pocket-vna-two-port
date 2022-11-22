@@ -42,7 +42,7 @@ last_step = -1
 
 command = [
         {"cmd":"rr"},
-        {"id":"0000","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":501,"islog":False,"avg":1},
+        {"id":"0000","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":2,"islog":False,"avg":1},
         {"id":"0001","t":0,"cmd":"crq","what":"short","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":True}},  
         {"id":"0002","t":0,"cmd":"crq","what":"open","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":True}},    
         {"id":"0003","t":0,"cmd":"crq","what":"load","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":True}}, 
@@ -95,28 +95,34 @@ def printResult(obj):
    
 def plotResult(obj, name):
      if "result" in obj:
+         
          n = resultToNetwork(obj["result"], name)
          n.f = n.f / 1e18
+         
          plt.figure()
          n.plot_s_db()
          plt.savefig("./validate/%s-db-validate.png"%name, dpi=300)
          plt.show()
          plt.close()
+         
          plt.figure()
          n.plot_s_deg()
          plt.savefig("./validate/%s-deg-validate.png"%name, dpi=300)
-         
          plt.show()
          plt.close()
+         
          plt.figure()
          plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,0,0], period=360)),label="%s, S11"%name)
+         plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,0,1], period=360)),label="%s, S12"%name)
+         plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,1,0], period=360)),label="%s, S21"%name)
+         plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,1,1], period=360)),label="%s, S22"%name)
          plt.xlabel("Frequency (GHz)")
          plt.ylabel("Phase (deg)")
          plt.legend()
          plt.savefig("./validate/%s-deg-unwrap-validate.png"%name, dpi=300)
-   
          plt.show()
          plt.close()
+         
          n.write_touchstone(filename="validate/%s-validate.s2p"%name,form="db")
      
          
@@ -131,7 +137,7 @@ def on_message(ws, message):
         if validExcludingHeartbeat(obj):
             step = step + 1
         
-        #printResult(obj)
+        printResult(obj)
         
         if step < len(command):
             plotResult(obj, names[step-1])    
