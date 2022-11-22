@@ -67,27 +67,29 @@ bool trace = false;
 /********* RF PORTS ************/
 // Check the RF output number on the RF switch 
 // and see where each standard/dut is connected
-
+// The value in the enum is zero-indexed 
+// The value of the port is one-indexed
+// So Port 2 in the datasheet is port 1 in the enum etc
 enum port1 {
-  PORT1_SHORT = 2,
-  PORT1_OPEN =  3,
-  PORT1_LOAD =  4,
-  PORT1_THRU =  5,
-  PORT1_DUT1 =  6,
-  PORT1_DUT2 =  7,
-  PORT1_DUT3 =  8,
-  PORT1_DUT4 =  1,
+  PORT1_SHORT = 1,
+  PORT1_OPEN =  2,
+  PORT1_LOAD =  3,
+  PORT1_THRU =  4,
+  PORT1_DUT1 =  5,
+  PORT1_DUT2 =  6,
+  PORT1_DUT3 =  7,
+  PORT1_DUT4 =  0,
 };
 
 enum port2 {
-  PORT2_SHORT = 5,
-  PORT2_OPEN =  6,
-  PORT2_LOAD =  7,
-  PORT2_THRU =  4,
-  PORT2_DUT1 =  3,
-  PORT2_DUT2 =  2,
-  PORT2_DUT3 =  1,
-  PORT2_DUT4 =  8,
+  PORT2_SHORT = 4,
+  PORT2_OPEN =  5,
+  PORT2_LOAD =  6,
+  PORT2_THRU =  3,
+  PORT2_DUT1 =  2,
+  PORT2_DUT2 =  1,
+  PORT2_DUT3 =  0,
+  PORT2_DUT4 =  7,
 };
 
 
@@ -160,7 +162,7 @@ void requestSerial(void);
 void releaseSerial(void);
 bool blinkState(long int count, int blink);
 Pins getPins(int port);
-
+void serialPrintPins(int port1, int port2);
 /**
  * Defines the valid states for the state machine
  *
@@ -594,8 +596,50 @@ void setup() {
   while (! Serial); //wait for serial to start 
 
   count = 0; //initialise counter for use in blink code
- 
 
+  if (debug){
+  Serial.print("        P1      P2     P1  P2\n");
+  Serial.print("short: ");
+  serialPrintPins(PORT1_SHORT, PORT2_SHORT);
+  Serial.print("\nopen : ");
+  serialPrintPins(PORT1_OPEN, PORT2_OPEN);  
+  Serial.print("\nload : ");
+  serialPrintPins(PORT1_LOAD, PORT2_LOAD);  
+  Serial.print("\nthru : ");
+  serialPrintPins(PORT1_THRU, PORT2_THRU);  
+  Serial.print("\ndut1 : ");
+  serialPrintPins(PORT1_DUT1, PORT2_DUT1);      
+  Serial.print("\ndut2 : ");
+  serialPrintPins(PORT1_DUT2, PORT2_DUT2);  
+  Serial.print("\ndut3 : ");
+  serialPrintPins(PORT1_DUT3, PORT2_DUT3);  
+  Serial.print("\ndut4 : ");
+  serialPrintPins(PORT1_DUT4, PORT2_DUT4);  
+  Serial.print("\n");
+  }
+}
+
+void serialPrintPins(int port1, int port2){
+  Pins p1, p2;
+
+  p1 = getPins(port1);
+  p2 = getPins(port2);
+  Serial.print(p1.a);
+  Serial.print(" ");
+  Serial.print(p1.b);
+  Serial.print(" ");
+  Serial.print(p1.c);
+  Serial.print("   ");  
+  Serial.print(p2.a);
+  Serial.print(" ");
+  Serial.print(p2.b);
+  Serial.print(" ");
+  Serial.print(p2.c);
+  Serial.print("   ");
+  Serial.print(port1);
+  Serial.print("   ");
+  Serial.print(port2);
+  
 }
 
 void loop() {
