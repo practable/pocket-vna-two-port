@@ -287,6 +287,8 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 
 	log.Debug("Middle.RangeCal checking result from VNA")
 
+	log.Debugf("response: %s", response)
+
 	rrq, ok := response.(pocket.RangeQuery)
 
 	if !ok {

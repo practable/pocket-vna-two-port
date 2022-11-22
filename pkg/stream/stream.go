@@ -9,6 +9,7 @@ package stream
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -121,6 +122,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 			if err != nil {
 				log.WithField("error", err).Warning("Could not turn unmarshal JSON - invalid cmd string in JSON?")
+				fmt.Printf("\n%s\n", msg.Data)
 			}
 
 			switch strings.ToLower(c.Command) {
@@ -133,6 +135,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 				if err != nil {
 					log.WithField("error", err).Warning("Could not turn unmarshal JSON for RangeQuery (rq) command - invalid or missing parameters in JSON?")
+					fmt.Printf("\n%s\n", msg.Data)
 				}
 
 				out <- s
@@ -145,6 +148,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 				if err != nil {
 					log.WithField("error", err).Warning("Could not turn unmarshal JSON for CalibratedRangeQuery (rq) command - invalid or missing parameters in JSON?")
+					fmt.Printf("\n%s\n", msg.Data)
 				}
 
 				out <- s
@@ -157,6 +161,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 				if err != nil {
 					log.WithField("error", err).Warning("Could not turn unmarshal JSON for SingleQuery (sq) command - invalid or missing parameters in JSON?")
+					fmt.Printf("\n%s\n", msg.Data)
 				}
 
 				out <- s
@@ -169,6 +174,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 				if err != nil {
 					log.WithField("error", err).Warning("Could not turn unmarshal JSON for ReasonableFrequencyRange (rr) command - invalid or missing parameters in JSON?")
+					fmt.Printf("\n%s\n", msg.Data)
 				}
 
 				out <- s

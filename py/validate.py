@@ -1,12 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-client.py
+validate.py
 
 websocket client for sending commands and plotting results to validate the
 combined system of pocketvna, arduino switch, and python calibration service
 
+To run this test:
+$ session host &
+$ cd pkg/rfswitch
+$  ./connectlocalswitch.sh /dev/ttyUSB1 #runs in background
+$ cd $REPO/cmd/vna
+$ go build
+$ export VNA_DESTINATION=ws://localhost:8888/ws/data
+$ export VNA_RFSWITCH=ws://localhost:8888/ws/rfswitch
+$ export VNA_CALIBRATION=ws://localhost:8888/ws/calibration
+$ export VNA_DEVELOPMENT=true #for extra debug messages
+$ ./vna unlock
+$ ./vna stream #runs in foreground
+$ in another terminal
+$ cd $REPO/py
+$  ./client.py #runs in foreground
+
+Then run this in the IDE if you like
+
 @author: timothy.d.drysdale@gmail.com
+
+two port version Nov 2022
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,26 +42,41 @@ last_step = -1
 
 command = [
         {"cmd":"rr"},
-        {"id":"0000","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":501,"islog":False,"avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":False}},
-        {"id":"0001","t":0,"cmd":"crq","what":"dut","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":False}},  
-        {"id":"0002","t":0,"cmd":"crq","what":"short","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":False}},  
-        {"id":"0003","t":0,"cmd":"crq","what":"open","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":False}},    
-        {"id":"0004","t":0,"cmd":"crq","what":"load","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":False}}, 
-        {"id":"0004","t":0,"cmd":"crq","what":"load","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":False}},  
+        {"id":"0000","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":501,"islog":False,"avg":1},
+        {"id":"0001","t":0,"cmd":"crq","what":"short","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":True}},  
+        {"id":"0002","t":0,"cmd":"crq","what":"open","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":True}},    
+        {"id":"0003","t":0,"cmd":"crq","what":"load","avg":1,"sparam":{"s11":True,"s12":False,"s21":False,"s22":True}}, 
+        {"id":"0004","t":0,"cmd":"crq","what":"thru","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},         
+        {"id":"0005","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},  
+        {"id":"0006","t":0,"cmd":"crq","what":"dut2","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},  
+        {"id":"0007","t":0,"cmd":"crq","what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},  
+        {"id":"0008","t":0,"cmd":"crq","what":"dut4","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},  
+        
         ]
 
-names = ["rr","rc","dut","short","open","load","foo"]
+names = ["rr","rc","short","open","load","thru", "dut1", "dut2", "dut3", "dut4"]
 network = []
 
 def resultToNetwork(result, name):
     freq = []
     s11 = []
+    s12 = []
+    s21 = []
+    s22 = []
     
     for r in result:
         freq.append(r["freq"])
         s11.append(r["s11"]["real"] + 1j*r["s11"]["imag"])
-        
-    return rf.Network(frequency=freq, s=s11, name=name)        
+        s12.append(r["s12"]["real"] + 1j*r["s12"]["imag"])
+        s21.append(r["s21"]["real"] + 1j*r["s21"]["imag"])
+        s22.append(r["s22"]["real"] + 1j*r["s22"]["imag"])        
+    
+    s = np.zeros((len(freq), 2, 2), dtype=complex) 
+    s[:,0,0] = s11 
+    s[:,0,1] = s12
+    s[:,1,0] = s21 
+    s[:,1,1] = s22    
+    return rf.Network(frequency=freq, s=s, name=name)        
         
 
 
@@ -70,6 +105,7 @@ def plotResult(obj, name):
          plt.figure()
          n.plot_s_deg()
          plt.savefig("./validate/%s-deg-validate.png"%name, dpi=300)
+         
          plt.show()
          plt.close()
          plt.figure()
