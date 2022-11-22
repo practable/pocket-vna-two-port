@@ -9,6 +9,7 @@
 .#*
 go.mod
 go.sum
+cmd/vna/vna
 # Test binary, built with `go test -c`
 *.test
 
