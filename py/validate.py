@@ -41,16 +41,16 @@ step = 0
 last_step = -1
 
 command = [
-        {"cmd":"rr"},
-        {"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":3,"islog":False,"avg":1},
-        {"id":"shrt","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"short","avg":1,"sparam":{"s11":True,"s12":True, "s21":False,"s22":False}}, 
-        {"id":"open","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"open","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
-        {"id":"load","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"load","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
-        {"id":"thru","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"thru","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
-        {"id":"dut1","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},     
-        {"id":"dut2","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"dut2","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
-        {"id":"dut3","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
-        {"id":"dut4","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":3,"what":"dut4","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
+        {"id":"rr","cmd":"rr"},
+        {"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":30,"islog":False,"avg":1},
+        {"id":"shrt","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"short","avg":1,"sparam":{"s11":True,"s12":True, "s21":False,"s22":False}}, 
+        {"id":"open","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"open","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
+        {"id":"load","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"load","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
+        {"id":"thru","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"thru","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
+        {"id":"dut1","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},     
+        {"id":"dut2","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut2","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
+        {"id":"dut3","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
+        {"id":"dut4","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut4","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
         ]
 
 network = []
@@ -135,9 +135,9 @@ def on_message(ws, message):
         obj = json.loads(message)
         
         if validExcludingHeartbeat(obj):
-            print("got valid")
             print(obj)
-            plotResult(obj, "foo")  
+            print(command[step]["id"])
+            plotResult(obj, command[step]["id"])  
             
             step = step + 1
             
