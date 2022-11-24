@@ -93,9 +93,11 @@ func HandleRequest(request interface{}, c *calibration.Calibration, r *rfswitch.
 		switch rq.Command.Command {
 
 		case "rq", "rangequery":
-
+			log.Debugf("rq request: %v", request)
 			v.Request <- request
-			return <-v.Response
+			resp := <-v.Response
+			log.Debugf("rq response: %v", resp)
+			return resp
 
 		case "rc", "rangecal":
 
@@ -131,6 +133,14 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 	sc, ok := (c.Scan).(pocket.RangeQuery)
 
 	// Scan.Select can have any value, because we did a two-port calibration
+	// however the values we are sending through are not making to here
+	// so try this to check if issue upstream/downstream from here
+	//sc.Select = pocket.SParamSelect{
+	//	S11: true,
+	//	S12: true,
+	//	S21: true,
+	//	S22: true,
+	//}
 
 	if !ok {
 		return pocket.CustomResult{
@@ -186,11 +196,25 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 		}
 	}
 
-	v.Request <- c.Scan
+	// modify the scan command to select only
+	// the sparams specified by the user's
+	// crq command. The cal scans had to do all four sparams,
+	// the user might not always want all four
+	// the calibration routine does not need four params in the dut
+	// to work, according to testing in python of TwelveTerm (TDD Nov 2022)
+	sc.Select = crq.Select
+
+	v.Request <- sc
+
+	log.Debugf("Scan request %v", sc)
 
 	response := <-v.Response
 
+	log.Debugf("Scan response %v", response)
+
 	rrq, ok := response.(pocket.RangeQuery)
+
+	log.Debugf("Scan response as range query %v", rrq)
 
 	if !ok {
 		return pocket.CustomResult{

@@ -329,7 +329,7 @@ func TestRunDirect(t *testing.T) {
 		// weak test - with real kit attached, we should get non-zero numbers
 
 		assert.True(t, rq.Result[0].S11.Real != 0)
-
+		assert.True(t, rq.Result[0].S21.Real != 0)
 		assert.Equal(t, len(rq.Result), 3)
 
 		expectedFreq := pocket.LogFrequency(100000, 4000000, 3)

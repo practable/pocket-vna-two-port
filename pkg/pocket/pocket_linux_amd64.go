@@ -27,6 +27,8 @@ import (
 	"errors"
 	"math"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // does not compile if in types.go ("C undefined")
@@ -434,6 +436,8 @@ func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 		ss = append(ss, s)
 
 	}
+
+	log.Debugf("rq decoded result: %v", decode(result))
 
 	return ss, decode(result)
 

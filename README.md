@@ -59,6 +59,19 @@ The revised, minimal states are:
 | DUT-3       | 1         | 1         | 1          | 0         | 0         | 0         |
 | DUT-4       | 0         | 0         | 0          | 1         | 1         | 1         |
 
+Or in decimal
+
+| State       | P1        | P2        | 
+|-------------|-----------|-----------|
+| Short       | 1         | 4         |
+| Open        | 2         | 5         |
+| Load        | 3         | 6         |
+| Thru        | 4         | 3         |
+| DUT-1       | 5         | 2         |
+| DUT-2       | 6         | 1         |
+| DUT-3       | 7         | 0         |
+| DUT-4       | 0         | 7         |
+
 This table implies the following connections:
 
 ### Port 1
@@ -94,7 +107,21 @@ Note that the connection on the HM321 RF chip on the datasheet.
 
 ![hm321](./img/hm321.png)
 
+## Current results
 
+Set debug=true to get a table showing the outputs
+
+```
+        P1      P2     P1  P2
+short: 1 0 0   0 0 1   1   4
+open : 0 1 0   1 0 1   2   5
+load : 1 1 0   0 1 1   3   6
+thru : 0 0 1   1 1 0   4   3
+dut1 : 1 0 1   0 1 0   5   2
+dut2 : 0 1 1   1 0 0   6   1
+dut3 : 1 1 1   0 0 0   7   0
+dut4 : 0 0 0   1 1 1   0   7
+```
 
 ## Overview
 

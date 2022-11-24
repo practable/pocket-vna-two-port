@@ -312,6 +312,7 @@ func New(u string, ctx context.Context) Calibration {
 		Response: response,
 		Timeout:  time.Second,
 		Command:  Command{},
+		Scan:     pocket.RangeQuery{},
 	}
 
 	c.Clear() //prepare for first use
@@ -329,6 +330,15 @@ func (c *Calibration) Clear() {
 	c.Command = Command{
 		Command: "twoport",
 	}
+	c.Scan = pocket.RangeQuery{
+		Select: pocket.SParamSelect{
+			S11: true,
+			S12: true,
+			S21: true,
+			S22: true,
+		},
+	}
+
 }
 
 // Check ensures the results are consistent lengths
@@ -469,13 +479,6 @@ func (c *Calibration) Set(target string, result Result) error {
 			return err
 		}
 	}
-
-	/*sp := SParam{
-		S11: result.S11,
-		S12: result.S12,
-		S21: result.S21,
-		S22: result.S22,
-	}*/
 
 	switch {
 	case target == "short":
