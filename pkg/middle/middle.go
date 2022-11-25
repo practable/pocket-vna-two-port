@@ -93,11 +93,12 @@ func HandleRequest(request interface{}, c *calibration.Calibration, r *rfswitch.
 		switch rq.Command.Command {
 
 		case "rq", "rangequery":
-			log.Debugf("rq request: %v", request)
-			v.Request <- request
-			resp := <-v.Response
-			log.Debugf("rq response: %v", resp)
-			return resp
+
+			log.WithFields(log.Fields{
+				"request": rq,
+			}).Infof("Middle.HandleRequest with ID: %s", rq.ID)
+
+			return RangeQuery(rq, r, v)
 
 		case "rc", "rangecal":
 
@@ -132,17 +133,7 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 
 	sc, ok := (c.Scan).(pocket.RangeQuery)
 
-	// Scan.Select can have any value, because we did a two-port calibration
-	// however the values we are sending through are not making to here
-	// so try this to check if issue upstream/downstream from here
-	//sc.Select = pocket.SParamSelect{
-	//	S11: true,
-	//	S12: true,
-	//	S21: true,
-	//	S22: true,
-	//}
-
-	if !ok {
+	if !(ok && c.Ready) {
 		return pocket.CustomResult{
 			Message: "Error. No existing calibration. Please calibrate with rc command",
 			Command: crq,
@@ -263,6 +254,79 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 	crq.Result = sparams
 
 	return crq
+
+}
+
+func RangeQuery(rq pocket.RangeQuery, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
+
+	var err error
+	var name string
+
+	switch {
+	case rq.What == "short" || rq.What == "s":
+		name = "short"
+		err = r.SetShort()
+
+	case rq.What == "open" || rq.What == "o":
+		name = "open"
+		err = r.SetOpen()
+
+	case rq.What == "load" || rq.What == "l":
+		name = "load"
+		err = r.SetLoad()
+
+	case rq.What == "thru" || rq.What == "t":
+		name = "thru"
+		err = r.SetThru()
+
+	case rq.What == "dut1" || rq.What == "1":
+		name = "dut1"
+		err = r.SetDUT1()
+
+	case rq.What == "dut2" || rq.What == "2":
+		name = "dut2"
+		err = r.SetDUT2()
+
+	case rq.What == "dut3" || rq.What == "3":
+		name = "dut3"
+		err = r.SetDUT3()
+
+	case rq.What == "dut4" || rq.What == "4":
+		name = "dut4"
+		err = r.SetDUT4()
+	}
+
+	// throw no error if what is unrecognised, because it will be blank when rq is used by rangecal and calibratedrangequery
+	// ideally we'd use this in the same way for all uses, but using rq externally only became necessary for troubleshooting
+	// the two-port rig with 8-port switches, so we do it this way to minimise changes elsewhere for now.
+	// but do throw error if the value is what is valid
+	if err != nil {
+		return pocket.CustomResult{
+			Message: "Error setting RF switch to " + name + ": " + err.Error(),
+			Command: rq,
+		}
+	}
+
+	v.Request <- rq
+
+	log.Debugf("Scan request %v", rq)
+
+	response := <-v.Response
+
+	log.Debugf("Scan response %v", response)
+
+	rrq, ok := response.(pocket.RangeQuery)
+
+	log.Debugf("Scan response as range query %v", rrq)
+
+	if !ok {
+		return pocket.CustomResult{
+			Message: "Error measuring " + name,
+			Command: response,
+		}
+	}
+
+	return rrq
 
 }
 
@@ -482,6 +546,8 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 			Command: result,
 		}
 	}
+
+	c.Ready = true
 
 	// send some results back so the success is confirmed with the presence of data
 	rc.Result = rrq.Result

@@ -119,6 +119,7 @@ type RangeQuery struct {
 	Avg             uint16       `json:"avg"`
 	Select          SParamSelect `json:"sparam"`
 	Result          []SParam     `json:"result,omitEmpty"`
+	What            string       `json:"what"`
 }
 
 // this command is not supported by pocket

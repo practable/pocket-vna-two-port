@@ -22,6 +22,7 @@ type Calibration struct {
 	Timeout  time.Duration
 	Command  Command
 	Scan     interface{}
+	Ready    bool
 }
 
 /* Command object definition in python calibration service
@@ -313,6 +314,7 @@ func New(u string, ctx context.Context) Calibration {
 		Timeout:  time.Second,
 		Command:  Command{},
 		Scan:     pocket.RangeQuery{},
+		Ready:    false,
 	}
 
 	c.Clear() //prepare for first use
@@ -338,6 +340,7 @@ func (c *Calibration) Clear() {
 			S22: true,
 		},
 	}
+	c.Ready = false
 
 }
 

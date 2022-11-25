@@ -522,9 +522,9 @@ Pins getPins(int port) {
  
   Pins p;
 
-  p.a = (port & ( 1 << 0 )) >> 0;
+  p.c = (port & ( 1 << 0 )) >> 0;
   p.b = (port & ( 1 << 1 )) >> 1;
-  p.c = (port & ( 1 << 2 )) >> 2;
+  p.a = (port & ( 1 << 2 )) >> 2;
 
   return p;
     

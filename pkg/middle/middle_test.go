@@ -38,11 +38,11 @@ python client.py & #run the calibration service
 
 func TestMain(m *testing.M) {
 	// Setup  logging
-	debug = false
+	debug = true
 	verbose = false
 
 	if debug {
-		log.SetLevel(log.InfoLevel)
+		log.SetLevel(log.DebugLevel)
 		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
 		defer log.SetOutput(os.Stdout)
 
@@ -263,6 +263,8 @@ func TestMiddle(t *testing.T) {
 
 		err := json.Unmarshal(m.Data, &rq)
 
+		log.Debugf("rq result: %s", m.Data)
+
 		assert.NoError(t, err)
 		assert.Equal(t, "rq", rq.Command.Command)
 
@@ -287,7 +289,7 @@ func TestMiddle(t *testing.T) {
 
 	crq := pocket.CalibratedRangeQuery{
 		Command: pocket.Command{Command: "crq", ID: "crq-before-cal"},
-		What:    "dut",
+		What:    "dut1",
 		Avg:     1,
 		Select:  pocket.SParamSelect{S11: true, S12: false, S21: false, S22: false},
 	}
