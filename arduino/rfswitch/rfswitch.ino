@@ -39,7 +39,7 @@
 // SET BOTH THESE TO FALSE BEFORE ROLLING OUT IN PRODUCTION
 
 // report additional information (may affect performance)
-bool debug = false;
+bool debug = true;
 bool trace = false;
 
 //=============================================================
@@ -598,7 +598,17 @@ void setup() {
   count = 0; //initialise counter for use in blink code
 
   if (debug){
-  Serial.print("        P1      P2     P1  P2\n");
+    /*
+    #define SWITCH_P1_A      8
+#define SWITCH_P1_B      9
+#define SWITCH_P1_C      10
+#define SWITCH_P1_POWER  3
+#define SWITCH_P2_A      4
+#define SWITCH_P2_B      5
+#define SWITCH_P2_C      6
+*/
+  Serial.print("       4 5 6   8 9 10\n");
+  Serial.print("        P2      P1     P2  P1\n");
   Serial.print("short: ");
   serialPrintPins(PORT1_SHORT, PORT2_SHORT);
   Serial.print("\nopen : ");
@@ -624,17 +634,17 @@ void serialPrintPins(int port1, int port2){
 
   p1 = getPins(port1);
   p2 = getPins(port2);
-  Serial.print(p1.a);
-  Serial.print(" ");
-  Serial.print(p1.b);
-  Serial.print(" ");
-  Serial.print(p1.c);
-  Serial.print("   ");  
   Serial.print(p2.a);
   Serial.print(" ");
   Serial.print(p2.b);
   Serial.print(" ");
   Serial.print(p2.c);
+  Serial.print("   ");  
+  Serial.print(p1.a);
+  Serial.print(" ");
+  Serial.print(p1.b);
+  Serial.print(" ");
+  Serial.print(p1.c);
   Serial.print("   ");
   Serial.print(port1);
   Serial.print("   ");
