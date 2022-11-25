@@ -42,15 +42,24 @@ last_step = -1
 
 command = [
         {"id":"rr","cmd":"rr"},
-        {"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":30,"islog":False,"avg":1},
-        {"id":"shrt","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"short","avg":1,"sparam":{"s11":True,"s12":True, "s21":False,"s22":False}}, 
-        {"id":"open","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"open","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
-        {"id":"load","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"load","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
-        {"id":"thru","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"thru","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
-        {"id":"dut1","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},     
-        {"id":"dut2","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut2","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
-        {"id":"dut3","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
-        {"id":"dut4","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut4","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
+        {"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":501,"islog":False,"avg":1},
+        # {"id":"uncal_shrt","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"short","avg":1,"sparam":{"s11":True,"s12":True, "s21":False,"s22":False}}, 
+        # {"id":"uncal_open","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"open","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
+        # {"id":"uncal_load","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"load","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
+        # {"id":"uncal_thru","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"thru","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}}, 
+        # {"id":"uncal_dut1","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},     
+        # {"id":"uncal_dut2","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut2","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
+        # {"id":"uncal_dut3","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
+        # {"id":"uncal_dut4","t":0,"cmd":"rq","range":{"start":1000000,"end":4000000000},"size":30,"what":"dut4","avg":1,"sparam":{"s11":True,"s12":True,"s21":False,"s22":False}},  
+        {"id":"short","t":0,"cmd":"crq","what":"short","avg":1,"sparam":{"s11":True,"s12":True, "s21":True,"s22":True}}, 
+        {"id":"open","t":0,"cmd":"crq","what":"open","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}}, 
+        {"id":"load","t":0,"cmd":"crq","what":"load","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}}, 
+        {"id":"thru","t":0,"cmd":"crq","what":"thru","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}}, 
+        {"id":"dut1","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},     
+        {"id":"dut2","t":0,"cmd":"crq","what":"dut2","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},  
+        {"id":"dut3","t":0,"cmd":"crq","what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},  
+        {"id":"dut4","t":0,"cmd":"crq","what":"dut4","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},          
+        
         ]
 
 network = []
@@ -103,23 +112,23 @@ def plotResult(obj, name):
          plt.show()
          plt.close()
          
-         #plt.figure()
-         #n.plot_s_deg()
-         #plt.savefig("./validate/%s-deg-validate.png"%name, dpi=300)
-         #plt.show()
-         #plt.close()
+         plt.figure()
+         n.plot_s_deg()
+         plt.savefig("./validate/%s-deg-validate.png"%name, dpi=300)
+         plt.show()
+         plt.close()
          
-         # plt.figure()
-         # plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,0,0], period=360)),label="%s, S11"%name)
-         # plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,0,1], period=360)),label="%s, S12"%name)
-         # plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,1,0], period=360)),label="%s, S21"%name)
-         # plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,1,1], period=360)),label="%s, S22"%name)
-         # plt.xlabel("Frequency (GHz)")
-         # plt.ylabel("Phase (deg)")
-         # plt.legend()
-         # plt.savefig("./validate/%s-deg-unwrap-validate.png"%name, dpi=300)
-         # plt.show()
-         # plt.close()
+         plt.figure()
+         plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,0,0], period=360)),label="%s, S11"%name)
+         plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,0,1], period=360)),label="%s, S12"%name)
+         plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,1,0], period=360)),label="%s, S21"%name)
+         plt.plot(n.f/1e9,np.squeeze(np.unwrap(n.s_deg[:,1,1], period=360)),label="%s, S22"%name)
+         plt.xlabel("Frequency (GHz)")
+         plt.ylabel("Unwrapped phase (deg)")
+         plt.legend()
+         plt.savefig("./validate/%s-deg-unwrap-validate.png"%name, dpi=300)
+         plt.show()
+         plt.close()
          
          n.write_touchstone(filename="validate/%s-validate.s2p"%name,form="db")
      else:
