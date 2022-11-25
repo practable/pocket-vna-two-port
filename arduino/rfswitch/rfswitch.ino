@@ -39,7 +39,7 @@
 // SET BOTH THESE TO FALSE BEFORE ROLLING OUT IN PRODUCTION
 
 // report additional information (may affect performance)
-bool debug = true;
+bool debug = false;
 bool trace = false;
 
 //=============================================================
