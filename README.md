@@ -1,6 +1,8 @@
 # go-pocketvna
 
-A golang-based web service for the pocketvna.com](https://pocketvna.com/) vector network analyser, with an automated one-port calibration facility provided by additional RF hardware, for use with the open-source [practable.io](https://practable.io] remote lab ecosystem. The user interface is similar to [this](https://github.com/dpreid/pidui), although not yet publically released by the developer (coming soon!)
+A golang-based web service for the pocketvna.com](https://pocketvna.com/) vector network analyser, with an automated two-port calibration facility provided by additional RF hardware, for use with the open-source [practable.io](https://practable.io] remote lab ecosystem. The user interface is similar to [this](https://github.com/dpreid/pidui), although not yet publically released by the developer (coming soon!)
+
+Status: in development. Prototype has passed measurement quality check, and firmware has been updated to two-ports. Now need bringing together and testing again.
 
 ## Two port set up
 
