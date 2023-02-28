@@ -1,0 +1,90 @@
+% Author: Alexander Don
+% University of Edinburgh (s2438345@ed.ac.uk)
+% Remote Lab - Prototype test
+% Date: 10-12-2022
+
+%(Last Ammended 11-01-2023)
+
+clc
+clear all
+close all
+
+%Adding the measurement folders to the workspace
+
+addpath("PocketVNA\")
+addpath("Copper Mountain VNA\")
+
+% Extracting the S-Parameter Data
+
+%DUT 1
+PVNA_DUT1=sparameters('PVNA_DUT_1.s2p')'
+
+Backward=sparameters('DUT_1_R.s2p');
+random=sparameters('DUT_1_2431.s2p');
+
+ref= sparameters('DUT1_REF.s2p');
+
+%% S11
+figure
+sgtitle('DUT 1 (Stub Filter)')
+
+subplot(2,2,1)
+rfplot(Forward,1,1,'db');
+hold on
+rfplot(Backward,1,1,'db');
+hold on
+rfplot(random,1,1,'db');
+hold on
+rfplot(ref,1,1,'db','r');
+set(findobj(gca, 'Type', 'Line'), 'LineWidth', 0.8);
+title('S11','Interpreter','latex','fontsize',13)
+ylim([-50,50])
+yticks(-50:10:50)
+legend('Forward','Backward','Random','Ideal Reference','Interpreter','Latex')
+grid minor
+
+
+subplot(2,2,2)
+rfplot(Forward,1,2,'db');
+hold on
+rfplot(Backward,1,2,'db');
+hold on
+rfplot(random,1,2,'db');
+hold on
+rfplot(ref,1,2,'db','r');
+set(findobj(gca, 'Type', 'Line'), 'LineWidth', 1);
+title('S12','Interpreter','latex','fontsize',13)
+ylim([-50,50])
+yticks(-50:10:50)
+legend('Forward','Backward','Random','Ideal Reference','Interpreter','Latex')
+grid minor
+
+subplot(2,2,3)
+rfplot(Forward,2,2,'db');
+hold on
+rfplot(Backward,2,2,'db');
+hold on
+rfplot(random,2,2,'db');
+hold on
+rfplot(ref,2,2,'db','r');
+set(findobj(gca, 'Type', 'Line'), 'LineWidth', 1);
+title('S22','Interpreter','latex','fontsize',13)
+ylim([-50,50])
+yticks(-50:10:50)
+legend('Forward','Backward','Random','Ideal Reference','Interpreter','Latex')
+grid minor
+
+subplot(2,2,4)
+rfplot(Forward,2,1,'db');
+hold on
+rfplot(Backward,2,1,'db');
+hold on
+rfplot(random,2,1,'db');
+hold on
+rfplot(ref,2,1,'db','r');
+set(findobj(gca, 'Type', 'Line'), 'LineWidth', 1);
+title('S21','Interpreter','latex','fontsize',13)
+ylim([-50,50])
+yticks(-50:10:50)
+legend('Forward','Backward','Random','Ideal Reference','Interpreter','Latex')
+grid minor

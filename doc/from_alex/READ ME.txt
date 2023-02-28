@@ -1,0 +1,19 @@
+Hey Tim, hope your good.
+
+"Copper Mountain VNA" folder contains successfull measurements using a commercial VNA calibrated using the built in standards of the system.
+
+"PocketVNA" folder contains successful measurements using the PocketVNA calibrated using the built in standards of the system.
+
+These two should be all the data you need.
+
+In addition to this i have also supplied a brief PT and MALAB code (almost certain you wont need but there if you want to see anything)
+
+Lastly you will also notice that in this folder there are 4 touchstone files (DUT_1_REF TO DUT_4_REF) these are the "ideal" S-parameters of each
+DUT found by connecting a commercial VNA directly across each DUT. Thought these might help establish how far off both the commercial VNA and Pocket VNA are 
+from the "ideal"
+
+Anyway hope that not too much extra waffle etc. Any issues just drop me an email.
+
+Thanks,
+Alex
+
