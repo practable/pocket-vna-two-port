@@ -14,22 +14,34 @@
   - name: Update apt cache
     apt:
       update_cache: yes
-      
+
+  - name: Install pip
+    apt:
+      name: python3-pip    
+     
   - name: Remove any existing go files 
     file:
       path: /usr/local/go
       state: absent
-        
+       
   - name: Download and extract golang 1.20.1
     ansible.builtin.unarchive:
       src: https://golang.org/dl/go1.20.1.linux-armv6l.tar.gz
       dest: /usr/local
       remote_src: yes
-
+      
+  - name: Add go to PATH
+    copy:
+      content: "export PATH=$PATH:/usr/local/go/bin"
+      dest: "/etc/profile.d/my_path.sh"
+    
   - name: Install the package "git"
     apt:
       name: git
-      
+
+  # installing sources in this preliminary step
+  # shows the versions we have selected
+  # in a single location
   - name: Create sources directory if it does not exist
     file:
       path: /home/pi/sources
@@ -47,24 +59,17 @@
       dest: /home/pi/sources/relay
       version: v0.4.7
       update: yes
-    
+
   - name: clone practable/jump
     git:
       repo: https://github.com/practable/jump.git
-      dest: /home/pi/sources/relay
-      version: v0.1.1
+      dest: /home/pi/sources/jump
+      version: v0.1.3
       update: yes    
 
-  - name: Install pip
-    apt:
-      name: python-pip
-      
+  # do we still need docker for python?    
   - name: Get docker for python
     ansible.builtin.command: pip install docker
-      
-  - name: Install the package python-backports.ssl-match-hostname (needed for docker)
-    apt:
-      name: python-backports.ssl-match-hostname
 
   - name: Get docker
     ansible.builtin.command: curl -fsSL https://get.docker.com -o get-docker.sh
@@ -81,5 +86,6 @@
       src: ../files/websocat.rpios
       dest: /usr/local/bin/websocat
       mode: a+x
+
       
  

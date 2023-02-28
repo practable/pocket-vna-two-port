@@ -1,8 +1,0 @@
-#!/bin/sh
-dataTokenFile="/etc/practable/data.token"
-dataAccessFile="/etc/practable/data.access"
-
-dataToken=$(cat "$dataTokenFile")
-dataAccess=$(cat "$dataAccessFile")
-
-curl -X POST -H "Content-Type: application/json" -d '{"stream":"data","destination":"'"${dataAccess}"'","id":"1","token":"'"${dataToken}"'"}' http://localhost:8888/api/destinations 
