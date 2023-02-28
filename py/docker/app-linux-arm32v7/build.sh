@@ -1,3 +1,3 @@
 #!/bin/bash
-app="calibration-twport"
+app="calibration-twoport"
 docker build -t ${app} .
