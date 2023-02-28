@@ -1,6 +1,6 @@
 [Unit]
-Description=get data from pocket vna 
-After=network.target session.service 
+Description=vna data service
+After=network.target relay.service 
 Wants=session.service 
 
 [Service]

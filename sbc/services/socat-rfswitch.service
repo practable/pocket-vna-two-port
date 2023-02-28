@@ -1,6 +1,6 @@
 [Unit]
 Description=connect rfswitch USB to websocat-rfswitch
-After=network.target session.service websocat-rfswitch.service
+After=network.target relay.service websocat-rfswitch.service
 Wants=session.service websocat-rfswitch.service
 
 [Service]

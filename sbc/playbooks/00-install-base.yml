@@ -1,0 +1,85 @@
+---
+- name: install base (go, git) 
+  hosts: pvna2:pvna2pilot
+  become: yes
+  gather_facts: no
+
+  tasks:
+    
+  - name: ensure /etc/practable
+    file:
+      path: /etc/practable
+      state: directory
+      
+  - name: Update apt cache
+    apt:
+      update_cache: yes
+      
+  - name: Remove any existing go files 
+    file:
+      path: /usr/local/go
+      state: absent
+        
+  - name: Download and extract golang 1.20.1
+    ansible.builtin.unarchive:
+      src: https://golang.org/dl/go1.20.1.linux-armv6l.tar.gz
+      dest: /usr/local
+      remote_src: yes
+
+  - name: Install the package "git"
+    apt:
+      name: git
+      
+  - name: Create sources directory if it does not exist
+    file:
+      path: /home/pi/sources
+      state: directory
+
+  - name: clone pocket-vna-two-port
+    git:
+      repo: https://github.com/practable/pocket-vna-two-port.git
+      dest: /home/pi/sources/pocket-vna-two-port
+      update: yes
+
+  - name: clone practable/relay
+    git:
+      repo: https://github.com/practable/relay.git
+      dest: /home/pi/sources/relay
+      version: v0.4.7
+      update: yes
+    
+  - name: clone practable/jump
+    git:
+      repo: https://github.com/practable/jump.git
+      dest: /home/pi/sources/relay
+      version: v0.1.1
+      update: yes    
+
+  - name: Install pip
+    apt:
+      name: python-pip
+      
+  - name: Get docker for python
+    ansible.builtin.command: pip install docker
+      
+  - name: Install the package python-backports.ssl-match-hostname (needed for docker)
+    apt:
+      name: python-backports.ssl-match-hostname
+
+  - name: Get docker
+    ansible.builtin.command: curl -fsSL https://get.docker.com -o get-docker.sh
+   
+  - name: Install docker
+    ansible.builtin.command: sh get-docker.sh     
+
+  - name: Install the package "socat"
+    apt:
+      name: socat
+
+  - name: copy websocat binary [ubuntu]
+    copy:
+      src: ../files/websocat.rpios
+      dest: /usr/local/bin/websocat
+      mode: a+x
+      
+ 

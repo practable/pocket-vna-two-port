@@ -1,0 +1,13 @@
+[Unit]
+Description=relay rules service
+After=network.target relay.service
+Wants=relay.service
+PartOf=relay.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/bin/relay-rules
+
+[Install]
+WantedBy=multi-user.target

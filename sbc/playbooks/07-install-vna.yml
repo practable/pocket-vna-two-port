@@ -1,0 +1,41 @@
+---
+- name: install vna
+  hosts: pvna2:pvna2pilot
+  become: yes
+  gather_facts: no
+
+  tasks:
+
+  # so we can use this playbook for update, stop the existing service
+  # and ignore errors - typically only thrown if it does not exist
+  - name: stop vna-data
+    service:
+      name: vna-data
+      state: stopped
+     ignore_errors: true
+    
+  - name: Copy socat-rfswitch service file 
+    copy:
+      src: ../services/socat-rfswitch.service
+      dest: /etc/systemd/system/socat-rfswitch.service
+      owner: root
+      group: root
+       
+  - name: Copy websocat-rfswitch service file 
+    copy:
+      src: ../services/websocat-rfswitch.service
+      dest: /etc/systemd/system/websocat-rfswitch.service
+      owner: root
+      group: root
+      
+  - name: Just force systemd to reread configs (2.4 and above)
+    ansible.builtin.systemd:
+      daemon_reload: yes
+
+  - name: start vna-data
+    service:
+      name: vna-data
+      state: started
+      enabled: true      
+      
+

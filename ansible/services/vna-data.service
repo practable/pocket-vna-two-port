@@ -1,0 +1,13 @@
+[Unit]
+Description=get data from pocket vna 
+After=network.target session.service 
+Wants=session.service 
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+ExecStartPre=/bin/sleep 1
+ExecStart=/usr/local/bin/vna-data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+---
+- name: install calibration
+  hosts: pvna2:pvna2pilot
+  become: yes
+  gather_facts: no
+
+  tasks:
+
+  # so we can use this playbook for update, stop the existing service
+  # and ignore errors - typically only thrown if it does not exist
+  - name: stop calibration
+    service:
+      name: calibration
+      state: stopped
+      enabled: true
+    ignore_errors: true
+      
+  - name: pull image (practable/calibration-twoport)
+    docker_image:
+      name: practable/calibration-twoport:arm32v7-3.7-0.1
+
+  - name: Copy calibration service file 
+    copy:
+      src: ../services/calibration.service
+      dest: /etc/systemd/system/calibration.service
+      owner: root
+      group: root
+      
+  - name: Just force systemd to reread configs (2.4 and above)
+    ansible.builtin.systemd:
+      daemon_reload: yes
+
+  - name: start calibration
+    service:
+      name: calibration
+      state: started
+      enabled: true    
+      
+

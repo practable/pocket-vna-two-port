@@ -1,6 +1,6 @@
 [Unit]
 Description=connect rfswitch to session host
-After=network.target session.service
+After=network.target relay.service
 Wants=session.service
 
 [Service]

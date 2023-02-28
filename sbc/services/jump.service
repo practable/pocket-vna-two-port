@@ -1,0 +1,10 @@
+[Unit]
+Description=jump host service
+After=network.target
+
+[Service]
+Restart=on-failure
+ExecStart=/usr/local/bin/jump-start 
+
+[Install]
+WantedBy=multi-user.target

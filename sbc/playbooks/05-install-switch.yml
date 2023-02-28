@@ -1,0 +1,53 @@
+---
+- name: install switch
+  hosts: pvna2:pvna2pilot
+  become: yes
+  gather_facts: no
+
+  tasks:
+
+  # so we can use this playbook for update, stop the existing service
+  # and ignore errors - typically only thrown if it does not exist
+  - name: stop socat-rfswitch
+    service:
+      name: socat-rfswitch
+      state: stopped
+     ignore_errors: true
+    
+  - name: stop websocat-rfswitch
+    service:
+      name: websocat-rfswitch
+      state: stopped
+    ignore_errors: true   
+      
+  - name: Copy socat-rfswitch service file 
+    copy:
+      src: ../services/socat-rfswitch.service
+      dest: /etc/systemd/system/socat-rfswitch.service
+      owner: root
+      group: root
+       
+  - name: Copy websocat-rfswitch service file 
+    copy:
+      src: ../services/websocat-rfswitch.service
+      dest: /etc/systemd/system/websocat-rfswitch.service
+      owner: root
+      group: root
+      
+  - name: Just force systemd to reread configs (2.4 and above)
+    ansible.builtin.systemd:
+      daemon_reload: yes
+
+  - name: start socat-rfswitch
+    service:
+      name: socat-rfswith
+      state: started
+      enabled: true
+      
+  - name: start websocat-rfswitch
+    service:
+      name: websocat-rfswith
+      state: started
+      enabled: true      
+      
+

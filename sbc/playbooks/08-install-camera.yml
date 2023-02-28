@@ -1,0 +1,40 @@
+---
+- name: install camera
+  hosts: pvna2:pvna2pilot
+  become: yes
+  gather_facts: no
+
+  tasks:
+
+  # so we can use this playbook for update, stop the existing service
+  # and ignore errors - typically only thrown if it does not exist
+  - name: stop camera service
+    service:
+      name: camera
+      state: stopped
+     ignore_errors: true
+     
+  - name: Install the package "ffmpeg"
+    apt:
+      name: ffmpeg
+
+  - name: copy ffmpeg-camera script
+    copy: src=../files/ffmpeg-camera dest=/usr/local/bin/ffmpeg-camera mode=a+x
+      
+  - name: Copy camera service file
+    copy:
+      src: ../services/camera.service
+      dest: /etc/systemd/system/camera.service
+      owner: root
+      group: root
+
+  - name: Just force systemd to reread configs (2.4 and above)
+    ansible.builtin.systemd:
+      daemon_reload: yes
+      
+  - name: start camera service
+    service:
+      name: camera
+      state: started
+      enabled: true     
+

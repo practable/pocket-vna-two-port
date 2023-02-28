@@ -1,0 +1,6 @@
+#!/bin/bash
+export VNA_DESTINATION=ws://localhost:8888/ws/data
+export VNA_CALIBRATION=ws://localhost:8888/ws/calibration
+export VNA_RFSWITCH=ws://localhost:8888/ws/rfswitch
+vna unlock
+vna stream

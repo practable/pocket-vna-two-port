@@ -1,0 +1,9 @@
+[Unit]
+Description=relay service
+After=network.target
+[Service]
+Restart=on-failure
+ExecStart=/usr/local/bin/relay host
+
+[Install]
+WantedBy=multi-user.target relay-rules.service

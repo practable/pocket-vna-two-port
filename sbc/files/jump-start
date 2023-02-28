@@ -1,0 +1,6 @@
+#!/bin/bash
+JUMP_HOST_LOCAL_PORT=22
+JUMP_HOST_ACCESS=$(cat /etc/practable/jump.access)
+JUMP_HOST_TOKEN=$(cat /etc/practable/jump.token)
+JUMP_HOST_DEVELOPMENT=true
+/usr/local/bin/jump host
