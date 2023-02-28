@@ -12,7 +12,7 @@
     service:
       name: camera
       state: stopped
-     ignore_errors: true
+    ignore_errors: true
      
   - name: Install the package "ffmpeg"
     apt:

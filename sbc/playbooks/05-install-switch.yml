@@ -2,7 +2,7 @@
 - name: install switch
   hosts: pvna2:pvna2pilot
   become: yes
-  gather_facts: no
+  gather_facts: yes
 
   tasks:
 
@@ -12,13 +12,29 @@
     service:
       name: socat-rfswitch
       state: stopped
-     ignore_errors: true
+    ignore_errors: true
     
   - name: stop websocat-rfswitch
     service:
       name: websocat-rfswitch
       state: stopped
-    ignore_errors: true   
+    ignore_errors: true
+    
+  - name: install socat-rfswitch to usr/local/bin
+    copy:
+      src: ../files/socat-rfswitch
+      dest: /usr/local/bin/socat-rfswitch
+      owner: root
+      group: root
+      mode: a+x
+      
+  - name: install websocat-rfswitch to usr/local/bin
+    copy:
+      src: ../files/websocat-rfswitch
+      dest: /usr/local/bin/websocat-rfswitch
+      owner: root
+      group: root
+      mode: a+x
       
   - name: Copy socat-rfswitch service file 
     copy:
@@ -37,17 +53,20 @@
   - name: Just force systemd to reread configs (2.4 and above)
     ansible.builtin.systemd:
       daemon_reload: yes
-
+      
+  # the order of starting these two services matters    
+  - name: start websocat-rfswitch
+    service:
+      name: websocat-rfswitch
+      state: started
+      enabled: true  
+      
   - name: start socat-rfswitch
     service:
-      name: socat-rfswith
+      name: socat-rfswitch
       state: started
       enabled: true
       
-  - name: start websocat-rfswitch
-    service:
-      name: websocat-rfswith
-      state: started
-      enabled: true      
+    
       
 

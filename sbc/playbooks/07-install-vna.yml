@@ -2,8 +2,9 @@
 - name: install vna
   hosts: pvna2:pvna2pilot
   become: yes
-  gather_facts: no
-
+  gather_facts: yes
+  environment:
+    PATH: "/usr/local/go/bin:{{ ansible_env.PATH }}"
   tasks:
 
   # so we can use this playbook for update, stop the existing service
@@ -12,19 +13,36 @@
     service:
       name: vna-data
       state: stopped
-     ignore_errors: true
+    ignore_errors: true
     
-  - name: Copy socat-rfswitch service file 
+  - name: copy libPocketVnaAPI.so
+    copy: src=../files/libPocketVnaApi.so  dest=/usr/lib/libPocketVnaApi.so mode=a+x
+    
+  - name: copy libPocketVnaAPI.so.0
+    copy: src=../files/libPocketVnaApi.so.0  dest=/usr/lib/libPocketVnaApi.so.0 mode=a+x
+    
+  - name: build cmd/vna from practable/pocket-vna-two-port
+    command: go build
+    args:
+      chdir: /home/pi/sources/pocket-vna-two-port/cmd/vna
+      
+  - name: install cmd/vna to usr/local/bin
+    command: cp vna /usr/local/bin
+    args:
+      chdir: /home/pi/sources/pocket-vna-two-port/cmd/vna   
+     
+  - name: install vna-data to usr/local/bin
     copy:
-      src: ../services/socat-rfswitch.service
-      dest: /etc/systemd/system/socat-rfswitch.service
+      src: ../files/vna-data
+      dest: /usr/local/bin/vna-data
       owner: root
       group: root
-       
-  - name: Copy websocat-rfswitch service file 
+      mode: a+x
+      
+  - name: Copy vna-data service file 
     copy:
-      src: ../services/websocat-rfswitch.service
-      dest: /etc/systemd/system/websocat-rfswitch.service
+      src: ../services/vna-data.service
+      dest: /etc/systemd/system/vna-data.service
       owner: root
       group: root
       
