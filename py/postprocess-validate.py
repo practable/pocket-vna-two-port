@@ -414,6 +414,10 @@ for name in plots.keys():
         item["data"](item["args"][0], item["args"][1])
     if "ylim" in plots[name]:    
         plt.ylim(plots[name]["ylim"])
+    title = name.upper().replace("_"," ")
+    title = title.replace("DB","(dB)")
+    title = title.replace("DEG","(degrees)")
+    plt.title(title)    
     plt.savefig("../img/validate-%s.png"%(name), dpi=300)
     plt.close()    
 
