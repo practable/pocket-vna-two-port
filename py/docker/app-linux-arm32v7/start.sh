@@ -1,5 +1,5 @@
 #!/bin/bash
-app="calibration"
+app="calibration-twport"
 docker build -t ${app} .
 docker run ${app} 
 

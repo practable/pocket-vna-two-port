@@ -15,6 +15,7 @@ import _thread
 import time
 import traceback
 import websocket
+debug = True
 
 def on_message(ws, message):
     
@@ -32,12 +33,18 @@ def on_message(ws, message):
             ws.send(json.dumps(result)) 
             
         elif get_cmd(obj)=="twoport":
-
+            if debug:
+                print("Request:")
+                print(obj)
             obj = clean_twoport(obj)
             dut, ideal, meas = make_networks2(obj)
             calibrated = apply_cal2(dut, ideal, meas)
             result = network_to_result2(calibrated)
             ws.send(json.dumps(result)) 
+            if debug:
+                print("")
+                print("Result:")
+                print(json.dumps(result))
             
     except Exception as e:
         print(e)

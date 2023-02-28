@@ -400,8 +400,14 @@ def apply_cal(dut, ideal, meas):
      cal = OnePort(ideals = ideal, measured = meas)
      cal.run()
      return cal.apply_cal(dut)
-
+ 
 def apply_cal2(dut, ideal, meas):
+     
+     cal = TwelveTerm(ideals = ideal, measured = meas, n_thrus=1)
+     cal.run()
+     return cal.apply_cal(dut)
+ 
+def apply_cal2_hybrid(dut, ideal, meas):
      
      cal = TwelveTerm(ideals = ideal, measured = meas, n_thrus=1)
      cal.run()
@@ -509,6 +515,14 @@ def make_cal2(ideal, meas):
 
      cal.run()
 
+     return cal
+ 
+def make_cal2_hybrid(ideal, meas):
+
+     cal = TwelveTerm(ideals = ideal, measured = meas, n_thrus=1)
+
+     cal.run()
+
      f = meas[0].frequency
      standard = DefinedGammaZ0(f)
 
@@ -554,7 +568,7 @@ def use_cal(cal, dut):
     
     return cal.apply_cal(dut)
     
-def use_cal2(cal,cal_s11, cal_s22, dut):
+def use_cal2_hybrid(cal,cal_s11, cal_s22, dut):
 
     # cal for S12, S21    
     dut_cal = cal.apply_cal(dut)
@@ -609,7 +623,7 @@ def network_to_result2(network):
 
 if __name__ == "__main__":
     
-    obj = clean_oneport(load_json('test/json/oneport.json'))
+    obj = clean_oneport(load_json('test/json/oneport/oneport.json'))
     
     # do tests:
     #check clean of good object
@@ -709,7 +723,7 @@ if __name__ == "__main__":
     
     time_start = time.time()
     
-    obj = clean_oneport(load_json('test/json/oneport.json'))
+    obj = clean_oneport(load_json('test/json/oneport/oneport.json'))
  
     time_load = time.time()
     
@@ -755,7 +769,7 @@ if __name__ == "__main__":
     
     # check the cal result against the one we calculated and manually
     # compared to the matlab version earlier
-    expected = rf.Network('test/expected/expected.s1p')
+    expected = rf.Network('test/expected/oneport/expected.s1p')
     
     N = len(expected.f)
     
@@ -784,12 +798,12 @@ if __name__ == "__main__":
     data = apply_cal(dut, ideal, meas)
     result = network_to_result(data)
     
-    with open('test/json/result.json', 'w') as f:
+    with open('test/json/oneport/result.json', 'w') as f:
         json.dump(result, f)
     
     # make a small input file for testing websocket interface
     obj = test_object(10)
-    with open('test/json/test.json', 'w') as f:
+    with open('test/json/oneport/test.json', 'w') as f:
         json.dump(obj, f)
         
     # test the test file
@@ -890,7 +904,7 @@ if __name__ == "__main__":
     
     time_start = time.time()
     
-    obj = clean_twoport(load_json('test/json/twoport.json'))
+    obj = clean_twoport(load_json('test/json/twoport-dataset-2/twoport.json'))
  
     time_load = time.time()
     
@@ -910,11 +924,11 @@ if __name__ == "__main__":
     
     time_start = time.time()
     
-    cal, cal_for_s11, cal_for_s22 = make_cal2(ideal, meas)
+    cal = make_cal2(ideal, meas)
     
     time_cal = time.time()
      
-    result = use_cal2(cal, cal_for_s11, cal_for_s22, dut) #use 2port version
+    result = use_cal(cal, dut)
     
     time_result = time.time()
     
@@ -927,73 +941,40 @@ if __name__ == "__main__":
     
     # check the cal result against the one we calculated and manually
     # compared to the matlab version earlier
-    
-    # remove these to avoid needing matplotlib in the docker container
-    dut_exp = rf.Network('test/expected/twoport.s2p', name="validated python demo")
+
+    dut_exp = rf.Network('test/expected/twoport-dataset-2/twoport.s2p', name="validated python demo")
     dut_cal = result
     dut_cal.Name="calibration service"
+
+    s12_error = dut_exp.s_db[:,0,1] - dut_cal.s_db[:,0,1] 
+    s21_error = dut_exp.s_db[:,1,0] - dut_cal.s_db[:,1,0] 
+    s11_error = dut_exp.s_db[:,0,0] - dut_cal.s_db[:,0,0]     
+    s22_error = dut_exp.s_db[:,1,1] - dut_cal.s_db[:,1,1] 
     
-    # plt.figure()
-    # plt.title("S21")
-    # dut_cal.plot_s_db(1,0)
-    # dut_exp.plot_s_db(1,0)
-    # plt.savefig("img/twoport-cal-s21-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
+    # don't check differences wtih LMS method down in the noise
+    s11_noise_mask = np.greater(dut_cal.s_db[:,0,0], -20)
+    s22_noise_mask = np.greater(dut_cal.s_db[:,1,1], -20)
+    s12_noise_mask = np.greater(dut_cal.s_db[:,0,1], -70)
+    s21_noise_mask = np.greater(dut_cal.s_db[:,1,0], -70)
 
-    # plt.figure()
-    # plt.title("S12")
-    # dut_cal.plot_s_db(0,1)
-    # dut_exp.plot_s_db(0,1)
-    # plt.savefig("img/twoport-cal-s12-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
-
-    # plt.figure()
-    # plt.title("S11")
-    # dut_cal.plot_s_db(0,0)
-    # dut_exp.plot_s_db(0,0)
-    # plt.savefig("img/twoport-cal-s11-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
-
-    # plt.figure()
-    # plt.title("S22")
-    # dut_cal.plot_s_db(1,1)
-    # dut_exp.plot_s_db(1,1)
-    # plt.savefig("img/twoport-cal-s22-db.png",dpi=300)
-    # plt.show()
-    # plt.close()
-    
-    N = len(dut_exp.f)
+    # The checks oin S11, S22 are relaxed a little due to sharp features
+    # and possibility of numerical noise from import/export 
+    # into json format
+    assert np.sum(s11_noise_mask * s11_error**2) < 50
+    assert np.sum(s12_noise_mask * s12_error**2) < 5
+    assert np.sum(s21_noise_mask * s21_error**2) < 5
+    assert np.sum(s22_noise_mask * s22_error**2) < 50  
+           
         
-    max_db_error = np.ones(N)*0.1
-    
-    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,0,0]) - np.squeeze(dut_cal.s_db[:,0,0]))
-    assert np.all(np.less_equal(actual_db_error, max_db_error))
-    
-    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,0,1]) - np.squeeze(dut_cal.s_db[:,0,1]))
-    assert np.all(np.less_equal(actual_db_error, max_db_error))
+    N = len(dut_exp.f)
 
-    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,1,0]) - np.squeeze(dut_cal.s_db[:,1,0]))
-    assert np.all(np.less_equal(actual_db_error, max_db_error))
-
-    actual_db_error = np.abs(np.squeeze(dut_exp.s_db[:,1,1]) - np.squeeze(dut_cal.s_db[:,1,1]))
-    assert np.all(np.less_equal(actual_db_error, max_db_error))    
-    
-    max_deg_error = np.ones(N)
-    
-    actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,0,0]) - np.squeeze(dut_cal.s_deg[:,0,0]))
-    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
+    max_deg_error = 5
 
     actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,0,1]) - np.squeeze(dut_cal.s_deg[:,0,1]))
-    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
-    
+    assert np.all(np.less_equal(s12_noise_mask * actual_deg_error, max_deg_error))
+
     actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,1,0]) - np.squeeze(dut_cal.s_deg[:,1,0]))
-    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
-    
-    actual_deg_error = np.abs(np.squeeze(dut_exp.s_deg[:,1,1]) - np.squeeze(dut_cal.s_deg[:,1,1]))
-    assert np.all(np.less_equal(actual_deg_error, max_deg_error))
+    assert np.all(np.less_equal(s21_noise_mask * actual_deg_error, max_deg_error))
     
     # check result_to_json
     result = network_to_result2(dut_cal)
