@@ -1,5 +1,45 @@
 # Docker deployment
 
+## Building an image for the raspberry pi (arm32v7)
+
+This needs to be built on the raspberry pi, due to a lack of suitable emulators for the raspberry pi 4. Some earlier models are available with QEMU but not suitable for this task.
+
+### Installing Docker on the RPi4
+
+Ensure you are using a raspberry pi with the latest raspbian pi OS lite 32 (currently kernal 5.15)
+
+```
+$uname -a
+Linux raspberrypi 5.15.84-v7l+ #1613 SMP Thu Jan 5 12:01:26 GMT 2023 armv7l GNU/Linux
+```
+Update as usual
+
+```
+sudo apt update
+sudo apt upgrade
+```
+
+Install docker....
+
+```
+curl -sSL https://get.docker.com | sh
+```
+
+```
+#get sources
+cd ~
+mkdir sources
+cd sources
+git clone https://github.com/practable/pocket-vna-two-port.git
+cd pocket-vna-two-port/py/docker/app-linux-arm32v7 
+sudo build #docker throws a permission denied if you try to run it as an unprivileged user
+```
+
+The build is quite slow compared to the desktop build - grab a cuppa / go for a walk.
+build start 16:28
+
+## Notes from first version
+
 The Docker container for linux/amd64 and linux/arm32v7 differ because of the lack of pre-compiled python packages on the arm32v7 (Raspberry Pi 4) platform.
 
 A <600MB image is created on ubuntu desktop, in a few minutes, with this Dockerfile:
