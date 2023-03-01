@@ -1,8 +1,84 @@
-# go-pocketvna
+# pocket-vna-two-port
 
 A golang-based web service for the pocketvna.com](https://pocketvna.com/) vector network analyser, with an automated two-port calibration facility provided by additional RF hardware, for use with the open-source [practable.io](https://practable.io] remote lab ecosystem. The user interface is similar to [this](https://github.com/dpreid/pidui), although not yet publically released by the developer (coming soon!)
 
-Status: in development. Prototype has passed measurement quality check, and firmware has been updated to two-ports. Now need bringing together and testing again.
+Status: Prototype has passed measurement quality check, and firmware has been updated to two-ports.
+
+## API
+
+Note that the optional "id" parameter does not affect the command itself, and is provided to help associate replies with the commands that produced them (in case responses come out of order)
+
+### Reasonable range 
+
+```
+{"id":"rr","cmd":"rr"}
+```
+Response:
+```
+{"id":"rr","t":0,"cmd":"rr","range":{"start":500000,"end":4000000000}}
+```
+
+### Calibration
+
+To Perform a full 2-port calibration issue a command like this:
+
+```
+{"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":501,"islog":false,"avg":1}
+```
+
+501 points is quite slow, so for quick checking functionality, try fewer points.
+```
+{"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":5,"islog":false,"avg":1}
+```
+
+ The `range`, `size`, `isLog` and `avg` are the same as before. This example uses the largest scan size possible (501 points)
+
+### Measurement
+
+These are all the measurements that can be taken (as before, they use the size, and range parameters from the cal):
+
+```
+{"id":"short","t":0,"cmd":"crq","what":"short","avg":1,"sparam":{"s11":true,"s12":true, "s21":true,"s22":true}}
+{"id":"open","t":0,"cmd":"crq","what":"open","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}}
+{"id":"load","t":0,"cmd":"crq","what":"load","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}}
+{"id":"thru","t":0,"cmd":"crq","what":"thru","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}}
+{"id":"dut1","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}}
+{"id":"dut2","t":0,"cmd":"crq","what":"dut2","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}}
+{"id":"dut3","t":0,"cmd":"crq","what":"dut3","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}}
+{"id":"dut4","t":0,"cmd":"crq","what":"dut4","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}} 
+```
+
+### Trying it out
+
+use the dev-debug because it has been modified to display the data stream more conveniently
+
+request rr:
+```
+{"id":"rr","t":0,"cmd":"rr","range":{"start":500000,"end":4000000000}}
+```
+response
+```
+{"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":501,"islog":false,"avg":1}
+```
+
+request cal
+```
+{"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":3,"islog":false,"avg":1}
+```
+response
+```
+{"id":"rcal","t":0,"cmd":"rc","range":{"start":1000000,"end":4000000000},"size":3,"islog":false,"avg":1,"sparam":{"s11":false,"s12":false,"s21":false,"s22":false},"result":[{"s11":{"real":-0.00002794712781906128,"imag":-0.0002553611993789673},"s12":{"real":0.00004700571298599243,"imag":0.000007621943950653076},"s21":{"real":0.00005336105823516846,"imag":-0.000005081295967102051},"s22":{"real":0.000048279762268066406,"imag":-0.00021597743034362793},"freq":1000000},{"s11":{"real":-0.0000025406479835510254,"imag":-0.0002896711230278015},"s12":{"real":0.0015550479292869568,"imag":-0.00180024653673172},"s21":{"real":-0.0020975321531295776,"imag":0.001013830304145813},"s22":{"real":-0.0018929839134216309,"imag":0.0009096488356590271},"freq":2000500000},{"s11":{"real":0.002163603901863098,"imag":-0.008152559399604797},"s12":{"real":0.0015474259853363037,"imag":-0.0013009533286094666},"s21":{"real":0.0024291202425956726,"imag":0.0006962120532989502},"s22":{"real":0.0027683377265930176,"imag":-0.006796970963478088},"freq":4000000000}],"what":""}
+```
+
+request measurement
+```
+{"id":"dut1","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true}}
+```
+response
+```
+{"id":"dut1","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":true,"s12":true,"s21":true,"s22":true},"result":[{"s11":{"real":0.7213804056329582,"imag":1.4104697588145223},"s12":{"real":-0.6894871206139953,"imag":0.2700840697023531},"s21":{"real":0.7031091027298517,"imag":0.47775336746611247},"s22":{"real":0.10341030075671172,"imag":0.3654223580872504},"freq":1000000},{"s11":{"real":-0.21755274620868625,"imag":-0.3754279747150785},"s12":{"real":0.6896210346136951,"imag":-0.12124783800081158},"s21":{"real":0.5913287788642378,"imag":-0.17444370058172678},"s22":{"real":-0.19807969221279273,"imag":-0.3255108569280837},"freq":2000500000},{"s11":{"real":-0.6383708479867005,"imag":-0.14863376649864046},"s12":{"real":0.29690952420750577,"imag":-0.0448141195835949},"s21":{"real":0.32891032123190567,"imag":0.003536763868706301},"s22":{"real":-0.4513970279816097,"imag":-0.14868940500662153},"freq":4000000000}]}
+```
+
 
 ## Two port set up
 
