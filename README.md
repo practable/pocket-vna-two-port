@@ -183,6 +183,20 @@ These connections tally with the prototype.
 Note that the connection on the HM321 RF chip on the datasheet.
 
 
+### Current DUT Setup
+
+The prototype as at 2023-03-02 is set up as follows:
+
+
+| DUT | Type           | Port/Switch 1 | Port/Switch 2 | 
+|-----|----------------|---------------|---------------|
+| 1   | 2-Port Filter  | P1            | P2            |
+| 2   | 4-Port Coupler | P1            | P4            | 
+| 3   | 4-Port Coupler | P1            | P2            |
+| 4   | 4-Port Coupler | P1            | P3            |
+
+The 4-Port couplers are all the same, but with different port connections, to allow all four ports to be measured (albeit not as completely as a four-port VNA).
+
 ![hm321](./img/hm321.png)
 
 ## Current results
@@ -201,7 +215,9 @@ dut3 : 1 1 1   0 0 0   7   0
 dut4 : 0 0 0   1 1 1   0   7
 ```
 
-## Overview
+## Overview from the one-port repo
+
+These notes should aid in understanding the ansible scripts in `./sbc`, even though some details differ. Note that the below information has NOT been edited to match changes in the current repo, so differs in the detail e.g. of calibration commands (now two-port), and S-parameter settings in the measurement commands. See commands above for the current version.
 
 This repo contains code and design files for the key parts of the system.
 
@@ -210,8 +226,7 @@ This repo contains code and design files for the key parts of the system.
 - python calibration service using scikit-rf & websocket libraries
 - docker containerisation of the python calibration service
 - C/C++ firmware for an arduino nano microcontroller
-- PCB for a logic level shifterthat can control a 4-port RF switch mounted on an evaluation board
-
+-
 The largest part of this repo is the golang executable `vna` which sequences tasks between the four major parts: 
 - user (via websocket service, routed through session host from the external practable.io ecosystem)
 - vector network analyser (via golang-wrapped shared C library; local USB connection to hardware)
