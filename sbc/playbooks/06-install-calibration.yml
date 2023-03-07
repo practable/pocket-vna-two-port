@@ -14,12 +14,12 @@
       state: stopped
       enabled: true
     ignore_errors: true
-      
+
   - name: pull image (practable/calibration-twoport)
     docker_image:
       name: practable/calibration-twoport:arm32v7-3.7-0.1
-
-  - name: Copy calibration service file 
+      source: pull
+  - name: Copy calibration service file
     copy:
       src: ../services/calibration.service
       dest: /etc/systemd/system/calibration.service

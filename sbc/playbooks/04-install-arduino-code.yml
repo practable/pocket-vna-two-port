@@ -7,10 +7,10 @@
   tasks:
 
   - git:
-    repo: https://github.com/practable/pocket-vna-two-port.git
-    dest: /home/pi/sources/pocket-vna-two-port
-    update: yes
-    
+      repo: https://github.com/practable/pocket-vna-two-port.git
+      dest: /home/pi/sources/pocket-vna-two-port
+      update: yes
+
   - name: Compile arduino code
     command: arduino-cli compile --fqbn arduino:avr:nano RFSwitch/ 
     args:
