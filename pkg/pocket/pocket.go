@@ -2,6 +2,7 @@ package pocket
 
 import (
 	"context"
+	"math"
 	"time"
 )
 
@@ -178,3 +179,198 @@ const (
 )
 
 type Distribution int
+
+func New(ctx context.Context) VNAService {
+
+	request := make(chan interface{}, 2)
+	response := make(chan interface{}, 2)
+	h := NewHardware()
+	go h.Run(ctx, request, response)
+
+	return VNAService{
+		Hardware: h,
+		Ctx:      ctx,
+		Request:  request,
+		Response: response,
+		Timeout:  time.Second,
+	}
+}
+
+func NewHardware() *Hardware {
+
+	return new(Hardware)
+}
+
+/* Run provides a go channel interface to the first available instance of a pocket VNA device
+
+There are two uni-directional channels, one to receive commands, the other to reply with data
+
+*/
+
+func (h *Hardware) Run(ctx context.Context, command <-chan interface{}, result chan<- interface{}) {
+
+	err := h.Connect()
+
+	if err != nil {
+		result <- CustomResult{Message: err.Error()}
+		return
+	}
+
+	for {
+		select {
+
+		case cmd := <-command:
+
+			result <- h.HandleCommand(cmd)
+
+		case <-ctx.Done():
+			err := h.Disconnect()
+			if err != nil {
+				result <- CustomResult{Message: err.Error()}
+			}
+			return
+		}
+	}
+}
+
+func (h *Hardware) Connect() error {
+	handle, err := getFirstDeviceHandle()
+	if err != nil {
+		return err
+	}
+
+	h.handle = handle
+
+	return nil
+}
+
+func (h *Hardware) Disconnect() error {
+
+	return releaseHandle(h.handle)
+}
+
+func ForceUnlockDevices() error {
+
+	return forceUnlockDevices()
+
+}
+
+func (h *Hardware) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
+
+	fStart, fEnd, err := getReasonableFrequencyRange(h.handle)
+
+	if err != nil {
+		return r, err
+	}
+
+	r.Result.Start = fStart
+	r.Result.End = fEnd
+
+	return r, err
+
+}
+
+func (h *Hardware) HandleCommand(command interface{}) interface{} {
+
+	switch command.(type) {
+
+	case ReasonableFrequencyRange:
+
+		result, err := h.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
+
+		if err != nil {
+			return CustomResult{Message: err.Error()}
+		}
+
+		return result
+
+	case RangeQuery:
+
+		result, err := h.RangeQuery(command.(RangeQuery))
+
+		if err != nil {
+			return CustomResult{Message: err.Error()}
+		}
+
+		return result
+
+	case SingleQuery:
+
+		result, err := h.SingleQuery(command.(SingleQuery))
+
+		if err != nil {
+			return CustomResult{Message: err.Error()}
+		}
+
+		return result
+
+	default:
+		return CustomResult{
+			Message: "Unknown Command",
+			Command: command,
+		}
+	}
+
+}
+
+func (h *Hardware) RangeQuery(r RangeQuery) (RangeQuery, error) {
+
+	distr := 1 // Linear
+
+	if r.LogDistribution {
+		distr = 2
+	}
+
+	sparams, err := rangeQuery(h.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
+
+	if err != nil {
+		return r, err
+	}
+
+	r.Result = sparams
+
+	return r, err
+}
+
+func (h *Hardware) SingleQuery(s SingleQuery) (SingleQuery, error) {
+
+	sparam, err := singleQuery(h.handle, s.Freq, s.Avg, s.Select)
+
+	if err != nil {
+		return s, err
+	}
+
+	s.Result = sparam
+
+	return s, err
+
+}
+
+func LinFrequency(start, end uint64, size int) []uint64 {
+
+	var ff []uint64
+	s := float64(start)
+	e := float64(end)
+
+	for i := 0; i < size; i++ {
+		f := s + float64(i)*(e-s)/(float64(size)-1)
+		ff = append(ff, uint64(f))
+	}
+	return ff
+}
+
+func LogFrequency(start, end uint64, size int) []uint64 {
+
+	var ff []uint64
+	s := float64(start)
+	e := float64(end)
+	x := e / s
+	for i := 0; i < size; i++ {
+
+		y := float64(i) / (float64(size) - 1.0)
+		f := s * math.Pow(x, y)
+		ff = append(ff, uint64(math.Round(f)))
+	}
+	return ff
+
+}
