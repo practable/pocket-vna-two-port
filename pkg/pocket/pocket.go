@@ -28,80 +28,6 @@ type Mock struct {
 	CommandsReceived               []interface{}
 }
 
-func NewMock() *Mock {
-	return &Mock{}
-}
-
-func (m *Mock) Connect() (func() error, error) {
-	return func() error { return m.DisconnectError }, m.ConnectError
-}
-
-func (m *Mock) GetReasonableFrequencyRange(command interface{}) error {
-
-	c := command.(*ReasonableFrequencyRange)
-
-	c.Result.Start = m.ResultReasonableFrequencyRange.Start
-	c.Result.End = m.ResultReasonableFrequencyRange.End
-
-	cc := *c
-
-	m.CommandsReceived = append(m.CommandsReceived, cc)
-
-	command = c
-
-	return m.CommandError
-}
-
-func (m *Mock) SingleQuery(command interface{}) error {
-
-	c := command.(*SingleQuery)
-
-	c.Result = m.ResultSingleQuery
-	cc := *c
-	m.CommandsReceived = append(m.CommandsReceived, cc)
-
-	command = c
-
-	return m.CommandError
-}
-
-func (m *Mock) RangeQuery(command interface{}) error {
-
-	c := command.(*RangeQuery)
-
-	c.Result = m.ResultRangeQuery
-	cc := *c
-	m.CommandsReceived = append(m.CommandsReceived, cc)
-
-	command = c
-
-	return m.CommandError
-}
-
-func (m *Mock) HandleCommand(command interface{}) error {
-
-	// used to return CustomResult{Message: err.Error()} on error, or copy of command
-	log.WithField("type", reflect.TypeOf(command)).Debugf("Handling Command")
-	switch (command).(type) {
-
-	case *ReasonableFrequencyRange:
-
-		return m.GetReasonableFrequencyRange(command)
-
-	case *RangeQuery:
-
-		return m.RangeQuery(command)
-
-	case *SingleQuery:
-
-		return m.SingleQuery(command) //.(SingleQuery))
-
-	default:
-		return errors.New("unknown command")
-	}
-
-}
-
 /*
 typedef struct PocketVnaDeviceDesc {
     const char * path;
@@ -209,11 +135,6 @@ type RangeQuery struct {
 	Select          SParamSelect `json:"sparam"`
 	Result          []SParam     `json:"result,omitEmpty"`
 	What            string       `json:"what"`
-}
-
-// GenericCommand (for getting the command type in HandleCommand)
-type GenericCommand struct {
-	Command
 }
 
 // this command is not supported by pocket
@@ -379,6 +300,81 @@ func (h *Hardware) SingleQuery(command interface{}) error {
 	command = s
 
 	return err
+
+}
+
+func NewMock() *Mock {
+	return &Mock{}
+}
+
+func (m *Mock) Connect() (func() error, error) {
+	return func() error { return m.DisconnectError }, m.ConnectError
+}
+
+func (m *Mock) GetReasonableFrequencyRange(command interface{}) error {
+
+	c := command.(*ReasonableFrequencyRange)
+
+	c.Result.Start = m.ResultReasonableFrequencyRange.Start
+	c.Result.End = m.ResultReasonableFrequencyRange.End
+
+	cc := *c
+
+	m.CommandsReceived = append(m.CommandsReceived, cc)
+
+	command = c
+
+	return m.CommandError
+}
+
+func (m *Mock) SingleQuery(command interface{}) error {
+
+	c := command.(*SingleQuery)
+
+	c.Result = m.ResultSingleQuery
+	cc := *c
+	m.CommandsReceived = append(m.CommandsReceived, cc)
+
+	command = c
+
+	return m.CommandError
+}
+
+func (m *Mock) RangeQuery(command interface{}) error {
+
+	c := command.(*RangeQuery)
+
+	c.Result = m.ResultRangeQuery
+	cc := *c
+	m.CommandsReceived = append(m.CommandsReceived, cc)
+
+	command = c
+
+	return m.CommandError
+}
+
+func (m *Mock) HandleCommand(command interface{}) error {
+
+	// used to return CustomResult{Message: err.Error()} on error, or copy of command
+	log.WithField("type", reflect.TypeOf(command)).Debugf("Handling Command")
+
+	switch (command).(type) {
+
+	case *ReasonableFrequencyRange:
+
+		return m.GetReasonableFrequencyRange(command)
+
+	case *RangeQuery:
+
+		return m.RangeQuery(command)
+
+	case *SingleQuery:
+
+		return m.SingleQuery(command)
+
+	default:
+		return errors.New("unknown command")
+	}
 
 }
 
