@@ -6,11 +6,22 @@ import (
 )
 
 type VNAService struct {
-	Handle   *Handle
+	Hardware *Hardware
 	Ctx      context.Context
 	Request  chan interface{}
 	Response chan interface{}
 	Timeout  time.Duration
+}
+
+type VNA interface {
+	Run(ctx context.Context, command <-chan interface{}, result chan<- interface{})
+	Connect() error
+	Disconnect() error
+	ForceUnlockDevices() error
+	GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error)
+	HandleCommand(command interface{}) interface{}
+	RangeQuery(r RangeQuery) (RangeQuery, error)
+	SingleQuery(s SingleQuery) (SingleQuery, error)
 }
 
 /*

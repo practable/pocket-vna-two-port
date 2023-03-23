@@ -255,7 +255,7 @@ func TestRunHW(t *testing.T) {
 	}
 	timeout := time.Millisecond * 100
 
-	v := NewHandle()
+	v := NewHardware()
 
 	command := make(chan interface{})
 	result := make(chan interface{})
@@ -264,7 +264,7 @@ func TestRunHW(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	go v.Run(command, result, ctx)
+	go v.Run(ctx, command, result)
 
 	// Do GetReasonableFrequencyRange command
 

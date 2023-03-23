@@ -32,7 +32,7 @@ import (
 )
 
 // does not compile if in types.go ("C undefined")
-type Handle struct {
+type Hardware struct {
 	handle C.PVNA_DeviceHandler
 }
 
@@ -40,11 +40,11 @@ func New(ctx context.Context) VNAService {
 
 	request := make(chan interface{}, 2)
 	response := make(chan interface{}, 2)
-	h := NewHandle()
-	go h.Run(request, response, ctx)
+	h := NewHardware()
+	go h.Run(ctx, request, response)
 
 	return VNAService{
-		Handle:   h,
+		Hardware: h,
 		Ctx:      ctx,
 		Request:  request,
 		Response: response,
@@ -52,9 +52,9 @@ func New(ctx context.Context) VNAService {
 	}
 }
 
-func NewHandle() *Handle {
+func NewHardware() *Hardware {
 
-	return new(Handle)
+	return new(Hardware)
 }
 
 /* Run provides a go channel interface to the first available instance of a pocket VNA device
@@ -63,7 +63,7 @@ There are two uni-directional channels, one to receive commands, the other to re
 
 */
 
-func (h *Handle) Run(command <-chan interface{}, result chan<- interface{}, ctx context.Context) {
+func (h *Hardware) Run(ctx context.Context, command <-chan interface{}, result chan<- interface{}) {
 
 	err := h.Connect()
 
@@ -89,7 +89,7 @@ func (h *Handle) Run(command <-chan interface{}, result chan<- interface{}, ctx 
 	}
 }
 
-func (h *Handle) Connect() error {
+func (h *Hardware) Connect() error {
 	handle, err := getFirstDeviceHandle()
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (h *Handle) Connect() error {
 	return nil
 }
 
-func (h *Handle) Disconnect() error {
+func (h *Hardware) Disconnect() error {
 
 	return releaseHandle(h.handle)
 }
@@ -112,7 +112,7 @@ func ForceUnlockDevices() error {
 	return decode(result)
 }
 
-func (h *Handle) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
+func (h *Hardware) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
 
 	fStart, fEnd, err := getReasonableFrequencyRange(h.handle)
 
@@ -127,7 +127,7 @@ func (h *Handle) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (Reason
 
 }
 
-func (h *Handle) HandleCommand(command interface{}) interface{} {
+func (h *Hardware) HandleCommand(command interface{}) interface{} {
 
 	switch command.(type) {
 
@@ -170,7 +170,7 @@ func (h *Handle) HandleCommand(command interface{}) interface{} {
 
 }
 
-func (h *Handle) RangeQuery(r RangeQuery) (RangeQuery, error) {
+func (h *Hardware) RangeQuery(r RangeQuery) (RangeQuery, error) {
 
 	distr := 1 // Linear
 
@@ -189,7 +189,7 @@ func (h *Handle) RangeQuery(r RangeQuery) (RangeQuery, error) {
 	return r, err
 }
 
-func (h *Handle) SingleQuery(s SingleQuery) (SingleQuery, error) {
+func (h *Hardware) SingleQuery(s SingleQuery) (SingleQuery, error) {
 
 	sparam, err := singleQuery(h.handle, s.Freq, s.Avg, s.Select)
 
