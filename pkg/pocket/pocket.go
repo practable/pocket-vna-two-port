@@ -1,28 +1,105 @@
 package pocket
 
 import (
-	"context"
+	"errors"
 	"math"
-	"time"
+	"reflect"
+
+	log "github.com/sirupsen/logrus"
 )
 
-type VNAService struct {
-	Hardware *Hardware
-	Ctx      context.Context
-	Request  chan interface{}
-	Response chan interface{}
-	Timeout  time.Duration
+type VNA interface {
+	Connect() (func() error, error)
+	GetReasonableFrequencyRange(command interface{}) error
+	HandleCommand(command interface{}) error
+	RangeQuery(command interface{}) error
+	SingleQuery(command interface{}) error
 }
 
-type VNA interface {
-	Run(ctx context.Context, command <-chan interface{}, result chan<- interface{})
-	Connect() error
-	Disconnect() error
-	ForceUnlockDevices() error
-	GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error)
-	HandleCommand(command interface{}) interface{}
-	RangeQuery(r RangeQuery) (RangeQuery, error)
-	SingleQuery(s SingleQuery) (SingleQuery, error)
+//TODO mock that takes a pointer to mock switch state, and returns different results depending on switch state
+
+type Mock struct {
+	ConnectError                   error
+	DisconnectError                error
+	CommandError                   error
+	ResultRangeQuery               []SParam
+	ResultSingleQuery              SParam
+	ResultReasonableFrequencyRange Range
+	CommandsReceived               []interface{}
+}
+
+func NewMock() *Mock {
+	return &Mock{}
+}
+
+func (m *Mock) Connect() (func() error, error) {
+	return func() error { return m.DisconnectError }, m.ConnectError
+}
+
+func (m *Mock) GetReasonableFrequencyRange(command interface{}) error {
+
+	c := command.(*ReasonableFrequencyRange)
+
+	c.Result.Start = m.ResultReasonableFrequencyRange.Start
+	c.Result.End = m.ResultReasonableFrequencyRange.End
+
+	cc := *c
+
+	m.CommandsReceived = append(m.CommandsReceived, cc)
+
+	command = c
+
+	return m.CommandError
+}
+
+func (m *Mock) SingleQuery(command interface{}) error {
+
+	c := command.(*SingleQuery)
+
+	c.Result = m.ResultSingleQuery
+	cc := *c
+	m.CommandsReceived = append(m.CommandsReceived, cc)
+
+	command = c
+
+	return m.CommandError
+}
+
+func (m *Mock) RangeQuery(command interface{}) error {
+
+	c := command.(*RangeQuery)
+
+	c.Result = m.ResultRangeQuery
+	cc := *c
+	m.CommandsReceived = append(m.CommandsReceived, cc)
+
+	command = c
+
+	return m.CommandError
+}
+
+func (m *Mock) HandleCommand(command interface{}) error {
+
+	// used to return CustomResult{Message: err.Error()} on error, or copy of command
+	log.WithField("type", reflect.TypeOf(command)).Debugf("Handling Command")
+	switch (command).(type) {
+
+	case *ReasonableFrequencyRange:
+
+		return m.GetReasonableFrequencyRange(command)
+
+	case *RangeQuery:
+
+		return m.RangeQuery(command)
+
+	case *SingleQuery:
+
+		return m.SingleQuery(command) //.(SingleQuery))
+
+	default:
+		return errors.New("unknown command")
+	}
+
 }
 
 /*
@@ -134,6 +211,11 @@ type RangeQuery struct {
 	What            string       `json:"what"`
 }
 
+// GenericCommand (for getting the command type in HandleCommand)
+type GenericCommand struct {
+	Command
+}
+
 // this command is not supported by pocket
 // we have to handle this in the firmwarees
 type CalibratedRangeQuery struct {
@@ -180,25 +262,15 @@ const (
 
 type Distribution int
 
-func New(ctx context.Context) VNAService {
+func NewHardware() (VNA, func() error, error) {
+	h := new(Hardware)
+	disconnect, err := h.Connect()
 
-	request := make(chan interface{}, 2)
-	response := make(chan interface{}, 2)
-	h := NewHardware()
-	go h.Run(ctx, request, response)
-
-	return VNAService{
-		Hardware: h,
-		Ctx:      ctx,
-		Request:  request,
-		Response: response,
-		Timeout:  time.Second,
+	if err != nil {
+		return h, disconnect, err
 	}
-}
 
-func NewHardware() *Hardware {
-
-	return new(Hardware)
+	return h, disconnect, nil
 }
 
 /* Run provides a go channel interface to the first available instance of a pocket VNA device
@@ -207,46 +279,18 @@ There are two uni-directional channels, one to receive commands, the other to re
 
 */
 
-func (h *Hardware) Run(ctx context.Context, command <-chan interface{}, result chan<- interface{}) {
+// Connect returns a disconnect function that should called when finished
+func (h *Hardware) Connect() (func() error, error) {
 
-	err := h.Connect()
-
-	if err != nil {
-		result <- CustomResult{Message: err.Error()}
-		return
-	}
-
-	for {
-		select {
-
-		case cmd := <-command:
-
-			result <- h.HandleCommand(cmd)
-
-		case <-ctx.Done():
-			err := h.Disconnect()
-			if err != nil {
-				result <- CustomResult{Message: err.Error()}
-			}
-			return
-		}
-	}
-}
-
-func (h *Hardware) Connect() error {
 	handle, err := getFirstDeviceHandle()
+
 	if err != nil {
-		return err
+		return func() error { return nil }, err
 	}
 
 	h.handle = handle
 
-	return nil
-}
-
-func (h *Hardware) Disconnect() error {
-
-	return releaseHandle(h.handle)
+	return func() error { return releaseHandle(h.handle) }, nil
 }
 
 func ForceUnlockDevices() error {
@@ -255,65 +299,51 @@ func ForceUnlockDevices() error {
 
 }
 
-func (h *Hardware) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
+func (h *Hardware) GetReasonableFrequencyRange(command interface{}) error {
+
+	r := command.(*ReasonableFrequencyRange)
 
 	fStart, fEnd, err := getReasonableFrequencyRange(h.handle)
 
 	if err != nil {
-		return r, err
+		return err
 	}
 
 	r.Result.Start = fStart
 	r.Result.End = fEnd
 
-	return r, err
+	command = r
+
+	return err
 
 }
 
-func (h *Hardware) HandleCommand(command interface{}) interface{} {
+func (h *Hardware) HandleCommand(command interface{}) error {
 
-	switch command.(type) {
+	// used to return CustomResult{Message: err.Error()} on error, or copy of command
+	switch (command).(type) {
 
-	case ReasonableFrequencyRange:
+	case *ReasonableFrequencyRange:
 
-		result, err := h.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
+		return h.GetReasonableFrequencyRange(command)
 
-		if err != nil {
-			return CustomResult{Message: err.Error()}
-		}
+	case *RangeQuery:
 
-		return result
+		return h.RangeQuery(command)
 
-	case RangeQuery:
+	case *SingleQuery:
 
-		result, err := h.RangeQuery(command.(RangeQuery))
-
-		if err != nil {
-			return CustomResult{Message: err.Error()}
-		}
-
-		return result
-
-	case SingleQuery:
-
-		result, err := h.SingleQuery(command.(SingleQuery))
-
-		if err != nil {
-			return CustomResult{Message: err.Error()}
-		}
-
-		return result
+		return h.SingleQuery(command) //.(SingleQuery))
 
 	default:
-		return CustomResult{
-			Message: "Unknown Command",
-			Command: command,
-		}
+		return errors.New("unknown command")
 	}
 
 }
 
-func (h *Hardware) RangeQuery(r RangeQuery) (RangeQuery, error) {
+func (h *Hardware) RangeQuery(command interface{}) error {
+
+	r := command.(*RangeQuery)
 
 	distr := 1 // Linear
 
@@ -324,25 +354,31 @@ func (h *Hardware) RangeQuery(r RangeQuery) (RangeQuery, error) {
 	sparams, err := rangeQuery(h.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
 
 	if err != nil {
-		return r, err
+		return err
 	}
 
 	r.Result = sparams
 
-	return r, err
+	command = r
+
+	return err
 }
 
-func (h *Hardware) SingleQuery(s SingleQuery) (SingleQuery, error) {
+func (h *Hardware) SingleQuery(command interface{}) error {
+
+	s := command.(*SingleQuery)
 
 	sparam, err := singleQuery(h.handle, s.Freq, s.Avg, s.Select)
 
 	if err != nil {
-		return s, err
+		return err
 	}
 
 	s.Result = sparam
 
-	return s, err
+	command = s
+
+	return err
 
 }
 

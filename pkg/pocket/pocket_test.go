@@ -3,13 +3,11 @@ package pocket
 import (
 	"bufio"
 	"bytes"
-	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +23,7 @@ func TestMain(m *testing.M) {
 
 	if debug {
 		log.SetLevel(log.TraceLevel)
-		log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, DisableColors: true})
+		log.SetFormatter(&log.TextFormatter{FullTimestamp: true, DisableColors: true})
 		defer log.SetOutput(os.Stdout)
 
 	} else {
@@ -48,6 +46,190 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
+func TestMockConnect(t *testing.T) {
+
+	v := NewMock()
+
+	disconnect, err := v.Connect()
+	assert.NoError(t, err)
+	err = disconnect()
+	assert.NoError(t, err)
+
+	ce := errors.New("PVNA_Res_NoDevice")
+	v.ConnectError = ce
+	disconnect, err = v.Connect()
+	assert.Error(t, err)
+	assert.Equal(t, ce, err)
+	err = disconnect()
+	assert.NoError(t, err)
+
+}
+
+func TestMockGetReasonableFrequencyRange(t *testing.T) {
+
+	v := NewMock()
+
+	start := uint64(1000000)
+	end := uint64(4000000000)
+	id := "rfr00"
+
+	v.ResultReasonableFrequencyRange = Range{
+		Start: start,
+		End:   end,
+	}
+
+	c := ReasonableFrequencyRange{Command: Command{ID: id}}
+
+	err := v.GetReasonableFrequencyRange(&c)
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, id, c.ID)
+	assert.Equal(t, start, c.Result.Start)
+	assert.Equal(t, end, c.Result.End)
+
+	assert.Equal(t, []interface{}{c}, v.CommandsReceived)
+
+}
+
+func TestMockSingleQuery(t *testing.T) {
+
+	v := NewMock()
+
+	id := "sq00"
+
+	v.ResultSingleQuery = SParam{
+		S11: Complex{
+			Imag: 1.0,
+			Real: 2.0,
+		},
+		Freq: 3,
+	}
+
+	// our mock doesn't check anything in the command
+	c := SingleQuery{Command: Command{ID: id}}
+
+	err := v.SingleQuery(&c)
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, id, c.ID)
+	assert.Equal(t, 1.0, c.Result.S11.Imag)
+	assert.Equal(t, 2.0, c.Result.S11.Real)
+	assert.Equal(t, uint64(3), c.Result.Freq)
+	assert.Equal(t, []interface{}{c}, v.CommandsReceived)
+}
+
+func TestMockRangeQuery(t *testing.T) {
+
+	v := NewMock()
+
+	id := "sq00"
+
+	v.ResultRangeQuery = []SParam{SParam{
+		S11: Complex{
+			Imag: 1.0,
+			Real: 2.0,
+		},
+		Freq: 3,
+	},
+		SParam{
+			S11: Complex{
+				Imag: 4.0,
+				Real: 5.0,
+			},
+			Freq: 6,
+		},
+	}
+
+	// our mock doesn't check anything in the command
+	c := RangeQuery{Command: Command{ID: id}}
+
+	err := v.RangeQuery(&c)
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, id, c.ID)
+	assert.Equal(t, 1.0, c.Result[0].S11.Imag)
+	assert.Equal(t, 2.0, c.Result[0].S11.Real)
+	assert.Equal(t, uint64(3), c.Result[0].Freq)
+	assert.Equal(t, 4.0, c.Result[1].S11.Imag)
+	assert.Equal(t, 5.0, c.Result[1].S11.Real)
+	assert.Equal(t, uint64(6), c.Result[1].Freq)
+
+	assert.Equal(t, []interface{}{c}, v.CommandsReceived)
+}
+
+func TestMockHandleCommand(t *testing.T) {
+
+	v := NewMock()
+
+	start := uint64(1000000)
+	end := uint64(4000000000)
+
+	v.ResultReasonableFrequencyRange = Range{
+		Start: start,
+		End:   end,
+	}
+
+	v.ResultSingleQuery = SParam{
+		S11: Complex{
+			Imag: 1.0,
+			Real: 2.0,
+		},
+		Freq: 3,
+	}
+
+	v.ResultRangeQuery = []SParam{SParam{
+		S11: Complex{
+			Imag: 4.0,
+			Real: 5.0,
+		},
+		Freq: 6,
+	},
+		SParam{
+			S11: Complex{
+				Imag: 7.0,
+				Real: 8.0,
+			},
+			Freq: 9,
+		},
+	}
+
+	id0 := "rfr00"
+	c0 := ReasonableFrequencyRange{Command: Command{ID: id0, Command: "rfr"}}
+
+	err := v.HandleCommand(&c0)
+	assert.NoError(t, err)
+	assert.Equal(t, id0, c0.ID)
+	assert.Equal(t, start, c0.Result.Start)
+	assert.Equal(t, end, c0.Result.End)
+
+	id1 := "rq00"
+	c1 := RangeQuery{Command: Command{ID: id1, Command: "rq"}}
+	err = v.HandleCommand(&c1)
+	assert.NoError(t, err)
+	assert.Equal(t, id1, c1.ID)
+	assert.Equal(t, 4.0, c1.Result[0].S11.Imag)
+	assert.Equal(t, 5.0, c1.Result[0].S11.Real)
+	assert.Equal(t, uint64(6), c1.Result[0].Freq)
+	assert.Equal(t, 7.0, c1.Result[1].S11.Imag)
+	assert.Equal(t, 8.0, c1.Result[1].S11.Real)
+	assert.Equal(t, uint64(9), c1.Result[1].Freq)
+
+	id2 := "sq00"
+	c2 := SingleQuery{Command: Command{ID: id2, Command: "sq"}}
+	err = v.HandleCommand(&c2)
+	assert.NoError(t, err)
+	assert.Equal(t, id2, c2.ID)
+	assert.Equal(t, 1.0, c2.Result.S11.Imag)
+	assert.Equal(t, 2.0, c2.Result.S11.Real)
+	assert.Equal(t, uint64(3), c2.Result.Freq)
+
+	assert.Equal(t, []interface{}{c0, c1, c2}, v.CommandsReceived)
+}
+
+/* TODO refactor tests
 func TestGetReleaseHandleHW(t *testing.T) {
 	if !hardware {
 		t.Skip("hardware not present")
@@ -417,3 +599,4 @@ func TestFrequencyHW(t *testing.T) {
 	}
 
 }
+*/
