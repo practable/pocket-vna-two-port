@@ -7,26 +7,27 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
 	"github.com/timdrysdale/pocket-vna-two-port/pkg/calibration"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
 	"github.com/timdrysdale/pocket-vna-two-port/pkg/rfswitch"
 	"github.com/timdrysdale/pocket-vna-two-port/pkg/stream"
+	"github.com/timdrysdale/pocket-vna-two-port/pkg/vna"
 )
 
 type Middle struct {
 	Calibration *calibration.Calibration
 	Stream      *stream.Stream
 	Switch      *rfswitch.Switch
-	VNA         *pocket.VNAService
+	VNA         *vna.VNAService
 }
 
-func New(uc, ur, us string, ctx context.Context) Middle {
+func New(ctx context.Context, uc, ur, us string, vna *vna.VNAService) Middle {
 
 	c := calibration.New(uc, ctx)
 	r := rfswitch.New(ur, ctx)
 	s := stream.New(us, ctx)
 
-	v := pocket.New(ctx)
+	// note that vna will have it own's context (usually the same parent as this one though)
 
 	timeout := time.Second
 
@@ -60,7 +61,7 @@ func New(uc, ur, us string, ctx context.Context) Middle {
 		Calibration: &c,
 		Stream:      &s,
 		Switch:      &r,
-		VNA:         &v,
+		VNA:         v,
 	}
 
 }

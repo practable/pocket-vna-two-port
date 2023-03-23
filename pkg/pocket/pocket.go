@@ -6,7 +6,7 @@ import (
 )
 
 type VNAService struct {
-	VNA      *VNA
+	Handle   *Handle
 	Ctx      context.Context
 	Request  chan interface{}
 	Response chan interface{}
@@ -159,3 +159,11 @@ type Complex struct {
 	Real float64 `json:"real"`
 	Imag float64 `json:"imag"`
 }
+
+const (
+	Undefined Distribution = iota //handle default value being undefined
+	Linear
+	Log
+)
+
+type Distribution int

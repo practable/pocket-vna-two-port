@@ -15,11 +15,13 @@ import (
 )
 
 var verbose bool
+var hardware bool
 
 func TestMain(m *testing.M) {
 	// Setup  logging
 	debug := false
 	verbose = true
+	hardware = false
 
 	if debug {
 		log.SetLevel(log.TraceLevel)
@@ -32,11 +34,13 @@ func TestMain(m *testing.M) {
 		log.SetOutput(logignore)
 	}
 
-	err := ForceUnlockDevices()
+	if hardware {
+		err := ForceUnlockDevices()
 
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	}
 
 	exitVal := m.Run()
@@ -44,16 +48,20 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
-func TestGetReleaseHandle(t *testing.T) {
-
+func TestGetReleaseHandleHW(t *testing.T) {
+	if !hardware {
+		t.Skip("hardware not present")
+	}
 	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
 	err = releaseHandle(handle)
 	assert.NoError(t, err)
 }
 
-func TestGetReasonableFrequency(t *testing.T) {
-
+func TestGetReasonableFrequencyHW(t *testing.T) {
+	if !hardware {
+		t.Skip("hardware not present")
+	}
 	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
 
@@ -70,8 +78,10 @@ func TestGetReasonableFrequency(t *testing.T) {
 
 }
 
-func TestSingleQuery(t *testing.T) {
-
+func TestSingleQueryHW(t *testing.T) {
+	if !hardware {
+		t.Skip("hardware not present")
+	}
 	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
 
@@ -94,8 +104,10 @@ func TestSingleQuery(t *testing.T) {
 
 }
 
-func TestRangeQuery(t *testing.T) {
-
+func TestRangeQueryHW(t *testing.T) {
+	if !hardware {
+		t.Skip("hardware not present")
+	}
 	handle, err := getFirstDeviceHandle()
 	assert.NoError(t, err)
 
@@ -121,8 +133,10 @@ func TestRangeQuery(t *testing.T) {
 
 }
 
-func TestNewService(t *testing.T) {
-
+func TestNewServiceHW(t *testing.T) {
+	if !hardware {
+		t.Skip("hardware not present")
+	}
 	timeout := time.Millisecond * 100
 
 	ctx := context.Background()
@@ -235,11 +249,13 @@ func TestNewService(t *testing.T) {
 
 }
 
-func TestRun(t *testing.T) {
-
+func TestRunHW(t *testing.T) {
+	if !hardware {
+		t.Skip("hardware not present")
+	}
 	timeout := time.Millisecond * 100
 
-	v := NewVNA()
+	v := NewHandle()
 
 	command := make(chan interface{})
 	result := make(chan interface{})
@@ -355,8 +371,10 @@ func TestRun(t *testing.T) {
 
 }
 
-func TestFrequency(t *testing.T) {
-
+func TestFrequencyHW(t *testing.T) {
+	if !hardware {
+		t.Skip("hardware not present")
+	}
 	var start, end uint64
 	start = 1000000
 	end = 500000000

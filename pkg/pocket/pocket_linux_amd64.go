@@ -32,7 +32,7 @@ import (
 )
 
 // does not compile if in types.go ("C undefined")
-type VNA struct {
+type Handle struct {
 	handle C.PVNA_DeviceHandler
 }
 
@@ -40,11 +40,11 @@ func New(ctx context.Context) VNAService {
 
 	request := make(chan interface{}, 2)
 	response := make(chan interface{}, 2)
-	v := NewVNA()
-	go v.Run(request, response, ctx)
+	h := NewHandle()
+	go h.Run(request, response, ctx)
 
 	return VNAService{
-		VNA:      v,
+		Handle:   h,
 		Ctx:      ctx,
 		Request:  request,
 		Response: response,
@@ -52,9 +52,9 @@ func New(ctx context.Context) VNAService {
 	}
 }
 
-func NewVNA() *VNA {
+func NewHandle() *Handle {
 
-	return new(VNA)
+	return new(Handle)
 }
 
 /* Run provides a go channel interface to the first available instance of a pocket VNA device
@@ -63,9 +63,9 @@ There are two uni-directional channels, one to receive commands, the other to re
 
 */
 
-func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx context.Context) {
+func (h *Handle) Run(command <-chan interface{}, result chan<- interface{}, ctx context.Context) {
 
-	err := v.Connect()
+	err := h.Connect()
 
 	if err != nil {
 		result <- CustomResult{Message: err.Error()}
@@ -77,10 +77,10 @@ func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx con
 
 		case cmd := <-command:
 
-			result <- v.HandleCommand(cmd)
+			result <- h.HandleCommand(cmd)
 
 		case <-ctx.Done():
-			err := v.Disconnect()
+			err := h.Disconnect()
 			if err != nil {
 				result <- CustomResult{Message: err.Error()}
 			}
@@ -89,20 +89,20 @@ func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx con
 	}
 }
 
-func (v *VNA) Connect() error {
+func (h *Handle) Connect() error {
 	handle, err := getFirstDeviceHandle()
 	if err != nil {
 		return err
 	}
 
-	v.handle = handle
+	h.handle = handle
 
 	return nil
 }
 
-func (v *VNA) Disconnect() error {
+func (h *Handle) Disconnect() error {
 
-	return releaseHandle(v.handle)
+	return releaseHandle(h.handle)
 }
 
 func ForceUnlockDevices() error {
@@ -112,9 +112,9 @@ func ForceUnlockDevices() error {
 	return decode(result)
 }
 
-func (v *VNA) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
+func (h *Handle) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
 
-	fStart, fEnd, err := getReasonableFrequencyRange(v.handle)
+	fStart, fEnd, err := getReasonableFrequencyRange(h.handle)
 
 	if err != nil {
 		return r, err
@@ -127,13 +127,13 @@ func (v *VNA) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (Reasonabl
 
 }
 
-func (v *VNA) HandleCommand(command interface{}) interface{} {
+func (h *Handle) HandleCommand(command interface{}) interface{} {
 
 	switch command.(type) {
 
 	case ReasonableFrequencyRange:
 
-		result, err := v.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
+		result, err := h.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
 
 		if err != nil {
 			return CustomResult{Message: err.Error()}
@@ -143,7 +143,7 @@ func (v *VNA) HandleCommand(command interface{}) interface{} {
 
 	case RangeQuery:
 
-		result, err := v.RangeQuery(command.(RangeQuery))
+		result, err := h.RangeQuery(command.(RangeQuery))
 
 		if err != nil {
 			return CustomResult{Message: err.Error()}
@@ -153,7 +153,7 @@ func (v *VNA) HandleCommand(command interface{}) interface{} {
 
 	case SingleQuery:
 
-		result, err := v.SingleQuery(command.(SingleQuery))
+		result, err := h.SingleQuery(command.(SingleQuery))
 
 		if err != nil {
 			return CustomResult{Message: err.Error()}
@@ -170,7 +170,7 @@ func (v *VNA) HandleCommand(command interface{}) interface{} {
 
 }
 
-func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
+func (h *Handle) RangeQuery(r RangeQuery) (RangeQuery, error) {
 
 	distr := 1 // Linear
 
@@ -178,7 +178,7 @@ func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
 		distr = 2
 	}
 
-	sparams, err := rangeQuery(v.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
+	sparams, err := rangeQuery(h.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
 
 	if err != nil {
 		return r, err
@@ -189,9 +189,9 @@ func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
 	return r, err
 }
 
-func (v *VNA) SingleQuery(s SingleQuery) (SingleQuery, error) {
+func (h *Handle) SingleQuery(s SingleQuery) (SingleQuery, error) {
 
-	sparam, err := singleQuery(v.handle, s.Freq, s.Avg, s.Select)
+	sparam, err := singleQuery(h.handle, s.Freq, s.Avg, s.Select)
 
 	if err != nil {
 		return s, err
@@ -383,13 +383,6 @@ enum PocketVNADistribution {
 };
 
 */
-type Distribution int
-
-const (
-	Undefined Distribution = iota //handle default value being undefined
-	Linear
-	Log
-)
 
 // We do not implement the callback for this version ...
 func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr int, avg uint16, p SParamSelect) ([]SParam, error) {
