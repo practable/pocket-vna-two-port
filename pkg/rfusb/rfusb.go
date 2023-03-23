@@ -29,10 +29,83 @@ type RFUSB struct {
 	timeout time.Duration
 }
 
-func New() *RFUSB {
+type Mock struct {
+	mu   *sync.Mutex
+	port string
+}
+
+type Switch interface {
+	Close() error
+	Get() string
+	Open(port string, baud int, timeout time.Duration) error
+	SetPort(port string) error
+	SetShort() error
+	SetOpen() error
+	SetLoad() error
+	SetThru() error
+	SetDUT1() error
+	SetDut2() error
+	SetDut3() error
+	SetDut4() error
+}
+
+func NewMock() *Mock {
+	return &Mock{
+		mu:   &sync.Mutex{},
+		port: "unknown",
+	}
+}
+
+func (m *Mock) Close() error {
+	return nil
+}
+
+func (m *Mock) Get() string {
+	return m.port
+}
+
+func (m *Mock) Open(port string, baud int, timeout time.Duration) error {
+	return nil
+}
+
+func (m *Mock) SetPort(port string) error {
+	m.port = port
+	return nil
+}
+
+func (m *Mock) SetShort() error {
+	return m.SetPort("short")
+}
+
+func (m *Mock) SetOpen() error {
+	return m.SetPort("open")
+}
+
+func (m *Mock) SetLoad() error {
+	return m.SetPort("load")
+}
+
+func (m *Mock) SetThru() error {
+	return m.SetPort("thru")
+}
+func (m *Mock) SetDUT1() error {
+	return m.SetPort("dut1")
+}
+func (m *Mock) SetDUT2() error {
+	return m.SetPort("dut2")
+}
+func (m *Mock) SetDUT3() error {
+	return m.SetPort("dut3")
+}
+func (m *Mock) SetDUT4() error {
+	return m.SetPort("dut4")
+}
+
+func NewRFUSB() *RFUSB {
 	return &RFUSB{
-		mu: &sync.Mutex{},
-		//don't initialise port - use Open() for that
+		mu:   &sync.Mutex{},
+		port: "unknown",
+		//don't initialise sp - use Open() for that
 	}
 }
 
@@ -74,28 +147,6 @@ func (r *RFUSB) Close() error {
 	// don't take lock because there is read, close concurrency
 	// https://github.com/bugst/go-serial/blob/e381f2c1332081ea593d73e97c71342026876857/serial_linux_test.go#L35
 	return r.sp.Close()
-}
-
-func (r *RFUSB) Drain() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.sp == nil {
-		return errors.New("port is nil")
-	}
-	for {
-		var resp []byte
-		n, err := r.sp.Read(resp)
-		if err != nil {
-			return err //port probably closed
-		}
-		//https://github.com/bugst/go-serial/blob/e381f2c1332081ea593d73e97c71342026876857/serial_unix.go#L94
-		// timeout is n==0, err==nil
-		if n == 0 {
-			return nil
-		}
-		continue
-	}
-
 }
 
 func (r *RFUSB) SetShort() error {

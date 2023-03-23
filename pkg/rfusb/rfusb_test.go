@@ -19,7 +19,7 @@ var timeout time.Duration
 
 func TestMain(m *testing.M) {
 	// Setup  logging
-	debug := true
+	debug := false
 	hardware = true
 
 	if debug {
@@ -47,7 +47,7 @@ func TestOpen(t *testing.T) {
 		t.Skip("no hardware")
 	}
 
-	r := New()
+	r := NewRFUSB()
 
 	err := r.Open(port, baud, timeout)
 
@@ -64,7 +64,7 @@ func TestSetPort(t *testing.T) {
 		t.Skip("no hardware")
 	}
 
-	r := New()
+	r := NewRFUSB()
 
 	err := r.Open(port, baud, timeout)
 
@@ -87,7 +87,7 @@ func TestSettingPorts(t *testing.T) {
 		t.Skip("no hardware")
 	}
 
-	r := New()
+	r := NewRFUSB()
 
 	err := r.Open(port, baud, timeout)
 	assert.NoError(t, err)
@@ -96,48 +96,136 @@ func TestSettingPorts(t *testing.T) {
 
 	err = r.SetShort()
 	assert.NoError(t, err)
+	assert.Equal(t, "short", r.Get())
 
 	err = r.SetOpen()
 	assert.NoError(t, err)
+	assert.Equal(t, "open", r.Get())
 
 	err = r.SetLoad()
 	assert.NoError(t, err)
+	assert.Equal(t, "load", r.Get())
 
 	err = r.SetThru()
 	assert.NoError(t, err)
+	assert.Equal(t, "thru", r.Get())
 
 	err = r.SetDUT1()
 	assert.NoError(t, err)
+	assert.Equal(t, "dut1", r.Get())
 
 	err = r.SetDUT2()
 	assert.NoError(t, err)
+	assert.Equal(t, "dut2", r.Get())
 
 	err = r.SetDUT3()
 	assert.NoError(t, err)
+	assert.Equal(t, "dut3", r.Get())
 
 	err = r.SetDUT4()
 	assert.NoError(t, err)
+	assert.Equal(t, "dut4", r.Get())
 
 	err = r.SetDUT3()
 	assert.NoError(t, err)
+	assert.Equal(t, "dut3", r.Get())
 
 	err = r.SetDUT2()
 	assert.NoError(t, err)
+	assert.Equal(t, "dut2", r.Get())
 
 	err = r.SetDUT1()
 	assert.NoError(t, err)
+	assert.Equal(t, "dut1", r.Get())
 
 	err = r.SetThru()
 	assert.NoError(t, err)
+	assert.Equal(t, "thru", r.Get())
 
 	err = r.SetLoad()
 	assert.NoError(t, err)
+	assert.Equal(t, "load", r.Get())
 
 	err = r.SetOpen()
+	assert.NoError(t, err)
+	assert.Equal(t, "open", r.Get())
+
+	err = r.SetShort()
+	assert.NoError(t, err)
+	assert.Equal(t, "short", r.Get())
+
+	err = r.Close()
+
+	assert.NoError(t, err)
+
+}
+
+func TestSettingPortsMock(t *testing.T) {
+
+	r := NewMock()
+
+	err := r.Open(port, baud, timeout)
 	assert.NoError(t, err)
 
 	err = r.SetShort()
 	assert.NoError(t, err)
+	assert.Equal(t, "short", r.Get())
+
+	err = r.SetOpen()
+	assert.NoError(t, err)
+	assert.Equal(t, "open", r.Get())
+
+	err = r.SetLoad()
+	assert.NoError(t, err)
+	assert.Equal(t, "load", r.Get())
+
+	err = r.SetThru()
+	assert.NoError(t, err)
+	assert.Equal(t, "thru", r.Get())
+
+	err = r.SetDUT1()
+	assert.NoError(t, err)
+	assert.Equal(t, "dut1", r.Get())
+
+	err = r.SetDUT2()
+	assert.NoError(t, err)
+	assert.Equal(t, "dut2", r.Get())
+
+	err = r.SetDUT3()
+	assert.NoError(t, err)
+	assert.Equal(t, "dut3", r.Get())
+
+	err = r.SetDUT4()
+	assert.NoError(t, err)
+	assert.Equal(t, "dut4", r.Get())
+
+	err = r.SetDUT3()
+	assert.NoError(t, err)
+	assert.Equal(t, "dut3", r.Get())
+
+	err = r.SetDUT2()
+	assert.NoError(t, err)
+	assert.Equal(t, "dut2", r.Get())
+
+	err = r.SetDUT1()
+	assert.NoError(t, err)
+	assert.Equal(t, "dut1", r.Get())
+
+	err = r.SetThru()
+	assert.NoError(t, err)
+	assert.Equal(t, "thru", r.Get())
+
+	err = r.SetLoad()
+	assert.NoError(t, err)
+	assert.Equal(t, "load", r.Get())
+
+	err = r.SetOpen()
+	assert.NoError(t, err)
+	assert.Equal(t, "open", r.Get())
+
+	err = r.SetShort()
+	assert.NoError(t, err)
+	assert.Equal(t, "short", r.Get())
 
 	err = r.Close()
 
