@@ -34,8 +34,8 @@ message CalibrateTwoPortRequest {
 message SParams {
   repeated Complex s11 = 1;
   repeated Complex s12 = 2;
-  repeated Complex S21 = 3;
-  repeated Complex S22 = 4;
+  repeated Complex s21 = 3;
+  repeated Complex s22 = 4;
 }
 
 message Complex {

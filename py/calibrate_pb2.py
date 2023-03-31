@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'Z/github.com/practable/pocket-vna-two-port/pkg/pb',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0f\x63\x61librate.proto\x12\x02pb\"J\n\x18\x43\x61librateOnePortResponse\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1b\n\x06result\x18\x02 \x03(\x0b\x32\x0b.pb.Complex\"J\n\x18\x43\x61librateTwoPortResponse\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1b\n\x06result\x18\x02 \x01(\x0b\x32\x0b.pb.SParams\"\xb3\x01\n\x17\x43\x61librateOnePortRequest\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1a\n\x05short\x18\x02 \x03(\x0b\x32\x0b.pb.Complex\x12\x19\n\x04open\x18\x03 \x03(\x0b\x32\x0b.pb.Complex\x12\x19\n\x04load\x18\x04 \x03(\x0b\x32\x0b.pb.Complex\x12\x19\n\x04thru\x18\x05 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03\x64ut\x18\x06 \x03(\x0b\x32\x0b.pb.Complex\"\xb3\x01\n\x17\x43\x61librateTwoPortRequest\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1a\n\x05short\x18\x02 \x01(\x0b\x32\x0b.pb.SParams\x12\x19\n\x04open\x18\x03 \x01(\x0b\x32\x0b.pb.SParams\x12\x19\n\x04load\x18\x04 \x01(\x0b\x32\x0b.pb.SParams\x12\x19\n\x04thru\x18\x05 \x01(\x0b\x32\x0b.pb.SParams\x12\x18\n\x03\x64ut\x18\x06 \x01(\x0b\x32\x0b.pb.SParams\"q\n\x07SParams\x12\x18\n\x03s11\x18\x01 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03s12\x18\x02 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03S21\x18\x03 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03S22\x18\x04 \x03(\x0b\x32\x0b.pb.Complex\"%\n\x07\x43omplex\x12\x0c\n\x04imag\x18\x01 \x01(\x01\x12\x0c\n\x04real\x18\x02 \x01(\x01\x32\xad\x01\n\tCalibrate\x12O\n\x10\x43\x61librateOnePort\x12\x1b.pb.CalibrateOnePortRequest\x1a\x1c.pb.CalibrateOnePortResponse\"\x00\x12O\n\x10\x43\x61librateTwoPort\x12\x1b.pb.CalibrateTwoPortRequest\x1a\x1c.pb.CalibrateTwoPortResponse\"\x00\x42\x31Z/github.com/practable/pocket-vna-two-port/pkg/pbb\x06proto3'
+  serialized_pb=b'\n\x0f\x63\x61librate.proto\x12\x02pb\"J\n\x18\x43\x61librateOnePortResponse\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1b\n\x06result\x18\x02 \x03(\x0b\x32\x0b.pb.Complex\"J\n\x18\x43\x61librateTwoPortResponse\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1b\n\x06result\x18\x02 \x01(\x0b\x32\x0b.pb.SParams\"\xb3\x01\n\x17\x43\x61librateOnePortRequest\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1a\n\x05short\x18\x02 \x03(\x0b\x32\x0b.pb.Complex\x12\x19\n\x04open\x18\x03 \x03(\x0b\x32\x0b.pb.Complex\x12\x19\n\x04load\x18\x04 \x03(\x0b\x32\x0b.pb.Complex\x12\x19\n\x04thru\x18\x05 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03\x64ut\x18\x06 \x03(\x0b\x32\x0b.pb.Complex\"\xb3\x01\n\x17\x43\x61librateTwoPortRequest\x12\x11\n\tfrequency\x18\x01 \x03(\x01\x12\x1a\n\x05short\x18\x02 \x01(\x0b\x32\x0b.pb.SParams\x12\x19\n\x04open\x18\x03 \x01(\x0b\x32\x0b.pb.SParams\x12\x19\n\x04load\x18\x04 \x01(\x0b\x32\x0b.pb.SParams\x12\x19\n\x04thru\x18\x05 \x01(\x0b\x32\x0b.pb.SParams\x12\x18\n\x03\x64ut\x18\x06 \x01(\x0b\x32\x0b.pb.SParams\"q\n\x07SParams\x12\x18\n\x03s11\x18\x01 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03s12\x18\x02 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03s21\x18\x03 \x03(\x0b\x32\x0b.pb.Complex\x12\x18\n\x03s22\x18\x04 \x03(\x0b\x32\x0b.pb.Complex\"%\n\x07\x43omplex\x12\x0c\n\x04imag\x18\x01 \x01(\x01\x12\x0c\n\x04real\x18\x02 \x01(\x01\x32\xad\x01\n\tCalibrate\x12O\n\x10\x43\x61librateOnePort\x12\x1b.pb.CalibrateOnePortRequest\x1a\x1c.pb.CalibrateOnePortResponse\"\x00\x12O\n\x10\x43\x61librateTwoPort\x12\x1b.pb.CalibrateTwoPortRequest\x1a\x1c.pb.CalibrateTwoPortResponse\"\x00\x42\x31Z/github.com/practable/pocket-vna-two-port/pkg/pbb\x06proto3'
 )
 
 
@@ -260,14 +260,14 @@ _SPARAMS = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='S21', full_name='pb.SParams.S21', index=2,
+      name='s21', full_name='pb.SParams.s21', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='S22', full_name='pb.SParams.S22', index=3,
+      name='s22', full_name='pb.SParams.s22', index=3,
       number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -342,8 +342,8 @@ _CALIBRATETWOPORTREQUEST.fields_by_name['thru'].message_type = _SPARAMS
 _CALIBRATETWOPORTREQUEST.fields_by_name['dut'].message_type = _SPARAMS
 _SPARAMS.fields_by_name['s11'].message_type = _COMPLEX
 _SPARAMS.fields_by_name['s12'].message_type = _COMPLEX
-_SPARAMS.fields_by_name['S21'].message_type = _COMPLEX
-_SPARAMS.fields_by_name['S22'].message_type = _COMPLEX
+_SPARAMS.fields_by_name['s21'].message_type = _COMPLEX
+_SPARAMS.fields_by_name['s22'].message_type = _COMPLEX
 DESCRIPTOR.message_types_by_name['CalibrateOnePortResponse'] = _CALIBRATEONEPORTRESPONSE
 DESCRIPTOR.message_types_by_name['CalibrateTwoPortResponse'] = _CALIBRATETWOPORTRESPONSE
 DESCRIPTOR.message_types_by_name['CalibrateOnePortRequest'] = _CALIBRATEONEPORTREQUEST
