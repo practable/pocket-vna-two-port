@@ -1,0 +1,49 @@
+syntax = "proto3";
+package pb;
+option go_package = "github.com/practable/pocket-vna-two-port/pkg/pb";
+
+
+message CalibrateOnePortResponse {
+  repeated double frequency = 1;
+  repeated Complex result = 2;
+}
+
+message CalibrateTwoPortResponse {
+  repeated double frequency = 1;
+  SParams result = 2;
+}
+
+message CalibrateOnePortRequest {
+  repeated double frequency = 1;
+  repeated Complex short = 2;
+  repeated Complex open = 3;
+  repeated Complex load = 4;
+  repeated Complex thru = 5;
+  repeated Complex dut = 6;
+}
+
+message CalibrateTwoPortRequest {
+  repeated double frequency = 1;
+  SParams short = 2;
+  SParams open = 3;
+  SParams load = 4;
+  SParams thru = 5;
+  SParams dut = 6;
+}
+
+message SParams {
+  repeated Complex s11 = 1;
+  repeated Complex s12 = 2;
+  repeated Complex S21 = 3;
+  repeated Complex S22 = 4;
+}
+
+message Complex {
+  double imag = 1;
+  double real =2;
+}
+
+service Calibrate {
+  rpc CalibrateOnePort(CalibrateOnePortRequest) returns (CalibrateOnePortResponse) {}
+  rpc CalibrateTwoPort(CalibrateTwoPortRequest) returns (CalibrateTwoPortResponse) {}
+}
