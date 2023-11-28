@@ -8,12 +8,13 @@ import (
 
 	pb "github.com/practable/pocket-vna-two-port/pkg/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func TestCalibrate(t *testing.T) {
 
 	// Set up a connection to the server.
-	conn, err := grpc.Dial("localhost:9001")
+	conn, err := grpc.Dial("localhost:9001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -25,10 +26,30 @@ func TestCalibrate(t *testing.T) {
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.CalibrateTwoPort(ctx, &pb.CalibrateTwoPortRequest{})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+
+	ctpr := &pb.CalibrateTwoPortRequest{}
+
+	ctpr.Reset()
+
+	ctpr.Frequency = []float64{1e9}
+	spFake := pb.SParams{
+		S11: []*pb.Complex{&pb.Complex{Imag: 1, Real: 1}},
+		S12: []*pb.Complex{&pb.Complex{Imag: 1, Real: 1}},
+		S21: []*pb.Complex{&pb.Complex{Imag: 1, Real: 1}},
+		S22: []*pb.Complex{&pb.Complex{Imag: 1, Real: 1}},
 	}
-	log.Printf("Greeting: %s", r.GetMessage())
+
+	ctpr.Short = &spFake
+	ctpr.Open = &spFake
+	ctpr.Load = &spFake
+	ctpr.Thru = &spFake
+	ctpr.Dut = &spFake
+
+	r, err := c.CalibrateTwoPort(ctx, ctpr)
+	if err != nil {
+		log.Fatalf("could not calibrate: %v", err)
+	}
+	_ = r.GetFrequency()
+	_ = r.GetResult()
 
 }

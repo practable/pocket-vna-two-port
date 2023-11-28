@@ -230,6 +230,11 @@ TODO
 
 The golang packages are in `./pkg`
 
+If adding new subpackages, then update the reference to the project to the current branch, e.g. after adding the package `pb` to the `fix` branch, `go mod` couldn't find it `@latest` so it needed to be "upgraded" to look at the fix branch. Warning - after pulling to main, update to point to @latest again
+```
+go get -v -u github.com/practable/pocket-vna-two-port/pkg/pb@fix
+go mod tidy
+```
 ### Architecture
 
 The RF Switch is connected directly rather than via `socat`+`websocat` as in the previous generation. This simplifies the configuration of the single board computer and avoids switch commands getting out of sequence on a channel.
