@@ -14,8 +14,8 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
+	"github.com/practable/pocket-vna-two-port/pkg/pocket"
+	"github.com/practable/pocket-vna-two-port/pkg/reconws"
 )
 
 var hardware bool

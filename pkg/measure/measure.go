@@ -12,8 +12,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/rfusb"
+	"github.com/practable/pocket-vna-two-port/pkg/pocket"
+	"github.com/practable/pocket-vna-two-port/pkg/rfusb"
 )
 
 type Measure interface {

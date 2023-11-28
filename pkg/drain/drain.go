@@ -8,7 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
+	"github.com/practable/pocket-vna-two-port/pkg/reconws"
 )
 
 type Store struct {

@@ -17,10 +17,10 @@ import (
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/drain"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/stream"
+	"github.com/practable/pocket-vna-two-port/pkg/drain"
+	"github.com/practable/pocket-vna-two-port/pkg/pocket"
+	"github.com/practable/pocket-vna-two-port/pkg/reconws"
+	"github.com/practable/pocket-vna-two-port/pkg/stream"
 )
 
 var verbose bool

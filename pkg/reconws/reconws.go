@@ -2,7 +2,7 @@
    reconws is websocket client that automatically reconnects
 
 
-   modified from github.com/timdrysdale/relay/pkg/reconws to remove
+   modified from github.com/practable/relay/pkg/reconws to remove
    additional elements relating to usage with hub/agg etc in relay
 
    Copyright (C) 2019 Timothy Drysdale <timothy.d.drysdale@gmail.com>

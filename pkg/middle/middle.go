@@ -7,11 +7,11 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/timdrysdale/go-pocketvna/pkg/pocket"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/calibration"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/rfswitch"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/stream"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/vna"
+	"github.com/practable/go-pocketvna/pkg/pocket"
+	"github.com/practable/pocket-vna-two-port/pkg/calibration"
+	"github.com/practable/pocket-vna-two-port/pkg/rfswitch"
+	"github.com/practable/pocket-vna-two-port/pkg/stream"
+	"github.com/practable/pocket-vna-two-port/pkg/vna"
 )
 
 type Middle struct {

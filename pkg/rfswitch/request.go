@@ -9,7 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
+	"github.com/practable/pocket-vna-two-port/pkg/reconws"
 )
 
 func New(u string, ctx context.Context) Switch {
