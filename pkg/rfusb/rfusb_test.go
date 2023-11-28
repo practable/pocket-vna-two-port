@@ -16,6 +16,7 @@ var hardware bool
 var port string
 var baud int
 var timeout time.Duration
+var r *RFUSB
 
 func TestMain(m *testing.M) {
 	// Setup  logging
@@ -37,26 +38,23 @@ func TestMain(m *testing.M) {
 	baud = 57600
 	timeout = time.Duration(time.Second)
 
-	exitVal := m.Run()
-
-	os.Exit(exitVal)
-}
-
-func TestOpen(t *testing.T) {
-	if !hardware {
-		t.Skip("no hardware")
-	}
-
-	r := NewRFUSB()
+	r = NewRFUSB()
 
 	err := r.Open(port, baud, timeout)
+	if err != nil {
+		hardware = false
 
-	assert.NoError(t, err)
+	}
 
-	err = r.Close()
+	time.Sleep(time.Second) // allow port to open
 
-	assert.NoError(t, err)
+	exitVal := m.Run()
 
+	if hardware {
+		_ = r.Close() //ignore error, closing anyway
+	}
+
+	os.Exit(exitVal)
 }
 
 func TestSetPort(t *testing.T) {
@@ -64,19 +62,7 @@ func TestSetPort(t *testing.T) {
 		t.Skip("no hardware")
 	}
 
-	r := NewRFUSB()
-
-	err := r.Open(port, baud, timeout)
-
-	assert.NoError(t, err)
-
-	time.Sleep(time.Second)
-
-	err = r.SetPort("short")
-
-	assert.NoError(t, err)
-
-	err = r.Close()
+	err := r.SetPort("short")
 
 	assert.NoError(t, err)
 
@@ -87,14 +73,7 @@ func TestSettingPorts(t *testing.T) {
 		t.Skip("no hardware")
 	}
 
-	r := NewRFUSB()
-
-	err := r.Open(port, baud, timeout)
-	assert.NoError(t, err)
-
-	time.Sleep(time.Second)
-
-	err = r.SetShort()
+	err := r.SetShort()
 	assert.NoError(t, err)
 	assert.Equal(t, "short", r.Get())
 

@@ -215,6 +215,36 @@ dut3 : 1 1 1   0 0 0   7   0
 dut4 : 0 0 0   1 1 1   0   7
 ```
 
+## Developers
+
+This section contains notes for developers. The code was refactored during 2023 to account for a bug that required two measurements to be taken in a row before the correct DUT was measured. 
+
+TODO 
+
+0. `middle` update hardware test to cycle through all dut at least twice, and then a third time in a different order
+1. `middle` Use new direct switch connection in middle
+2. `middle` Use new grpc connection in middle
+
+
+### Golang files
+
+The golang packages are in `./pkg`
+
+### Architecture
+
+The RF Switch is connected directly rather than via `socat`+`websocat` as in the previous generation. This simplifies the configuration of the single board computer and avoids switch commands getting out of sequence on a channel.
+
+The calibration is via gRPC call, again to avoid responses getting out of sequence over a channel.
+
+
+
+### Building
+
+
+
+### Testing
+
+
 ## Overview from the one-port repo
 
 These notes should aid in understanding the ansible scripts in `./sbc`, even though some details differ. Note that the below information has NOT been edited to match changes in the current repo, so differs in the detail e.g. of calibration commands (now two-port), and S-parameter settings in the measurement commands. See commands above for the current version.
