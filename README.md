@@ -237,7 +237,6 @@ The RF Switch is connected directly rather than via `socat`+`websocat` as in the
 The calibration is via gRPC call, again to avoid responses getting out of sequence over a channel.
 
 
-
 ### Building
 
 

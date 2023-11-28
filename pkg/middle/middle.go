@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/practable/go-pocketvna/pkg/pocket"
 	"github.com/practable/pocket-vna-two-port/pkg/calibration"
-	"github.com/practable/pocket-vna-two-port/pkg/rfswitch"
+	"github.com/practable/pocket-vna-two-port/pkg/pocket"
 	"github.com/practable/pocket-vna-two-port/pkg/stream"
 	"github.com/practable/pocket-vna-two-port/pkg/vna"
+	log "github.com/sirupsen/logrus"
+	"github.com/timdrysdale/go-pocketvna/pkg/rfswitch"
 )
 
 type Middle struct {
