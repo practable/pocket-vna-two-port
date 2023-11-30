@@ -32,7 +32,7 @@ type Mock struct {
 
 func NewHardware(v *pocket.VNA, s *rfusb.Switch) *Hardware {
 
-	return Measure{
+	return &Hardware{
 		Switch: s,
 		VNA:    v,
 	}
@@ -40,7 +40,7 @@ func NewHardware(v *pocket.VNA, s *rfusb.Switch) *Hardware {
 
 func NewMock(v *pocket.VNA, s *rfusb.Switch) *Mock {
 
-	return Mock{
+	return &Mock{
 		Switch:  s,
 		VNA:     v,
 		Results: make(map[string][]pocket.SParam),
@@ -52,13 +52,13 @@ func (h *Hardware) Measure(rq *pocket.RangeQuery) error {
 	if rq == nil {
 		return errors.New("nil command")
 	}
-	err := h.Switch.SetPort(rq.What)
+	err := (*h.Switch).SetPort(rq.What)
 
 	if err != nil {
 		return fmt.Errorf("error setting switch to %s because %s", rq.What, err.Error())
 	}
 
-	return h.VNA.RangeQuery(rq)
+	return (*h.VNA).RangeQuery(rq)
 
 }
 

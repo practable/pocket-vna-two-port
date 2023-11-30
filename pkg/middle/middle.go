@@ -7,79 +7,113 @@ import (
 	"time"
 
 	"github.com/practable/pocket-vna-two-port/pkg/calibration"
+	"github.com/practable/pocket-vna-two-port/pkg/pb"
 	"github.com/practable/pocket-vna-two-port/pkg/pocket"
 	"github.com/practable/pocket-vna-two-port/pkg/stream"
 	"github.com/practable/pocket-vna-two-port/pkg/vna"
 	log "github.com/sirupsen/logrus"
 	"github.com/timdrysdale/go-pocketvna/pkg/rfswitch"
+	"github.com/timdrysdale/go-pocketvna/pkg/rfusb"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
+// Middle holds config and service pointers
 type Middle struct {
-	Calibration *calibration.Calibration
-	Stream      *stream.Stream
-	Switch      *rfswitch.Switch
-	VNA         *vna.VNAService
+	c              *grpc.ClientConn // calibration
+	s              *stream.Stream   // data stream from user
+	h              *measure.Hardware  // rf switch & VNA
+	baud           int
+	port           string
+	timeoutUSB     time.Duration
+	timeoutRequest time.Duration
 }
 
-func New(ctx context.Context, uc, ur, us string, vna *vna.VNAService) Middle {
+//TODO - just needs to use Measure!! That includes the switch as well 
 
-	c := calibration.New(uc, ctx)
-	r := rfswitch.New(ur, ctx)
-	s := stream.New(us, ctx)
+// func New returns a new middleware
+// addr is the host:port of the local gRPC calibration service (unlikely to be remote due to difficulties in proxying HTTP/2)
+// port is the usb port for the rf switch, e.g. `/dev/ttyUSB0`
+// baud is usb port baud e.g. 57600
+// timeout is the timeout e.g. 2m
+func New(addr, port string, baud int, timeoutUSB, timeoutRequest time.Duration, topic string, vna *vna.VNAService) Middle {
+
+	// create new hardware in Run() 
+	return Middle{
+		addr:           addr,
+		port:           port,
+		baud:           baud,
+		timeoutRequest: timeoutRequest,
+		timeoutUSB:     timeoutUSB,
+		topic:          topic,
+		v:              vna,
+	}
+
+}
+
+func (m *Middle) Run(ctx context.Context) {
+
+	w := rfusb.NewRFUSB() //open it in Run()
+
+	
+
+	
+	conn, err := grpc.Dial(m.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if err != nil {
+		log.Fatalf("did not connect to calibration gRPC service %s because %v", m.addr, err)
+	}
+	defer conn.Close()
+
+	m.c = pb.NewCalibrateClient(conn)
+
+	m.s = stream.New(us, ctx)
+
+	m.w.Open(m.port, m.baud, m.timeout)
+	defer m.w.Close()
 
 	// note that vna will have it own's context (usually the same parent as this one though)
 
-	timeout := time.Second
+	for {
 
-	requesttimeout := 2 * time.Minute
+		select {
 
-	go func() {
-		for {
+		case request := <-m.s.Request:
 
-			select {
+			rctx, cancel := context.WithTimeout(ctx, m.timeoutRequest)
 
-			case request := <-s.Request:
+			response, err := m.Handle(rctx, request)
 
-				select {
-
-				case s.Response <- HandleRequest(request, &c, &r, &v):
-					// carry on
-				case <-time.After(requesttimeout):
-					s.Response <- TimeoutMessage(request)
+			if err != nil {
+				s.Response <- pocket.CustomResult{
+					Message: err.Error(),
+					Command: request,
 				}
-
-			case <-time.After(timeout):
-				//carry on
-			case <-ctx.Done():
-				return
 			}
 
-		} //for
-	}() //func
+			s.Response <- response
 
-	return Middle{
-		Calibration: &c,
-		Stream:      &s,
-		Switch:      &r,
-		VNA:         v,
-	}
+			cancel()
 
-}
+		case <-ctx.Done():
+			return
+		}
 
-func TimeoutMessage(request interface{}) interface{} {
-
-	return pocket.CustomResult{
-		Message: "timeout waiting for request to be handled",
-		Command: request,
-	}
+	} //for
 
 }
 
-func HandleRequest(request interface{}, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
+func (m *Middle) Handle(ctx context.Context, request interface{}) (response interface{}, err error) {
+
+}
+
+//func HandleRequest(request interface{}, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
 
 	switch request.(type) {
 
 	case pocket.ReasonableFrequencyRange, pocket.SingleQuery:
+
+		//todo - do this directly, without using a channel?
 
 		v.Request <- request
 

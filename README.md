@@ -239,7 +239,7 @@ go mod tidy
 
 The RF Switch is connected directly rather than via `socat`+`websocat` as in the previous generation. This simplifies the configuration of the single board computer and avoids switch commands getting out of sequence on a channel.
 
-The calibration is via gRPC call, again to avoid responses getting out of sequence over a channel.
+The calibration is via gRPC call, again to avoid responses getting out of sequence over a channel. Note that gRPC uses HTTP/2 so we are probably stuck with running this locally on a container
 
 
 ### Building

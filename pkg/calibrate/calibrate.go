@@ -15,10 +15,8 @@ import (
 	"google.golang.org/grpc"
 	pb "github.com/practable/pocket-vna-two-port/pkg/pb"
 
-)
+)*/
 
+// TODO provide functions to convert between pocketVNA format and gRPC request/response
 
-var (
-	addr = flag.String("addr", "localhost:9001", "the address to connect to")
-)
-*/
+// gRPC calibration request

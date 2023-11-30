@@ -11,7 +11,15 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func TestCalibrate(t *testing.T) {
+func TestRequest(t *testing.T) {
+
+	// Makes a request to the calibration server but does not check the quality of any data
+	// the data quality has already been checked with the test in the python directory
+
+	// This test requires python code to be running:
+	// cd py
+	// python3 server.py
+	// TODO automate this for testing
 
 	// Set up a connection to the server.
 	conn, err := grpc.Dial("localhost:9001", grpc.WithTransportCredentials(insecure.NewCredentials()))
