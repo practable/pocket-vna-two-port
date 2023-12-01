@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	// Setup  logging
 	debug := false
 	verbose = true
-	hardware = false
+	hardware = true
 
 	if debug {
 		log.SetLevel(log.TraceLevel)
@@ -44,6 +44,51 @@ func TestMain(m *testing.M) {
 	exitVal := m.Run()
 
 	os.Exit(exitVal)
+}
+
+func TestLinLogFrequency(t *testing.T) {
+
+	var start, end uint64
+	start = 1000000
+	end = 500000000
+	size := 11
+
+	expectedLinear := []uint64{
+		1000000,
+		50900000,
+		100800000,
+		150700000,
+		200600000,
+		250500000,
+		300400000,
+		350300000,
+		400200000,
+		450100000,
+		500000000,
+	}
+
+	expectedLog := []uint64{
+		1000000,
+		1861646,
+		3465724,
+		6451950,  //-1 cf native app
+		12011244, //-1 cf native app
+		22360680,
+		41627660,  //-8 cf native app
+		77495949,  //+5 cf native app
+		144269991, //-9 cf native app
+		268579588, //+36 cf native app
+		500000000,
+	}
+
+	flin := LinFrequency(start, end, size)
+	flog := LogFrequency(start, end, size)
+
+	for i := 0; i < size; i++ {
+		assert.Equal(t, int(expectedLinear[i]), int(flin[i]))
+		assert.Equal(t, int(expectedLog[i]), int(flog[i]))
+	}
+
 }
 
 func TestMockConnect(t *testing.T) {
@@ -229,8 +274,7 @@ func TestMockHandleCommand(t *testing.T) {
 	assert.Equal(t, []interface{}{c0, c1, c2}, v.CommandsReceived)
 }
 
-/* TODO refactor tests
-func TestGetReleaseHandleHW(t *testing.T) {
+func TestHardwareGetReleaseHandle(t *testing.T) {
 	if !hardware {
 		t.Skip("hardware not present")
 	}
@@ -240,7 +284,7 @@ func TestGetReleaseHandleHW(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetReasonableFrequencyHW(t *testing.T) {
+func TestHardwareGetReasonableFrequency(t *testing.T) {
 	if !hardware {
 		t.Skip("hardware not present")
 	}
@@ -260,7 +304,7 @@ func TestGetReasonableFrequencyHW(t *testing.T) {
 
 }
 
-func TestSingleQueryHW(t *testing.T) {
+func TestHardwareSingleQuery(t *testing.T) {
 	if !hardware {
 		t.Skip("hardware not present")
 	}
@@ -286,7 +330,7 @@ func TestSingleQueryHW(t *testing.T) {
 
 }
 
-func TestRangeQueryHW(t *testing.T) {
+func TestHardwareRangeQuery(t *testing.T) {
 	if !hardware {
 		t.Skip("hardware not present")
 	}
@@ -314,289 +358,127 @@ func TestRangeQueryHW(t *testing.T) {
 	assert.NoError(t, err)
 
 }
+func TestNewHardware(t *testing.T) {
 
-func TestNewServiceHW(t *testing.T) {
 	if !hardware {
 		t.Skip("hardware not present")
 	}
-	timeout := time.Millisecond * 100
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	_, disconnect, err := NewHardware()
 
-	v := New(ctx)
+	assert.NoError(t, err)
 
-	// Do GetReasonableFrequencyRange command
+	defer disconnect()
+}
 
-	reasonable := Range{}
+func TestHardwareHandleCommand(t *testing.T) {
 
-	id := "123xyz"
-	v.Request <- ReasonableFrequencyRange{Command: Command{ID: id}}
-
-	select {
-	case <-time.After(timeout):
-		t.Error("timeout")
-	case ri := <-v.Response:
-
-		if actual, ok := ri.(ReasonableFrequencyRange); !ok {
-			t.Error("Wrong type returned")
-		} else {
-
-			assert.Equal(t, actual.ID, id)
-			// weak test - with real kit attached, we should get non-zero numbers
-			assert.True(t, actual.Result.Start > 0)
-			assert.True(t, actual.Result.End > actual.Result.Start)
-			reasonable = actual.Result //save for RangeQuery
-			if verbose {
-				fmt.Println(actual.Result)
-			}
-		}
+	if !hardware {
+		t.Skip("hardware not present")
 	}
 
-	// Do SingleQuery command
+	v, disconnect, err := NewHardware()
 
-	id = "456abc"
-	v.Request <- SingleQuery{
-		Command: Command{ID: id},
-		Freq:    200000,
-		Avg:     1,
-		Select:  SParamSelect{true, true, true, true},
+	assert.NoError(t, err)
+
+	defer disconnect()
+
+	// ReasonableFrequencyRange
+
+	start := uint64(500000)
+	end := uint64(4000000000)
+
+	id0 := "rfr00"
+	c0 := ReasonableFrequencyRange{
+		Command: Command{
+			ID:      id0,
+			Command: "rfr",
+		},
 	}
 
-	select {
-	case <-time.After(timeout):
-		t.Error("timeout")
-	case ri := <-v.Response:
-
-		if actual, ok := ri.(SingleQuery); !ok {
-			t.Error("Wrong type returned")
-		} else {
-
-			assert.Equal(t, actual.ID, id)
-			// weak test - with real kit attached, we should get non-zero numbers
-			assert.True(t, actual.Result.S11.Real != 0)
-			if verbose {
-				fmt.Println(actual.Result)
-			}
-		}
+	err = v.HandleCommand(&c0)
+	assert.NoError(t, err)
+	assert.Equal(t, id0, c0.ID)
+	//note these values are hardware dependent and are taken from our current hardware
+	if verbose {
+		fmt.Println(c0.Result)
 	}
+	assert.Equal(t, start, c0.Result.Start)
+	assert.Equal(t, end, c0.Result.End)
 
-	// Do RangeQuery command
-
-	id = "789def"
-	N := 7 // number of samples
-	v.Request <- RangeQuery{
-		Command:         Command{ID: id},
-		Range:           reasonable,
-		Size:            N,
+	// RangeQuery
+	id1 := "rq00"
+	c1 := RangeQuery{
+		Command: Command{
+			ID:      id1,
+			Command: "rq",
+		},
+		Range: Range{
+			Start: 500000,
+			End:   4000000000,
+		},
+		Size:            7,
 		Avg:             1,
 		LogDistribution: true,
 		Select:          SParamSelect{true, true, true, true},
 	}
 
-	timeout = time.Second //need more time for this than a single query
+	err = v.HandleCommand(&c1)
+	assert.NoError(t, err)
+	assert.Equal(t, id1, c1.ID)
 
-	select {
-	case <-time.After(timeout):
-		t.Error("timeout")
-	case ri := <-v.Response:
+	// weak check that first and last results are not zero
+	// there could be anything connected to the VNA
+	// so we can't check for specific values here
+	// so we just check they're not zero which
+	// implies something got put in the array
+	assert.NotEqual(t, 0, c1.Result[0].Freq)
+	assert.NotEqual(t, 0, c1.Result[0].S11.Imag)
+	assert.NotEqual(t, 0, c1.Result[0].S11.Real)
+	assert.NotEqual(t, 0, c1.Result[0].S12.Imag)
+	assert.NotEqual(t, 0, c1.Result[0].S12.Real)
+	assert.NotEqual(t, 0, c1.Result[0].S21.Imag)
+	assert.NotEqual(t, 0, c1.Result[0].S21.Real)
+	assert.NotEqual(t, 0, c1.Result[0].S22.Imag)
+	assert.NotEqual(t, 0, c1.Result[0].S22.Real)
+	assert.NotEqual(t, 0, c1.Result[6].Freq)
+	assert.NotEqual(t, 0, c1.Result[6].S11.Imag)
+	assert.NotEqual(t, 0, c1.Result[6].S11.Real)
+	assert.NotEqual(t, 0, c1.Result[6].S12.Imag)
+	assert.NotEqual(t, 0, c1.Result[6].S12.Real)
+	assert.NotEqual(t, 0, c1.Result[6].S21.Imag)
+	assert.NotEqual(t, 0, c1.Result[6].S21.Real)
+	assert.NotEqual(t, 0, c1.Result[6].S22.Imag)
+	assert.NotEqual(t, 0, c1.Result[6].S22.Real)
 
-		if actual, ok := ri.(RangeQuery); !ok {
-			t.Error("Wrong type returned")
-		} else {
-
-			assert.Equal(t, actual.ID, id)
-			// weak test - with real kit attached, we should get non-zero numbers
-			assert.Equal(t, len(actual.Result), N)
-
-			assert.Equal(t, reasonable.Start, actual.Result[0].Freq)
-			assert.Equal(t, reasonable.End, actual.Result[N-1].Freq)
-
-			expectedFreq := LogFrequency(reasonable.Start, reasonable.End, N)
-
-			for i := 0; i < N; i++ {
-				if verbose {
-					fmt.Printf("%d: %d %d\n", i, int(expectedFreq[i]), int(actual.Result[i].Freq))
-				}
-				assert.Equal(t, int(expectedFreq[i]), int(actual.Result[i].Freq))
-			}
-
-			if verbose {
-				fmt.Println(actual.Result)
-			}
-		}
+	// SingleQuery
+	id2 := "sq00"
+	c2 := SingleQuery{
+		Command: Command{
+			ID:      id2,
+			Command: "sq",
+		},
+		Freq:   1000000000,
+		Avg:    1,
+		Select: SParamSelect{true, true, true, true},
 	}
 
-	cancel()
+	err = v.HandleCommand(&c2)
+	assert.NoError(t, err)
+	assert.Equal(t, id2, c2.ID)
 
+	// weak check that first and last results are not zero
+	// there could be anything connected to the VNA
+	// so we can't check for specific values here
+	// so we just check they're not zero which
+	// implies something got put in the array
+	assert.NotEqual(t, 0, c2.Result.Freq)
+	assert.NotEqual(t, 0, c2.Result.S11.Imag)
+	assert.NotEqual(t, 0, c2.Result.S11.Real)
+	assert.NotEqual(t, 0, c2.Result.S12.Imag)
+	assert.NotEqual(t, 0, c2.Result.S12.Real)
+	assert.NotEqual(t, 0, c2.Result.S21.Imag)
+	assert.NotEqual(t, 0, c2.Result.S21.Real)
+	assert.NotEqual(t, 0, c2.Result.S22.Imag)
+	assert.NotEqual(t, 0, c2.Result.S22.Real)
 }
-
-func TestRunHW(t *testing.T) {
-	if !hardware {
-		t.Skip("hardware not present")
-	}
-	timeout := time.Millisecond * 100
-
-	v := NewHardware()
-
-	command := make(chan interface{})
-	result := make(chan interface{})
-
-	ctx := context.Background()
-
-	ctx, cancel := context.WithCancel(ctx)
-
-	go v.Run(ctx, command, result)
-
-	// Do GetReasonableFrequencyRange command
-
-	reasonable := Range{}
-
-	id := "123xyz"
-	command <- ReasonableFrequencyRange{Command: Command{ID: id}}
-
-	select {
-	case <-time.After(timeout):
-		t.Error("timeout")
-	case ri := <-result:
-
-		if actual, ok := ri.(ReasonableFrequencyRange); !ok {
-			t.Error("Wrong type returned")
-		} else {
-
-			assert.Equal(t, actual.ID, id)
-			// weak test - with real kit attached, we should get non-zero numbers
-			assert.True(t, actual.Result.Start > 0)
-			assert.True(t, actual.Result.End > actual.Result.Start)
-			reasonable = actual.Result //save for RangeQuery
-			if verbose {
-				fmt.Println(actual.Result)
-			}
-		}
-	}
-
-	// Do SingleQuery command
-
-	id = "456abc"
-	command <- SingleQuery{
-		Command: Command{ID: id},
-		Freq:    200000,
-		Avg:     1,
-		Select:  SParamSelect{true, true, true, true},
-	}
-
-	select {
-	case <-time.After(timeout):
-		t.Error("timeout")
-	case ri := <-result:
-
-		if actual, ok := ri.(SingleQuery); !ok {
-			t.Error("Wrong type returned")
-		} else {
-
-			assert.Equal(t, actual.ID, id)
-			// weak test - with real kit attached, we should get non-zero numbers
-			assert.True(t, actual.Result.S11.Real != 0)
-			if verbose {
-				fmt.Println(actual.Result)
-			}
-		}
-	}
-
-	// Do RangeQuery command
-
-	id = "789def"
-	N := 7 // number of samples
-	command <- RangeQuery{
-		Command:         Command{ID: id},
-		Range:           reasonable,
-		Size:            N,
-		Avg:             1,
-		LogDistribution: true,
-		Select:          SParamSelect{true, true, true, true},
-	}
-
-	timeout = time.Second //need more time for this than a single query
-
-	select {
-	case <-time.After(timeout):
-		t.Error("timeout")
-	case ri := <-result:
-
-		if actual, ok := ri.(RangeQuery); !ok {
-			t.Error("Wrong type returned")
-		} else {
-
-			assert.Equal(t, actual.ID, id)
-			// weak test - with real kit attached, we should get non-zero numbers
-			assert.Equal(t, len(actual.Result), N)
-
-			assert.Equal(t, reasonable.Start, actual.Result[0].Freq)
-			assert.Equal(t, reasonable.End, actual.Result[N-1].Freq)
-
-			expectedFreq := LogFrequency(reasonable.Start, reasonable.End, N)
-
-			for i := 0; i < N; i++ {
-				if verbose {
-					fmt.Printf("%d: %d %d\n", i, int(expectedFreq[i]), int(actual.Result[i].Freq))
-				}
-				assert.Equal(t, int(expectedFreq[i]), int(actual.Result[i].Freq))
-			}
-
-			if verbose {
-				fmt.Println(actual.Result)
-			}
-		}
-	}
-
-	cancel()
-
-}
-
-func TestFrequencyHW(t *testing.T) {
-	if !hardware {
-		t.Skip("hardware not present")
-	}
-	var start, end uint64
-	start = 1000000
-	end = 500000000
-	size := 11
-
-	expectedLinear := []uint64{
-		1000000,
-		50900000,
-		100800000,
-		150700000,
-		200600000,
-		250500000,
-		300400000,
-		350300000,
-		400200000,
-		450100000,
-		500000000,
-	}
-
-	expectedLog := []uint64{
-		1000000,
-		1861646,
-		3465724,
-		6451950,  //-1 cf native app
-		12011244, //-1 cf native app
-		22360680,
-		41627660,  //-8 cf native app
-		77495949,  //+5 cf native app
-		144269991, //-9 cf native app
-		268579588, //+36 cf native app
-		500000000,
-	}
-
-	flin := LinFrequency(start, end, size)
-	flog := LogFrequency(start, end, size)
-
-	for i := 0; i < size; i++ {
-		assert.Equal(t, int(expectedLinear[i]), int(flin[i]))
-		assert.Equal(t, int(expectedLog[i]), int(flog[i]))
-	}
-
-}
-*/

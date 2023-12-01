@@ -16,7 +16,7 @@ type VNA interface {
 	SingleQuery(command interface{}) error
 }
 
-//TODO mock that takes a pointer to mock switch state, and returns different results depending on switch state
+// Hardware type definition is in machine-specific file e.g. pocket_linux_amd64.go
 
 type Mock struct {
 	ConnectError                   error
@@ -28,7 +28,7 @@ type Mock struct {
 	CommandsReceived               []interface{}
 }
 
-/*
+/* For reference from C library
 typedef struct PocketVnaDeviceDesc {
     const char * path;
     PVNA_Access access;
@@ -138,7 +138,7 @@ type RangeQuery struct {
 }
 
 // this command is not supported by pocket
-// we have to handle this in the firmwarees
+// we have to handle this in the middle layer
 type CalibratedRangeQuery struct {
 	Command
 	What   string       `json:"what"`
