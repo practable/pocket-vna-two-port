@@ -21,11 +21,14 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
+	"time"
 
 	"github.com/ory/viper"
+	"github.com/practable/pocket-vna-two-port/pkg/middle"
+	"github.com/practable/pocket-vna-two-port/pkg/pocket"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/middle"
 )
 
 // streamCmd represents the stream command
@@ -34,41 +37,114 @@ var streamCmd = &cobra.Command{
 	Short: "Stream connects a pocketVNA to a websocket server",
 	Long: `Stream connects the first available pocketVNA to a websocket server. The websocket server is specified via an environment variable
 
-export VNA_DESTINATION=ws://localhost:8888/ws/vna
-export VNA_CALIBRATION=ws://localhost:8888/ws/calibration
-export VNA_RFSWITCH=ws://localhost:8888/ws/rfswitch
-
+export VNA_ADDR=localhost:9001
+export VNA_BAUD=57600
+export VNA_LOG_FILE=/var/log/vna/vna.log
+export VNA_LOG_FORMAT=json
+export VNA_LOG_LEVEL=info
+export VNA_PORT=/dev/ttyUSB0
+export VNA_TIMEOUT_USB=30s
+export VNA_TIMEOUT_REQUEST=3m
+export VNA_TOPIC=ws://localhost:8888/ws/data
 vna stream 
-
-Note that development can be enabled by setting environment variable VNA_DEVELOPMENT
-export VNA_DEVELOPMENT=true
-
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		viper.SetEnvPrefix("VNA")
 		viper.AutomaticEnv()
 
-		destination := viper.GetString("destination")
-		calibration := viper.GetString("calibration")
-		rfswitch := viper.GetString("rfswitch")
-		development := viper.GetBool("development")
+		viper.SetDefault("addr", "localhost:9001")
+		viper.SetDefault("baud", 57600)
+		viper.SetDefault("log_file", "/var/log/vna/vna.log")
+		viper.SetDefault("log_format", "json")
+		viper.SetDefault("log_level", "warn")
+		viper.SetDefault("port", "/dev/ttyUSB0")
+		viper.SetDefault("timeout_usb", "30s")
+		viper.SetDefault("timeout_request", "3m")
+		viper.SetDefault("topic", "ws://localhost:8888/ws/data")
 
-		if development {
-			// development environment
-			fmt.Println("Development mode - logging output to stdout")
-			fmt.Printf("Streaming to %s\n", destination)
-			log.SetFormatter(&log.TextFormatter{})
+		addr := viper.GetString("addr")
+		baud := viper.GetInt("baud")
+		logFile := viper.GetString("log_file")
+		logFormat := viper.GetString("log_format")
+		logLevel := viper.GetString("log_level")
+		port := viper.GetString("port")
+		timeoutUSBStr := viper.GetString("timeout_usb")
+		timeoutRequestStr := viper.GetString("timeout_request")
+		topic := viper.GetString("topic")
+
+		// parse durations
+
+		timeoutRequest, err := time.ParseDuration(timeoutRequestStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in VNA_TIMEOUT_REQUEST=" + timeoutRequestStr)
+			os.Exit(1)
+		}
+
+		timeoutUSB, err := time.ParseDuration(timeoutUSBStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in VNA_TIMEOUT_USB=" + timeoutUSBStr)
+			os.Exit(1)
+		}
+
+		// set up logging
+		switch strings.ToLower(logLevel) {
+		case "trace":
 			log.SetLevel(log.TraceLevel)
-			log.SetOutput(os.Stdout)
+		case "debug":
+			log.SetLevel(log.DebugLevel)
+		case "info":
+			log.SetLevel(log.InfoLevel)
+		case "warn":
+			log.SetLevel(log.WarnLevel)
+		case "error":
+			log.SetLevel(log.ErrorLevel)
+		case "fatal":
+			log.SetLevel(log.FatalLevel)
+		case "panic":
+			log.SetLevel(log.PanicLevel)
+		default:
+			fmt.Println("BOOK_LOG_LEVEL can be trace, debug, info, warn, error, fatal or panic but not " + logLevel)
+			os.Exit(1)
+		}
+
+		switch strings.ToLower(logFormat) {
+		case "json":
+			log.SetFormatter(&log.JSONFormatter{})
+		case "text":
+			log.SetFormatter(&log.TextFormatter{})
+		default:
+			fmt.Println("BOOK_LOG_FORMAT can be json or text but not " + logLevel)
+			os.Exit(1)
+		}
+
+		if strings.ToLower(logFile) == "stdout" {
+
+			log.SetOutput(os.Stdout) //
 
 		} else {
 
-			//production environment
-			log.SetFormatter(&log.JSONFormatter{})
-			log.SetLevel(log.WarnLevel)
-
+			file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			if err == nil {
+				log.SetOutput(file)
+			} else {
+				log.Infof("Failed to log to %s, logging to default stderr", logFile)
+			}
 		}
+
+		// Report useful info
+		log.Infof("vna version: %s", versionString())
+		log.Infof("addr: [%s]", addr)
+		log.Infof("baud: [%d]", baud)
+		log.Infof("log file: [%s]", logFile)
+		log.Infof("log format: [%s]", logFormat)
+		log.Infof("log level: [%s]", logLevel)
+		log.Infof("port: [%s]", port)
+		log.Infof("topic: [%s]", topic)
+		log.Infof("timeoutRequest: [%s]", timeoutUSB)
+		log.Infof("timeoutUSB: [%s]", timeoutUSB)
 
 		ctx, cancel := context.WithCancel(context.Background())
 
@@ -83,7 +159,12 @@ export VNA_DEVELOPMENT=true
 			}
 		}()
 
-		middle.New(calibration, rfswitch, destination, ctx)
+		// connect to VNA
+		v, disconnect, err := pocket.NewHardware()
+		defer disconnect()
+
+		m := middle.New(ctx, addr, port, baud, timeoutUSB, timeoutRequest, topic, &v)
+		go m.Run()
 
 		<-ctx.Done()
 
