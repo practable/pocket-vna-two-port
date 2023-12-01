@@ -185,7 +185,7 @@ func (r *RFUSB) SetPort(port string) error {
 		return errors.New("port is nil")
 	}
 
-	resp := make([]byte, 100)
+	resp := make([]byte, 128)
 
 	// read any stale messages before we send our command
 	// make a short timeout temporarily to avoid wasting time
@@ -239,6 +239,12 @@ DRAINED:
 		return errors.New("did not finish writing message")
 	}
 
+	// Get the response
+	// note we do a drain afterwards to avoid this error:
+	// unmarshalling reply failed because because unexpected end of JSON input. Reply was {"report":"port","is":"sho
+
+	reply := make([]byte, 128)
+
 	n, err = r.sp.Read(resp)
 
 	if err != nil {
@@ -249,9 +255,41 @@ DRAINED:
 		return fmt.Errorf("empty reply")
 	}
 
-	var report Report
+	idx := n - 1
+	copy(reply[:], resp[:])
 
-	err = json.Unmarshal(resp[:n], &report) //truncate to bytes read to avoid \x00 char which breaks unmarshal
+	//check we drained the whole message
+	// make a short timeout temporarily to avoid wasting time if we got the whole message already
+	err = r.sp.SetReadTimeout(100 * time.Millisecond) //don't make it too short or else get partial messages (that happens at 10ms)
+
+	if err != nil {
+		return fmt.Errorf("setting short timeout before drain failed because %s", err.Error())
+	}
+COMPLETED:
+	for {
+
+		n, err := r.sp.Read(resp)
+		if err != nil {
+			return err //port probably closed
+		}
+		//https://github.com/bugst/go-serial/blob/e381f2c1332081ea593d73e97c71342026876857/serial_unix.go#L94
+		// timeout is n==0, err==nil
+		if n == 0 {
+			break COMPLETED
+		}
+		if (idx + n) < len(reply) {
+			copy(reply[idx+1:idx+n], resp[:]) //TODO check if copies null?
+			idx = idx + n
+
+		} else {
+			log.Fatal("pkg/rfusb: serial read buffer full")
+		}
+		continue
+	}
+
+	var report Report
+	log.Debugf("(%d)%s", idx, string(reply[:idx]))
+	err = json.Unmarshal(reply[:idx], &report) //truncate to bytes read to avoid \x00 char which breaks unmarshal
 
 	if err != nil {
 		return fmt.Errorf("unmarshalling reply failed because because %s. Reply was %s", err.Error(), string(resp))
