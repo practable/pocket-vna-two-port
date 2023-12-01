@@ -370,6 +370,18 @@ func Cal2Meas(f []float64, s *pb.SParams) []pocket.SParam {
 				Real: s.S11[i].Real,
 				Imag: s.S11[i].Imag,
 			},
+			S12: pocket.Complex{
+				Real: s.S12[i].Real,
+				Imag: s.S12[i].Imag,
+			},
+			S21: pocket.Complex{
+				Real: s.S21[i].Real,
+				Imag: s.S21[i].Imag,
+			},
+			S22: pocket.Complex{
+				Real: s.S22[i].Real,
+				Imag: s.S22[i].Imag,
+			},
 		}
 
 		ps = append(ps, p)
