@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/practable/pocket-vna-two-port/pkg/drain"
 	"github.com/practable/pocket-vna-two-port/pkg/pocket"
 	"github.com/practable/pocket-vna-two-port/pkg/reconws"
 	"github.com/practable/pocket-vna-two-port/pkg/stream"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 var verbose bool
@@ -71,11 +71,12 @@ func TestMain(m *testing.M) {
 var upgrader = websocket.Upgrader{}
 
 func fakeMiddle(u string, ctx context.Context) stream.Stream {
-	return stream.New(u, ctx)
+	return stream.New(ctx, u)
 }
 
 // This test demonstrates draining the fromClient channel
 // if you don't, the handler throws a test error
+// TODO check if this is still relevant after upgrading with pocket/measure/rfusb?
 func TestFakeMiddle(t *testing.T) {
 
 	timeout := 100 * time.Millisecond
@@ -157,7 +158,9 @@ func TestFakeMiddle(t *testing.T) {
 
 func TestMiddle(t *testing.T) {
 	if debug {
-		t.Log("This test relies on hardware and succeeds most of the time")
+		t.Log("This test requires external dependencies and succeeds most of the time")
+		t.Log("Hardware required: VNA, RFSwitch")
+		t.Log("Services required:, gRPC calibration service py/server.py")
 	}
 
 	timeout := time.Millisecond * 1000
@@ -177,13 +180,25 @@ func TestMiddle(t *testing.T) {
 
 	// URL only assigned after starting
 	// Convert http://127.0.0.1 to ws://127.0.0.
-	uc := "ws://localhost:8888/ws/calibration"
-	ur := "ws://localhost:8888/ws/rfswitch"
-	us := "ws" + strings.TrimPrefix(ss.URL, "http")
+	topic := "ws" + strings.TrimPrefix(ss.URL, "http")
 
-	New(uc, ur, us, ctx)
+	addr := "localhost:9001" //gRPC calibration service
+	port := "/dev/ttyUSB0"
+	baud := 57600
+	timeoutUSB := time.Duration(time.Minute)
+	timeoutRequest := time.Duration(time.Minute) //2min in production for large calibrated scans?
 
-	/* Test ReasonableFrequencyRange */
+	v, disconnect, err := pocket.NewHardware()
+
+	defer disconnect()
+
+	assert.NoError(t, err)
+
+	m := New(ctx, addr, port, baud, timeoutUSB, timeoutRequest, topic, &v)
+
+	go m.Run()
+
+	// Test ReasonableFrequencyRange
 
 	mt := int(websocket.TextMessage)
 	message := []byte("{\"cmd\":\"rr\"}")
@@ -221,9 +236,15 @@ func TestMiddle(t *testing.T) {
 		assert.True(t, ok)
 
 		assert.Equal(t, "rr", rr.Command.Command)
+
+		// These are hardware dependent tests and can be changed to suit the hardware you are testing with
+		assert.Equal(t, uint64(500000), rr.Result.Start)
+		assert.Equal(t, uint64(4000000000), rr.Result.End)
 	}
 
-	/* Test rangeQuery */
+} /*
+
+	// Test rangeQuery
 
 	rq := pocket.RangeQuery{
 		Command:         pocket.Command{Command: "rq"},
@@ -280,12 +301,12 @@ func TestMiddle(t *testing.T) {
 
 	}
 
-	/* Test rangeCal */
+	// Test rangeCal
 
 	// TODO - consider replacment test. Now won't fail on incorrect Select though
 	// so do test later to avoid messing up next test ...
 
-	/* Test calibratedRangeQuery - will fail because there is no cal in place*/
+    // Test calibratedRangeQuery - will fail because there is no cal in place
 
 	crq := pocket.CalibratedRangeQuery{
 		Command: pocket.Command{Command: "crq", ID: "crq-before-cal"},
@@ -347,7 +368,7 @@ LOOP2:
 
 	assert.Equal(t, expectedError, cr.Message)
 
-	/* Test rangeCal */
+	// Test rangeCal
 
 	rq = pocket.RangeQuery{
 		Command:         pocket.Command{Command: "rc", ID: "good"},
@@ -444,7 +465,7 @@ LOOP2:
 		t.Error("No new messages for Test3")
 	}
 
-	/* Test calibratedRangeQuery */
+	// Test calibratedRangeQuery
 	crq = pocket.CalibratedRangeQuery{
 		Command: pocket.Command{Command: "crq"},
 		What:    "dut1",
@@ -538,7 +559,7 @@ LOOP2:
 	}
 
 }
-
+*/
 func userChannelHandler(t *testing.T, toClient, fromClient chan reconws.WsMessage, ctx context.Context) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {

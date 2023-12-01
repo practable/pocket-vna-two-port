@@ -3,76 +3,81 @@ package middle
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
-	"github.com/practable/pocket-vna-two-port/pkg/calibration"
+	"github.com/practable/pocket-vna-two-port/pkg/measure"
 	"github.com/practable/pocket-vna-two-port/pkg/pb"
 	"github.com/practable/pocket-vna-two-port/pkg/pocket"
+	"github.com/practable/pocket-vna-two-port/pkg/rfusb"
 	"github.com/practable/pocket-vna-two-port/pkg/stream"
-	"github.com/practable/pocket-vna-two-port/pkg/vna"
 	log "github.com/sirupsen/logrus"
-	"github.com/timdrysdale/go-pocketvna/pkg/rfswitch"
-	"github.com/timdrysdale/go-pocketvna/pkg/rfusb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Middle holds config and service pointers
 type Middle struct {
-	c              *grpc.ClientConn // calibration
-	s              *stream.Stream   // data stream from user
-	h              *measure.Hardware  // rf switch & VNA
-	baud           int
-	port           string
-	timeoutUSB     time.Duration
-	timeoutRequest time.Duration
+	c       *pb.CalibrateClient
+	conn    *grpc.ClientConn // calibration
+	ctx     context.Context
+	h       *measure.Hardware // rf switch & VNA
+	s       *stream.Stream    // data stream from user
+	timeout time.Duration
 }
 
-//TODO - just needs to use Measure!! That includes the switch as well 
+// for the channel in Handle
+type Response struct {
+	Result interface{}
+	Error  error
+}
 
-// func New returns a new middleware
+// func New returns a new middleware - do this way so in Run we can call Handle without passing parameters to it
 // addr is the host:port of the local gRPC calibration service (unlikely to be remote due to difficulties in proxying HTTP/2)
 // port is the usb port for the rf switch, e.g. `/dev/ttyUSB0`
 // baud is usb port baud e.g. 57600
-// timeout is the timeout e.g. 2m
-func New(addr, port string, baud int, timeoutUSB, timeoutRequest time.Duration, topic string, vna *vna.VNAService) Middle {
+// timeoutUSB is the timeout for USB comms e.g. 2m TODO is this needed?
+// topic is the address for the stream to connect to at the local `relay host` e.g. ws://localhost:8888/data (TODO check this address for correct format, e.g. does it need the ws://?)
 
-	// create new hardware in Run() 
+func New(ctx context.Context, addr, port string, baud int, timeoutUSB, timeoutRequest time.Duration, topic string, v *pocket.VNA) Middle {
+
+	// open the serial connection to the rf switch
+	r := rfusb.NewRFUSB()
+	r.Open(port, baud, timeoutUSB)
+	// r.Close() is in Run()
+
+	// create a new measure.Hardware using the rfswitch and VNA
+	// note that vna has it's own context (same parent as this context though)
+	h := measure.NewHardware(v, r)
+
+	// open the gRPC connection to the calibration service
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if err != nil {
+		log.Fatalf("did not connect to calibration gRPC service %s because %v", addr, err)
+	}
+	// conn.Close() is in Run()
+
+	c := pb.NewCalibrateClient(conn) //this doesn't need closing, apparently.
+
+	// open the command/data stream to the user (via relay etc)
+	s := stream.New(ctx, topic)
+
 	return Middle{
-		addr:           addr,
-		port:           port,
-		baud:           baud,
-		timeoutRequest: timeoutRequest,
-		timeoutUSB:     timeoutUSB,
-		topic:          topic,
-		v:              vna,
+		c:       &c,
+		conn:    conn,
+		ctx:     ctx,
+		h:       h,
+		s:       &s,
+		timeout: timeoutRequest,
 	}
 
 }
 
-func (m *Middle) Run(ctx context.Context) {
+func (m *Middle) Run() {
 
-	w := rfusb.NewRFUSB() //open it in Run()
-
-	
-
-	
-	conn, err := grpc.Dial(m.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	if err != nil {
-		log.Fatalf("did not connect to calibration gRPC service %s because %v", m.addr, err)
-	}
-	defer conn.Close()
-
-	m.c = pb.NewCalibrateClient(conn)
-
-	m.s = stream.New(us, ctx)
-
-	m.w.Open(m.port, m.baud, m.timeout)
-	defer m.w.Close()
-
-	// note that vna will have it own's context (usually the same parent as this one though)
+	defer m.h.Switch.Close()
+	defer m.conn.Close()
 
 	for {
 
@@ -80,22 +85,24 @@ func (m *Middle) Run(ctx context.Context) {
 
 		case request := <-m.s.Request:
 
-			rctx, cancel := context.WithTimeout(ctx, m.timeoutRequest)
+			rctx, cancel := context.WithTimeout(m.ctx, m.timeout)
+
+			var response interface{}
 
 			response, err := m.Handle(rctx, request)
 
 			if err != nil {
-				s.Response <- pocket.CustomResult{
+				response = pocket.CustomResult{
 					Message: err.Error(),
 					Command: request,
 				}
 			}
 
-			s.Response <- response
+			m.s.Response <- response
 
 			cancel()
 
-		case <-ctx.Done():
+		case <-m.ctx.Done():
 			return
 		}
 
@@ -105,18 +112,40 @@ func (m *Middle) Run(ctx context.Context) {
 
 func (m *Middle) Handle(ctx context.Context, request interface{}) (response interface{}, err error) {
 
+	r := make(chan Response)
+
+	// now try the request
+	// any calls that hang will result in a leakage of the associated goro
+	// but hopefully small impact compared to whole system hanging
+	go func() {
+
+		switch request.(type) {
+
+		case pocket.ReasonableFrequencyRange:
+
+			req := request.(pocket.ReasonableFrequencyRange)
+			err := m.h.ReasonableFrequencyRange(&req)
+
+			r <- Response{
+				Result: req,
+				Error:  err,
+			}
+		}
+	}()
+
+	select {
+	case response := <-r:
+		return response.Result, response.Error
+	case <-ctx.Done():
+		return nil, errors.New("timeout")
+	}
 }
 
-//func HandleRequest(request interface{}, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
+/*
 
-	switch request.(type) {
+	case pocket.SingleQuery:
 
-	case pocket.ReasonableFrequencyRange, pocket.SingleQuery:
-
-		//todo - do this directly, without using a channel?
-
-		v.Request <- request
-
+		return err = m.h.Measure(request)
 		return <-v.Response
 
 	case pocket.RangeQuery:
@@ -161,10 +190,10 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 			Message: "Unknown request",
 			Command: request,
 		}
-	}
-}
+	}*/
 
-func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
+/*
+func (m *Middle) CalibratedRangeQuery(crq pocket.CalibratedRangeQuery) interface{} {
 
 	sc, ok := (c.Scan).(pocket.RangeQuery)
 
@@ -292,7 +321,7 @@ func CalibratedRangeQuery(crq pocket.CalibratedRangeQuery, c *calibration.Calibr
 
 }
 
-func RangeQuery(rq pocket.RangeQuery, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
+func (m *Midlle) RangeQuery(rq pocket.RangeQuery) interface{} {
 
 	var err error
 	var name string
@@ -365,7 +394,7 @@ func RangeQuery(rq pocket.RangeQuery, r *rfswitch.Switch, v *pocket.VNAService) 
 
 }
 
-func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Switch, v *pocket.VNAService) interface{} {
+func (m *Middle) RangeCal(rc pocket.RangeQuery) interface{} {
 
 	// clear previous cal
 	c.Clear()
@@ -597,3 +626,4 @@ func RangeCal(rc pocket.RangeQuery, c *calibration.Calibration, r *rfswitch.Swit
 	// }
 
 }
+*/
