@@ -21,16 +21,16 @@ type Measure interface {
 }
 
 type Hardware struct {
-	Switch *rfusb.Switch
+	Switch rfusb.Switch // expect user to supply a pointer to a Switch instance
 	VNA    *pocket.VNA
 }
 type Mock struct {
-	Switch  *rfusb.Switch
+	Switch  rfusb.Switch // expect user to supply a pointer to a Switch instance
 	VNA     *pocket.VNA
 	Results map[string][]pocket.SParam
 }
 
-func NewHardware(v *pocket.VNA, s *rfusb.Switch) *Hardware {
+func NewHardware(v *pocket.VNA, s rfusb.Switch) *Hardware {
 
 	return &Hardware{
 		Switch: s,
@@ -38,7 +38,7 @@ func NewHardware(v *pocket.VNA, s *rfusb.Switch) *Hardware {
 	}
 }
 
-func NewMock(v *pocket.VNA, s *rfusb.Switch) *Mock {
+func NewMock(v *pocket.VNA, s rfusb.Switch) *Mock {
 
 	return &Mock{
 		Switch:  s,
@@ -52,7 +52,7 @@ func (h *Hardware) Measure(rq *pocket.RangeQuery) error {
 	if rq == nil {
 		return errors.New("nil command")
 	}
-	err := (*h.Switch).SetPort(rq.What)
+	err := h.Switch.SetPort(rq.What)
 
 	if err != nil {
 		return fmt.Errorf("error setting switch to %s because %s", rq.What, err.Error())
