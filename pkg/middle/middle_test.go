@@ -268,6 +268,7 @@ RFR:
 		Avg:             1,
 		Size:            2,
 		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+		What:            "short",
 	}
 
 	message, err = json.Marshal(rq)

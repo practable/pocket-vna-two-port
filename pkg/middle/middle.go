@@ -24,6 +24,8 @@ type Middle struct {
 	h       *measure.Hardware // rf switch & VNA
 	s       *stream.Stream    // data stream from user
 	timeout time.Duration
+	rq      pocket.RangeQuery //current calibration
+
 }
 
 // for the channel in Handle
@@ -130,6 +132,34 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				Result: req,
 				Error:  err,
 			}
+
+		// contains request for raw range query OR to do calibration
+		case pocket.RangeQuery:
+
+			rq := request.(pocket.RangeQuery)
+
+			switch rq.Command.Command {
+
+			case "rq", "rangequery":
+
+				req := request.(pocket.RangeQuery)
+
+				err := m.h.MeasureRange(&req)
+				r <- Response{
+					Result: req,
+					Error:  err,
+				}
+
+			case "rc", "rangecal":
+
+				//TODO organise the calibration here
+
+			}
+
+		case pocket.CalibratedRangeQuery:
+
+			//TODO measure and apply calibration
+
 		}
 	}()
 
