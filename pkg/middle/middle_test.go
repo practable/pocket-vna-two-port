@@ -163,7 +163,7 @@ func TestMiddle(t *testing.T) {
 		t.Log("Services required:, gRPC calibration service py/server.py")
 	}
 
-	timeout := time.Millisecond * 1000
+	timeout := 2 * time.Second
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -214,35 +214,50 @@ func TestMiddle(t *testing.T) {
 		t.Error(t, "timeout awaiting send message")
 	}
 
-	select {
+	t0 := time.Now()
+RFR:
+	for {
+		select {
 
-	case <-time.After(timeout):
-		t.Error("timeout awaiting response")
+		case <-time.After(timeout): //this times out if there are no heartbeats
+			t.Error("RFR: timeout awaiting response")
+			break RFR
 
-	case response := <-mds.Next():
+		case response := <-mds.Next():
 
-		//fmt.Printf(string((request.(reconws.WsMessage)).Data))
+			//fmt.Printf(string((request.(reconws.WsMessage)).Data))
 
-		m, ok := response.(reconws.WsMessage)
+			m, ok := response.(reconws.WsMessage)
 
-		assert.True(t, ok)
+			assert.True(t, ok)
 
-		var rr pocket.ReasonableFrequencyRange
+			var rr pocket.ReasonableFrequencyRange
 
-		err := json.Unmarshal(m.Data, &rr)
+			err := json.Unmarshal(m.Data, &rr)
 
-		assert.NoError(t, err)
+			assert.NoError(t, err)
 
-		assert.True(t, ok)
+			assert.True(t, ok)
 
-		assert.Equal(t, "rr", rr.Command.Command)
+			///ignore heartbeat, but timeout if only get heartbeats for too long
+			if rr.Command.Command == "hb" {
+				t.Log("RFR: heartbeat")
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("RFR timeout")
+					break RFR
+				}
+				continue
+			}
 
-		// These are hardware dependent tests and can be changed to suit the hardware you are testing with
-		assert.Equal(t, uint64(500000), rr.Result.Start)
-		assert.Equal(t, uint64(4000000000), rr.Result.End)
+			assert.Equal(t, "rr", rr.Command.Command)
+
+			// These are hardware dependent tests and can be changed to suit the hardware you are testing with
+			assert.Equal(t, uint64(500000), rr.Result.Start)
+			assert.Equal(t, uint64(4000000000), rr.Result.End)
+			t.Log("RFR test completed")
+			break RFR
+		}
 	}
-
-} /*
 
 	// Test rangeQuery
 
@@ -255,7 +270,7 @@ func TestMiddle(t *testing.T) {
 		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
 	}
 
-	message, err := json.Marshal(rq)
+	message, err = json.Marshal(rq)
 
 	assert.NoError(t, err)
 
@@ -270,37 +285,58 @@ func TestMiddle(t *testing.T) {
 		t.Error(t, "timeout awaiting send message")
 	}
 
-	select {
+	t0 = time.Now()
 
-	case <-time.After(timeout):
-		t.Error("timeout awaiting response")
-	case response := <-mds.Next():
+RQ:
+	for {
+		select {
 
-		m, ok := response.(reconws.WsMessage)
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break RQ
+		case response := <-mds.Next():
 
-		assert.True(t, ok)
+			m, ok := response.(reconws.WsMessage)
 
-		var rq pocket.RangeQuery
+			assert.True(t, ok)
 
-		err := json.Unmarshal(m.Data, &rq)
+			var rq pocket.RangeQuery
 
-		log.Debugf("rq result: %s", m.Data)
+			err := json.Unmarshal(m.Data, &rq)
 
-		assert.NoError(t, err)
-		assert.Equal(t, "rq", rq.Command.Command)
+			log.Debugf("rq result: %s", m.Data)
 
-		// TODO check message contents are ok
+			assert.NoError(t, err)
 
-		// cast to int to make human readable in assert error message
-		if len(rq.Result) == 2 {
-			assert.Equal(t, 100000, int(rq.Result[0].Freq))
-			assert.Equal(t, 4000000, int(rq.Result[1].Freq))
-		} else {
-			t.Fatal("wrong length results")
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("RQ timeout")
+					break RQ
+				}
+				t.Log("RQ: heartbeat")
+				continue
+			}
+
+			assert.Equal(t, "rq", rq.Command.Command)
+
+			// TODO check message contents are ok
+
+			// cast to int to make human readable in assert error message
+			if len(rq.Result) == 2 {
+				assert.Equal(t, 100000, int(rq.Result[0].Freq))
+				assert.Equal(t, 4000000, int(rq.Result[1].Freq))
+			} else {
+				t.Fatal("RQ wrong length results")
+			}
+			t.Log("RQ test completed")
+			break RQ
+
 		}
-
 	}
+}
 
+/*
 	// Test rangeCal
 
 	// TODO - consider replacment test. Now won't fail on incorrect Select though
@@ -560,6 +596,7 @@ LOOP2:
 
 }
 */
+
 func userChannelHandler(t *testing.T, toClient, fromClient chan reconws.WsMessage, ctx context.Context) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {

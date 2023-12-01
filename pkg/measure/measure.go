@@ -14,6 +14,7 @@ import (
 
 	"github.com/practable/pocket-vna-two-port/pkg/pocket"
 	"github.com/practable/pocket-vna-two-port/pkg/rfusb"
+	log "github.com/sirupsen/logrus"
 )
 
 type Measure interface {
@@ -60,7 +61,7 @@ func (h *Hardware) MeasureRange(rq *pocket.RangeQuery) error {
 	if err != nil {
 		return fmt.Errorf("error setting switch to %s because %s", rq.What, err.Error())
 	}
-
+	log.Infof("pkg/measure: range query requested")
 	return (*h.VNA).RangeQuery(rq)
 
 }
@@ -87,6 +88,7 @@ func (h *Hardware) MeasureSingle(sq *pocket.SingleQuery) error {
 	if err != nil {
 		return fmt.Errorf("error setting switch to %s because %s", sq.What, err.Error())
 	}
+	log.Infof("pkg/measure: single query requested")
 
 	return (*h.VNA).SingleQuery(sq)
 
@@ -109,6 +111,8 @@ func (h *Hardware) ReasonableFrequencyRange(rfr *pocket.ReasonableFrequencyRange
 	if rfr == nil {
 		return errors.New("nil command")
 	}
+
+	log.Infof("pkg/measure: reasonable frequency range requested")
 
 	return (*h.VNA).GetReasonableFrequencyRange(rfr)
 
