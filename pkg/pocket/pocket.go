@@ -153,6 +153,7 @@ type SingleQuery struct {
 	Avg    uint16       `json:"avg"`
 	Select SParamSelect `json:"sparam"`
 	Result SParam       `json:"result,omitEmpty"`
+	What   string       `json:"what"`
 }
 
 type ReasonableFrequencyRange struct {
