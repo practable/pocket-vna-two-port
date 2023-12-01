@@ -79,9 +79,12 @@ command = [
         {"id":"dut1(jump-repeat)","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},        
         {"id":"dut3(jump-repeat)","t":0,"cmd":"crq","what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},        
         {"id":"dut1(jump-repeat-2)","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},  
-        {"id":"dut2(jump-repeat)","t":0,"cmd":"crq","what":"dut3","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},
+        {"id":"dut2(jump-repeat)","t":0,"cmd":"crq","what":"dut2","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},
         {"id":"dut1(jump-repeat-3)","t":0,"cmd":"crq","what":"dut1","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}},
-
+        {"id":"short(repeat)","t":0,"cmd":"crq","what":"short","avg":1,"sparam":{"s11":True,"s12":True, "s21":True,"s22":True}}, 
+        {"id":"open(repeat)","t":0,"cmd":"crq","what":"open","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}}, 
+        {"id":"load(repeat)","t":0,"cmd":"crq","what":"load","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}}, 
+        {"id":"thru(repeat)","t":0,"cmd":"crq","what":"thru","avg":1,"sparam":{"s11":True,"s12":True,"s21":True,"s22":True}}, 
         ]
 
 network = []
@@ -201,7 +204,7 @@ if __name__ == "__main__":
 
     websocket.enableTrace(False)
  
-    local = False
+    local = True
     
     ws_url = "ws://localhost:8888/ws/data"   
     
