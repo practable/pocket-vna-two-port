@@ -1,6 +1,7 @@
 /*
 Package stream connects to a websocket server and transfers JSON messages corresponding to the
 types in pkg/pocket i.e. commands and results for pocketVNA
+This is done here to simplify the message handling in middleware package `middle`
 
 */
 
@@ -14,9 +15,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	log "github.com/sirupsen/logrus"
 	"github.com/practable/pocket-vna-two-port/pkg/pocket"
 	"github.com/practable/pocket-vna-two-port/pkg/reconws"
+	log "github.com/sirupsen/logrus"
 )
 
 type Stream struct {
