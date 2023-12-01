@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Tim Drysdale <timothy.d.drysdale@gmail.com>
+Copyright © 2020 Tim Drysdale <timothy.d.drysdale@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -18,37 +18,39 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/practable/pocket-vna-two-port/pkg/pocket"
 	"github.com/spf13/cobra"
 )
 
-// unlockCmd represents the unlock command
-var unlockCmd = &cobra.Command{
-	Use:   "unlock",
-	Short: "Unlock all VNA on the system",
-	Long:  `Unlock all VNA on the system.`,
+var (
+	Version   = "Version"
+	BuildTime = "BuildTime"
+)
+
+// versionCmd represents the version command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "reports version and build time",
+	Long:  `reports version and build time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := pocket.ForceUnlockDevices()
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-		os.Exit(0)
+		fmt.Println(versionString())
 	},
 }
 
+func versionString() string {
+	return Version + " " + BuildTime
+}
+
 func init() {
-	rootCmd.AddCommand(unlockCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// unlockCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// versionCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// unlockCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// versionCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
