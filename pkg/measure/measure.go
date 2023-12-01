@@ -25,9 +25,11 @@ type Hardware struct {
 	VNA    *pocket.VNA
 }
 type Mock struct {
-	Switch  rfusb.Switch // expect user to supply a pointer to a Switch instance
-	VNA     *pocket.VNA
-	Results map[string][]pocket.SParam
+	Switch                         rfusb.Switch // expect user to supply a pointer to a Switch instance
+	VNA                            *pocket.VNA
+	ResultRange                    map[string][]pocket.SParam //for range
+	ResultSingle                   map[string]pocket.SParam   //for single
+	ResultReasonableFrequencyRange pocket.Range
 }
 
 func NewHardware(v *pocket.VNA, s rfusb.Switch) *Hardware {
@@ -41,13 +43,14 @@ func NewHardware(v *pocket.VNA, s rfusb.Switch) *Hardware {
 func NewMock(v *pocket.VNA, s rfusb.Switch) *Mock {
 
 	return &Mock{
-		Switch:  s,
-		VNA:     v,
-		Results: make(map[string][]pocket.SParam),
+		Switch:       s,
+		VNA:          v,
+		ResultRange:  make(map[string][]pocket.SParam),
+		ResultSingle: make(map[string]pocket.SParam),
 	}
 }
 
-func (h *Hardware) Measure(rq *pocket.RangeQuery) error {
+func (h *Hardware) MeasureRange(rq *pocket.RangeQuery) error {
 
 	if rq == nil {
 		return errors.New("nil command")
@@ -62,14 +65,59 @@ func (h *Hardware) Measure(rq *pocket.RangeQuery) error {
 
 }
 
-func (m *Mock) Measure(rq *pocket.RangeQuery) error {
+func (m *Mock) MeasureRange(rq *pocket.RangeQuery) error {
 	if rq == nil {
 		return errors.New("nil command")
 	}
-	if _, ok := m.Results[rq.What]; !ok {
+	if _, ok := m.ResultRange[rq.What]; !ok {
 		return fmt.Errorf("no mock result for %s", rq.What)
 	}
-	rq.Result = m.Results[rq.What]
+	rq.Result = m.ResultRange[rq.What]
 	return nil
 
+}
+
+func (h *Hardware) MeasureSingle(sq *pocket.SingleQuery) error {
+
+	if sq == nil {
+		return errors.New("nil command")
+	}
+	err := h.Switch.SetPort(sq.What)
+
+	if err != nil {
+		return fmt.Errorf("error setting switch to %s because %s", sq.What, err.Error())
+	}
+
+	return (*h.VNA).SingleQuery(sq)
+
+}
+
+func (m *Mock) MeasureSingle(sq *pocket.SingleQuery) error {
+	if sq == nil {
+		return errors.New("nil command")
+	}
+	if _, ok := m.ResultSingle[sq.What]; !ok {
+		return fmt.Errorf("no mock result for %s", sq.What)
+	}
+	sq.Result = m.ResultSingle[sq.What]
+	return nil
+
+}
+
+func (h *Hardware) ReasonableFrequencyRange(rfr *pocket.ReasonableFrequencyRange) error {
+
+	if rfr == nil {
+		return errors.New("nil command")
+	}
+
+	return (*h.VNA).GetReasonableFrequencyRange(rfr)
+
+}
+
+func (m *Mock) ReasonableFrequencyRange(rfr *pocket.ReasonableFrequencyRange) error {
+	if rfr == nil {
+		return errors.New("nil command")
+	}
+	rfr.Result = m.ResultReasonableFrequencyRange
+	return nil
 }
