@@ -68,6 +68,13 @@ func TestSetPort(t *testing.T) {
 
 }
 
+func TestInterface(t *testing.T) {
+
+	var rs Switch
+	rs = r
+	rs.SetShort()
+}
+
 func TestSettingPorts(t *testing.T) {
 	if !hardware {
 		t.Skip("no hardware")

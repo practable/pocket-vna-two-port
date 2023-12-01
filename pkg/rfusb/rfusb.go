@@ -44,9 +44,9 @@ type Switch interface {
 	SetLoad() error
 	SetThru() error
 	SetDUT1() error
-	SetDut2() error
-	SetDut3() error
-	SetDut4() error
+	SetDUT2() error
+	SetDUT3() error
+	SetDUT4() error
 }
 
 func NewMock() *Mock {
