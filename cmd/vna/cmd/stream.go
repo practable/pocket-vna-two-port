@@ -37,15 +37,16 @@ var streamCmd = &cobra.Command{
 	Short: "Stream connects a pocketVNA to a websocket server",
 	Long: `Stream connects the first available pocketVNA to a websocket server. The websocket server is specified via an environment variable
 
-export VNA_DESTINATION=ws://localhost:8888/ws/vna
-export VNA_CALIBRATION=ws://localhost:8888/ws/calibration
-export VNA_RFSWITCH=ws://localhost:8888/ws/rfswitch
-
+export VNA_ADDR=localhost:9001
+export VNA_BAUD=57600
+export VNA_LOG_FILE=/var/log/vna/vna.log
+export VNA_LOG_FORMAT=json
+export VNA_LOG_LEVEL=info
+export VNA_PORT=/dev/ttyUSB0
+export VNA_TIMEOUT_USB=30s
+export VNA_TIMEOUT_REQUEST=3m
+export VNA_TOPIC=ws://localhost:8888/ws/data
 vna stream 
-
-Note that development can be enabled by setting environment variable VNA_DEVELOPMENT
-export VNA_DEVELOPMENT=true
-
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 
