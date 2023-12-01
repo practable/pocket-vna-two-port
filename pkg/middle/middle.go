@@ -161,7 +161,7 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 
 			case "rc", "rangecal":
 				req := request.(pocket.RangeQuery)
-				err := m.RangeCal(&req)
+				err := m.CalibrateRange(&req)
 				r <- Response{
 					Result: req,
 					Error:  err,
@@ -171,7 +171,13 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 
 		case pocket.CalibratedRangeQuery:
 
-			//TODO measure and apply calibration
+			req := request.(pocket.CalibratedRangeQuery)
+
+			err := m.MeasureRangeCalibrated(&req)
+			r <- Response{
+				Result: req,
+				Error:  err,
+			}
 
 		}
 	}()
@@ -184,13 +190,49 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 	}
 }
 
-// func RangeCal performs the calibration measurements
-func (m *Middle) RangeCal(request *pocket.RangeQuery) error {
+// func MeasureRangeCalibrated measures and applies a calibration, returning calibrated results
+func (m *Middle) MeasureRangeCalibrated(request *pocket.CalibratedRangeQuery) error {
+
+	if m.rq == nil {
+		return errors.New("not calibrated yet")
+	}
+
+	// measure dut set by user
+	m.rq.What = request.What
+
+	err := m.h.MeasureRange(m.rq)
+
+	if err != nil {
+		return err
+	}
+
+	m.dut = m.rq.Result
+
+	//reuse the other parts of the protocol buffer that are already there from the cal
+	m.ctpr.Dut = Meas2Cal(m.dut)
+
+	r, err := (*m.c).CalibrateTwoPort(m.ctx, m.ctpr)
+	if err != nil {
+		log.Fatalf("could not calibrate: %v", err)
+	}
+
+	m.dutcal = Cal2Meas(r.GetFrequency(), r.GetResult())
+
+	request.Result = m.dutcal
+
+	return nil
+
+}
+
+// func CalibrateRange performs the calibration measurements
+func (m *Middle) CalibrateRange(request *pocket.RangeQuery) error {
 
 	// store frequency range, size, LogDistribution
 	// Measure & save SOLT for all S-params
 	// return Sparams for the calibrated item that was listed in the What?
 	// Avg can be changed without invalidating the cal, so don't save it
+
+	request.What = "thru" //we'll force the return of the thru results for simplicity
 
 	rq := *request //make a local copy of the request to break the link to the original request
 	// so it's not changed by future requests coming in
@@ -203,8 +245,6 @@ func (m *Middle) RangeCal(request *pocket.RangeQuery) error {
 		S21: true,
 		S22: true,
 	}
-
-	// we are also ignoring m.rq.What, and returning the calibrated thru results
 
 	// measure cal standards
 
