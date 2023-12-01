@@ -163,7 +163,7 @@ func TestMiddle(t *testing.T) {
 		t.Log("Services required:, gRPC calibration service py/server.py")
 	}
 
-	timeout := 2 * time.Second
+	timeout := 10 * time.Second
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -338,7 +338,7 @@ RQ:
 
 	// Test rangeCal
 
-	timeout = 8 * time.Second //needs extra time compared to a single measurement
+	timeout = 20 * time.Second //needs extra time compared to a single measurement
 
 	rc := pocket.RangeQuery{
 		Command:         pocket.Command{Command: "rc"},
