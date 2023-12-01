@@ -335,6 +335,85 @@ RQ:
 
 		}
 	}
+
+	// Test rangeCal
+
+	timeout = 8 * time.Second //needs extra time compared to a single measurement
+
+	rc := pocket.RangeQuery{
+		Command:         pocket.Command{Command: "rc"},
+		Range:           pocket.Range{Start: 100000, End: 4000000},
+		LogDistribution: true,
+		Avg:             1,
+		Size:            2,
+		Select:          pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+		What:            "short",
+	}
+
+	message, err = json.Marshal(rc)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+RC:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break RC
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var rq pocket.RangeQuery
+
+			err := json.Unmarshal(m.Data, &rq)
+
+			log.Debugf("rq result: %s", m.Data)
+
+			assert.NoError(t, err)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("RC timeout")
+					break RC
+				}
+				t.Log("RC: heartbeat")
+				continue
+			}
+
+			assert.Equal(t, "rc", rq.Command.Command)
+
+			// TODO check message contents are ok
+
+			// cast to int to make human readable in assert error message
+			if len(rq.Result) == 2 {
+				assert.Equal(t, 100000, int(rq.Result[0].Freq))
+				assert.Equal(t, 4000000, int(rq.Result[1].Freq))
+			} else {
+				t.Fatal("RC wrong length results")
+			}
+			t.Log("RC test completed")
+			break RC
+
+		}
+	}
 }
 
 /*

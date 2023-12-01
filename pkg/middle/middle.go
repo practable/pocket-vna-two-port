@@ -24,8 +24,14 @@ type Middle struct {
 	h       *measure.Hardware // rf switch & VNA
 	s       *stream.Stream    // data stream from user
 	timeout time.Duration
-	rq      pocket.RangeQuery //current calibration
-
+	rq      *pocket.RangeQuery //current calibration
+	short   []pocket.SParam
+	open    []pocket.SParam
+	load    []pocket.SParam
+	thru    []pocket.SParam
+	dut     []pocket.SParam
+	dutcal  []pocket.SParam
+	ctpr    *pb.CalibrateTwoPortRequest
 }
 
 // for the channel in Handle
@@ -65,9 +71,13 @@ func New(ctx context.Context, addr, port string, baud int, timeoutUSB, timeoutRe
 	// open the command/data stream to the user (via relay etc)
 	s := stream.New(ctx, topic)
 
+	ctpr := &pb.CalibrateTwoPortRequest{}
+	ctpr.Reset()
+
 	return Middle{
 		c:       &c,
 		conn:    conn,
+		ctpr:    ctpr,
 		ctx:     ctx,
 		h:       h,
 		s:       &s,
@@ -143,7 +153,6 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 			case "rq", "rangequery":
 
 				req := request.(pocket.RangeQuery)
-
 				err := m.h.MeasureRange(&req)
 				r <- Response{
 					Result: req,
@@ -151,8 +160,12 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				}
 
 			case "rc", "rangecal":
-
-				//TODO organise the calibration here
+				req := request.(pocket.RangeQuery)
+				err := m.RangeCal(&req)
+				r <- Response{
+					Result: req,
+					Error:  err,
+				}
 
 			}
 
@@ -169,6 +182,162 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 	case <-ctx.Done():
 		return nil, errors.New("timeout")
 	}
+}
+
+// func RangeCal performs the calibration measurements
+func (m *Middle) RangeCal(request *pocket.RangeQuery) error {
+
+	// store frequency range, size, LogDistribution
+	// Measure & save SOLT for all S-params
+	// return Sparams for the calibrated item that was listed in the What?
+	// Avg can be changed without invalidating the cal, so don't save it
+
+	rq := *request //make a local copy of the request to break the link to the original request
+	// so it's not changed by future requests coming in
+	m.rq = &rq
+
+	// we need to measure all Sparams, so ignore user's select settings
+	m.rq.Select = pocket.SParamSelect{
+		S11: true,
+		S12: true,
+		S21: true,
+		S22: true,
+	}
+
+	// we are also ignoring m.rq.What, and returning the calibrated thru results
+
+	// measure cal standards
+
+	//short
+	m.rq.What = "short"
+	err := m.h.MeasureRange(m.rq)
+
+	if err != nil {
+		return err
+	}
+
+	m.short = m.rq.Result
+
+	// open
+	m.rq.What = "open"
+	err = m.h.MeasureRange(m.rq)
+
+	if err != nil {
+		return err
+	}
+
+	m.open = m.rq.Result
+
+	// load
+	m.rq.What = "load"
+	err = m.h.MeasureRange(m.rq)
+
+	if err != nil {
+		return err
+	}
+
+	m.load = m.rq.Result
+
+	// thru
+	m.rq.What = "thru"
+	err = m.h.MeasureRange(m.rq)
+
+	if err != nil {
+		return err
+	}
+
+	m.thru = m.rq.Result
+
+	// Use the thru for the DUT for the purpose of this cal
+	m.dut = m.thru
+
+	// Prepare the cal buffer...
+	m.ctpr.Reset()
+
+	m.ctpr.Frequency = Meas2Freq(m.short)
+
+	m.ctpr.Short = Meas2Cal(m.short)
+	m.ctpr.Open = Meas2Cal(m.open)
+	m.ctpr.Load = Meas2Cal(m.load)
+	m.ctpr.Thru = Meas2Cal(m.thru)
+	m.ctpr.Dut = Meas2Cal(m.dut)
+
+	r, err := (*m.c).CalibrateTwoPort(m.ctx, m.ctpr)
+	if err != nil {
+		log.Fatalf("could not calibrate: %v", err)
+	}
+
+	m.dutcal = Cal2Meas(r.GetFrequency(), r.GetResult())
+
+	request.Result = m.dutcal
+
+	return nil
+
+}
+
+func Meas2Freq(s []pocket.SParam) []float64 {
+	freq := []float64{}
+
+	for _, v := range s {
+		freq = append(freq, float64(v.Freq))
+	}
+
+	return freq
+}
+
+func Meas2Cal(s []pocket.SParam) *pb.SParams {
+
+	var s11, s12, s21, s22 []*pb.Complex
+
+	for _, v := range s {
+		s11 = append(s11, &pb.Complex{
+			Real: v.S11.Real,
+			Imag: v.S11.Imag,
+		})
+		s12 = append(s12, &pb.Complex{
+			Real: v.S12.Real,
+			Imag: v.S12.Imag,
+		})
+		s21 = append(s21, &pb.Complex{
+			Real: v.S21.Real,
+			Imag: v.S21.Imag,
+		})
+		s22 = append(s22, &pb.Complex{
+			Real: v.S22.Real,
+			Imag: v.S22.Imag,
+		})
+
+	}
+
+	return &pb.SParams{
+		S11: s11,
+		S12: s12,
+		S21: s21,
+		S22: s22,
+	}
+
+}
+
+func Cal2Meas(f []float64, s *pb.SParams) []pocket.SParam {
+
+	var ps []pocket.SParam
+
+	for i := range s.S11 {
+
+		p := pocket.SParam{
+			Freq: uint64(f[i]),
+			S11: pocket.Complex{
+				Real: s.S11[i].Real,
+				Imag: s.S11[i].Imag,
+			},
+		}
+
+		ps = append(ps, p)
+
+	}
+
+	return ps
+
 }
 
 /*
