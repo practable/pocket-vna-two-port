@@ -1,6 +1,6 @@
 
 <template>
-<div>
+<div class='container-sm m-2 background-white border rounded'>
 
     <div v-if='getSessionExpired' class='col-12'>
         <img id='session-end-image' src='https://assets.practable.io/images/common/thank-you-screen.svg' alt='session ended'>
@@ -14,9 +14,7 @@
           <img id='sparams-image' src='/images/VNA.png' alt='getSParamImage.alt'>
           <figcaption>Temp image of ports</figcaption>
       </div>
-
-
-      <div v-if='getConfigJSON != ""' class='col-6 '>
+      <div v-if='getConfigJSON != ""' class='col-4 '>
           <img id='dut-image' :src='getDUTImage.src' :alt='getDUTImage.alt'>
           <figcaption>{{ getDUTImage.figcaption }}</figcaption>
       </div>
@@ -232,8 +230,6 @@ export default {
         
         previous_phase: null,
         unit: 1E6,    //frequency in MHz
-
-        first_response: true,       //TEMPORARY for dealing with measurement issue in pocket VNA
     }
   },
   computed:{
@@ -242,15 +238,14 @@ export default {
       'getResponse',
       'getFrequencies',
       'getResultDB',
-      'getConfigJSON',
-      'getDUT'
+      'getConfigJSON'
       
     ]),
     getDUTImage(){
       let config = this.getConfigJSON;
       if(config.images != undefined){
         let DUTimage = config.images.find(images => {
-        return images.for === this.getDUT;
+        return images.for === "dut"
       })
         return DUTimage;
       } 
@@ -324,6 +319,7 @@ export default {
                   this.previous_phase = null;
                     //response structure for single frequency request: {"id":"945102d5-94e4-448e-bbbf-48384c662711","t":1634664795,"cmd":"sq","freq":100000,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false},"result":{"S11":{"Real":0.0001702234148979187,"Imag":0.0005754455924034119},"S12":{"Real":0,"Imag":0},"S21":{"Real":-0.00004191696643829346,"Imag":-0.00012067705392837524},"S22":{"Real":0,"Imag":0}}}
                     _this.$store.dispatch('setResponse', response);
+                    _this.$store.dispatch('setShowRequestModal', false);
                   
                 } 
                 else if(response.cmd == 'rq'){
@@ -332,6 +328,7 @@ export default {
                   console.log(response);
                   //for range request: {"id":"","t":0,"cmd":"rq","range":{"Start":100000,"End":4000000},"size":2,"isLog":true,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false},"result":[{"S11":{"Real":0.00013846158981323242,"Imag":0.00027057528495788574},"S12":{"Real":0,"Imag":0},"S21":{"Real":-0.000031754374504089355,"Imag":-0.0002350062131881714},"S22":{"Real":0,"Imag":0}},{"S11":{"Real":0.00470772385597229,"Imag":0.003948085010051727},"S12":{"Real":0,"Imag":0},"S21":{"Real":0.000017777085304260254,"Imag":-0.000005081295967102051},"S22":{"Real":0,"Imag":0}}]}
                   _this.$store.dispatch('setResponse', response);
+                  _this.$store.dispatch('setShowRequestModal', false);
                   
                 } 
                 else if(response.cmd == 'rc'){
@@ -343,29 +340,9 @@ export default {
                 else if(response.cmd == 'crq'){
                   this.previous_phase = null;
                   console.log(response);
-                  
-                  // THIS WILL CHANGE AFTER FIRMWARE FIX TO NOT RUN TWICE
-                  //if this is the first reponse then resend the measurement command
-                  if(_this.first_response){
-
-                    _this.first_response = false;
-
-                    let params = {
-                        avg:1,
-                        sparam:{s11:true,s12:true,s21:true,s22:true},
-                        what: _this.getDUT
-                    }
-
-                    _this.$store.dispatch('requestRangeAfterCal', params);
-                  } 
-                  //if it is the second reponse then display data as expected
-                  else{
-                    _this.first_response = true;
-
-                    _this.$store.dispatch('setResponse', response);
-                    _this.$store.dispatch('setShowRequestModal', false);
-                  }
-
+                  _this.$store.dispatch('setResponse', response);
+                  _this.$store.dispatch('setShowRequestModal', false);
+                  //_this.$store.dispatch('setCalibrated', false);
                 } 
                 else {
                   this.previous_phase = null;
