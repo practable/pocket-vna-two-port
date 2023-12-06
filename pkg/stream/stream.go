@@ -1,6 +1,7 @@
 /*
 Package stream connects to a websocket server and transfers JSON messages corresponding to the
 types in pkg/pocket i.e. commands and results for pocketVNA
+This is done here to simplify the message handling in middleware package `middle`
 
 */
 
@@ -14,9 +15,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/practable/pocket-vna-two-port/pkg/pocket"
+	"github.com/practable/pocket-vna-two-port/pkg/reconws"
 	log "github.com/sirupsen/logrus"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/pocket"
-	"github.com/timdrysdale/pocket-vna-two-port/pkg/reconws"
 )
 
 type Stream struct {
@@ -29,7 +30,7 @@ type Stream struct {
 }
 
 // TODO duplicate the testing applied to RunDirect
-func New(u string, ctx context.Context) Stream {
+func New(ctx context.Context, u string) Stream {
 
 	request := make(chan interface{}, 2)
 	response := make(chan interface{}, 2)
@@ -60,23 +61,208 @@ func New(u string, ctx context.Context) Stream {
 
 // This is the straight-forward version of the firmware with no added functionality
 // useful for raw access to the VNA. Requires VNA to be connected for testing.
-func RunDirect(u string, ctx context.Context) {
+func RunDirect(ctx context.Context, u string) {
 
 	r := reconws.New()
 
-	v := pocket.NewVNA()
+	h, disconnect, err := pocket.NewHardware()
 
-	command := make(chan interface{}, 2)
+	if err != nil {
+		log.Errorf("Stream.RunDirect: %s", err.Error())
+		return
+	}
 
-	result := make(chan interface{}, 2)
+	go func() {
+		<-ctx.Done()
+		disconnect()
+	}()
 
-	go v.Run(command, result, ctx)
+	go func() {
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+
+			case msg := <-r.In:
+
+				var c pocket.Command
+
+				err := json.Unmarshal([]byte(msg.Data), &c)
+
+				if err != nil {
+					log.WithField("err", err).Warning("Could not turn unmarshal JSON - invalid cmd string in JSON?")
+					fmt.Printf("\n%s\n", msg.Data)
+				}
+
+				switch strings.ToLower(c.Command) {
+
+				case "rq", "rangequery", "rc", "rangecal":
+
+					s := pocket.RangeQuery{}
+
+					err := json.Unmarshal([]byte(msg.Data), &s)
+
+					if err != nil {
+						log.WithField("err", err).Warning("Could not turn unmarshal JSON for RangeQuery (rq) command - invalid or missing parameters in JSON?")
+						fmt.Printf("\n%s\n", msg.Data)
+					}
+
+					err = h.HandleCommand(s)
+
+					if err != nil {
+
+						log.WithFields(log.Fields{"err": err.Error(), "command": s}).Error("error handling command")
+
+						cr := pocket.CustomResult{Message: err.Error(), Command: s}
+
+						data, err := json.Marshal(cr)
+
+						if err != nil {
+							data = []byte("could not marshal error message")
+						}
+
+						r.Out <- reconws.WsMessage{Data: data, Type: msg.Type}
+
+						continue
+
+					}
+
+					data, err := json.Marshal(s)
+
+					if err != nil {
+
+						log.WithFields(log.Fields{"err": err.Error(), "command": s}).Error("error marshalling result")
+
+						cr := pocket.CustomResult{Message: err.Error(), Command: s}
+
+						data, err = json.Marshal(cr)
+
+						if err != nil {
+							data = []byte("could not marshal error message")
+						}
+
+					}
+
+					r.Out <- reconws.WsMessage{Data: data, Type: msg.Type}
+
+				case "crq", "calibratedrangequery":
+
+					s := pocket.CalibratedRangeQuery{}
+
+					err := json.Unmarshal([]byte(msg.Data), &s)
+
+					if err != nil {
+						log.WithField("err", err).Warning("Could not turn unmarshal JSON for CalibratedRangeQuery (rq) command - invalid or missing parameters in JSON?")
+						fmt.Printf("\n%s\n", msg.Data)
+					}
+
+				case "sq", "singlequery":
+
+					s := pocket.SingleQuery{}
+
+					err := json.Unmarshal([]byte(msg.Data), &s)
+
+					if err != nil {
+						log.WithField("err", err).Warning("Could not turn unmarshal JSON for SingleQuery (sq) command - invalid or missing parameters in JSON?")
+						fmt.Printf("\n%s\n", msg.Data)
+					}
+
+					err = h.HandleCommand(s)
+
+					if err != nil {
+
+						log.WithFields(log.Fields{"err": err.Error(), "command": s}).Error("error handling command")
+
+						cr := pocket.CustomResult{Message: err.Error(), Command: s}
+
+						data, err := json.Marshal(cr)
+
+						if err != nil {
+							data = []byte("could not marshal error message")
+						}
+
+						r.Out <- reconws.WsMessage{Data: data, Type: msg.Type}
+
+						continue
+
+					}
+
+					data, err := json.Marshal(s)
+
+					if err != nil {
+
+						log.WithFields(log.Fields{"err": err.Error(), "command": s}).Error("error marshalling result")
+
+						cr := pocket.CustomResult{Message: err.Error(), Command: s}
+
+						data, err = json.Marshal(cr)
+
+						if err != nil {
+							data = []byte("could not marshal error message")
+						}
+
+					}
+
+					r.Out <- reconws.WsMessage{Data: data, Type: msg.Type}
+
+				case "rr", "reasonablefrequencyrange":
+
+					s := pocket.ReasonableFrequencyRange{}
+
+					err := json.Unmarshal([]byte(msg.Data), &s)
+
+					if err != nil {
+						log.WithField("err", err).Warning("Could not turn unmarshal JSON for ReasonableFrequencyRange (rr) command - invalid or missing parameters in JSON?")
+						fmt.Printf("\n%s\n", msg.Data)
+					}
+
+					err = h.HandleCommand(s)
+
+					if err != nil {
+
+						log.WithFields(log.Fields{"err": err.Error(), "command": s}).Error("error handling command")
+
+						cr := pocket.CustomResult{Message: err.Error(), Command: s}
+
+						data, err := json.Marshal(cr)
+
+						if err != nil {
+							data = []byte("could not marshal error message")
+						}
+
+						r.Out <- reconws.WsMessage{Data: data, Type: msg.Type}
+
+						continue
+
+					}
+
+					data, err := json.Marshal(s)
+
+					if err != nil {
+
+						log.WithFields(log.Fields{"err": err.Error(), "command": s}).Error("error marshalling result")
+
+						cr := pocket.CustomResult{Message: err.Error(), Command: s}
+
+						data, err = json.Marshal(cr)
+
+						if err != nil {
+							data = []byte("could not marshal error message")
+						}
+
+					}
+
+					r.Out <- reconws.WsMessage{Data: data, Type: msg.Type}
+
+				}
+
+			}
+		}
+
+	}()
 
 	go r.Reconnect(ctx, u)
-
-	go PipeWsToInterface(r.In, command, ctx)
-
-	go PipeInterfaceToWs(result, r.Out, ctx)
 
 	go HeartBeat(r.Out, time.Second, ctx)
 

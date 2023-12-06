@@ -23,187 +23,24 @@ package pocket
 */
 import "C"
 import (
-	"context"
 	"errors"
-	"math"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // does not compile if in types.go ("C undefined")
-type VNA struct {
+type Hardware struct {
 	handle C.PVNA_DeviceHandler
 }
 
-func New(ctx context.Context) VNAService {
+/* PRIVATE FUNCTIONS */
 
-	request := make(chan interface{}, 2)
-	response := make(chan interface{}, 2)
-	v := NewVNA()
-	go v.Run(request, response, ctx)
-
-	return VNAService{
-		VNA:      v,
-		Ctx:      ctx,
-		Request:  request,
-		Response: response,
-		Timeout:  time.Second,
-	}
-}
-
-func NewVNA() *VNA {
-
-	return new(VNA)
-}
-
-/* Run provides a go channel interface to the first available instance of a pocket VNA device
-
-There are two uni-directional channels, one to receive commands, the other to reply with data
-
-*/
-
-func (v *VNA) Run(command <-chan interface{}, result chan<- interface{}, ctx context.Context) {
-
-	err := v.Connect()
-
-	if err != nil {
-		result <- CustomResult{Message: err.Error()}
-		return
-	}
-
-	for {
-		select {
-
-		case cmd := <-command:
-
-			result <- v.HandleCommand(cmd)
-
-		case <-ctx.Done():
-			err := v.Disconnect()
-			if err != nil {
-				result <- CustomResult{Message: err.Error()}
-			}
-			return
-		}
-	}
-}
-
-func (v *VNA) Connect() error {
-	handle, err := getFirstDeviceHandle()
-	if err != nil {
-		return err
-	}
-
-	v.handle = handle
-
-	return nil
-}
-
-func (v *VNA) Disconnect() error {
-
-	return releaseHandle(v.handle)
-}
-
-func ForceUnlockDevices() error {
+func forceUnlockDevices() error {
 
 	result := C.pocketvna_force_unlock_devices()
 
 	return decode(result)
 }
-
-func (v *VNA) GetReasonableFrequencyRange(r ReasonableFrequencyRange) (ReasonableFrequencyRange, error) {
-
-	fStart, fEnd, err := getReasonableFrequencyRange(v.handle)
-
-	if err != nil {
-		return r, err
-	}
-
-	r.Result.Start = fStart
-	r.Result.End = fEnd
-
-	return r, err
-
-}
-
-func (v *VNA) HandleCommand(command interface{}) interface{} {
-
-	switch command.(type) {
-
-	case ReasonableFrequencyRange:
-
-		result, err := v.GetReasonableFrequencyRange(command.(ReasonableFrequencyRange))
-
-		if err != nil {
-			return CustomResult{Message: err.Error()}
-		}
-
-		return result
-
-	case RangeQuery:
-
-		result, err := v.RangeQuery(command.(RangeQuery))
-
-		if err != nil {
-			return CustomResult{Message: err.Error()}
-		}
-
-		return result
-
-	case SingleQuery:
-
-		result, err := v.SingleQuery(command.(SingleQuery))
-
-		if err != nil {
-			return CustomResult{Message: err.Error()}
-		}
-
-		return result
-
-	default:
-		return CustomResult{
-			Message: "Unknown Command",
-			Command: command,
-		}
-	}
-
-}
-
-func (v *VNA) RangeQuery(r RangeQuery) (RangeQuery, error) {
-
-	distr := 1 // Linear
-
-	if r.LogDistribution {
-		distr = 2
-	}
-
-	sparams, err := rangeQuery(v.handle, r.Range.Start, r.Range.End, r.Size, distr, r.Avg, r.Select)
-
-	if err != nil {
-		return r, err
-	}
-
-	r.Result = sparams
-
-	return r, err
-}
-
-func (v *VNA) SingleQuery(s SingleQuery) (SingleQuery, error) {
-
-	sparam, err := singleQuery(v.handle, s.Freq, s.Avg, s.Select)
-
-	if err != nil {
-		return s, err
-	}
-
-	s.Result = sparam
-
-	return s, err
-
-}
-
-/* PRIVATE FUNCTIONS */
 
 func getFirstDeviceHandle() (C.PVNA_DeviceHandler, error) {
 
@@ -383,13 +220,6 @@ enum PocketVNADistribution {
 };
 
 */
-type Distribution int
-
-const (
-	Undefined Distribution = iota //handle default value being undefined
-	Linear
-	Log
-)
 
 // We do not implement the callback for this version ...
 func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr int, avg uint16, p SParamSelect) ([]SParam, error) {
@@ -440,34 +270,5 @@ func rangeQuery(handle C.PVNA_DeviceHandler, start, end uint64, size int, distr 
 	log.Debugf("rq decoded result: %v", decode(result))
 
 	return ss, decode(result)
-
-}
-
-func LinFrequency(start, end uint64, size int) []uint64 {
-
-	var ff []uint64
-	s := float64(start)
-	e := float64(end)
-
-	for i := 0; i < size; i++ {
-		f := s + float64(i)*(e-s)/(float64(size)-1)
-		ff = append(ff, uint64(f))
-	}
-	return ff
-}
-
-func LogFrequency(start, end uint64, size int) []uint64 {
-
-	var ff []uint64
-	s := float64(start)
-	e := float64(end)
-	x := e / s
-	for i := 0; i < size; i++ {
-
-		y := float64(i) / (float64(size) - 1.0)
-		f := s * math.Pow(x, y)
-		ff = append(ff, uint64(math.Round(f)))
-	}
-	return ff
 
 }
