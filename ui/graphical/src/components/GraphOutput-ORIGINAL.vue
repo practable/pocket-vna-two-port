@@ -3,14 +3,10 @@
 
 
 <template>
-<div :id='id' class='container-sm m-2 bg-white border rounded'>
-    <div class="row">
-        <h4 v-if="type == 'single'">{{ sparams }}</h4>
-        <h4 v-else>All scattering parameters</h4>
-    </div>
-    <div class="row m-0 justify-content-center" :id="'chart-canvas' + id">
+<div class='container-sm m-2 background-white border rounded'>
+    <div class="row m-0 justify-content-center" id="chart-canvas">
         <div class="col-12">
-            <canvas :id="'graph' + id"></canvas>
+            <canvas id='graph-canvas'></canvas>
         </div>
     </div>
 
@@ -34,12 +30,12 @@
         <span type='text' class="form-control">Phase</span>
             <div class='input-group-text '>
                 
-                <input class="form-check-input" type="radio" :name="'wrappedRadio' + id" value='wrapped' :id="'wrappedRadio' + id" v-model='plot_phase'>
+                <input class="form-check-input" type="radio" name="wrappedRadio" value='wrapped' id="wrappedRadio" v-model='plot_phase'>
             </div>
             <input type='text' class="form-control" placeholder="Wrap" disabled>
         
             <div class="input-group-text">
-                <input class="form-check-input" type="radio" :name="'unwrappedRadio' + id" value='unwrapped' :id="'unwrappedRadio' + id" v-model='plot_phase'>
+                <input class="form-check-input" type="radio" name="unwrappedRadio" value='unwrapped' id="unwrappedRadio" v-model='plot_phase'>
             </div>
             <input type='text' class="form-control" placeholder="Unwrap" disabled>
         </div>
@@ -96,7 +92,7 @@ import { mapGetters } from 'vuex';
 export default {
     
     name: 'GraphOutput',
-    props: ['id', 'type', 'sparams'],
+    props: ['sparams'],
     emits: [],
     components:{
         //Toolbar,
@@ -146,7 +142,7 @@ export default {
         },
         createChart() {
             let _this = this;
-            const canvas = document.getElementById('graph' + this.id);
+            const canvas = document.getElementById('graph-canvas');
             const ctx = canvas.getContext('2d');
             this.chart = new Chart(ctx, {
             type: 'line',
@@ -265,36 +261,21 @@ export default {
             for(let i=0; i<this.getNumData;i++){
                 let x = x_data[i];
 
-                if(this.type == 'all'){
-                    //all parameters are present on graph so get all data at the correct index
-                    if(this.getResponse.sparam.s11){
+                if(this.getResponse.sparam.s11){
                     this.addSParamData(x, y_data[i].s11, 0);
                 }
 
-                    if(this.getResponse.sparam.s12){
-                        this.addSParamData(x, y_data[i].s12, 2);
-                    }
-
-                    if(this.getResponse.sparam.s21){
-                        this.addSParamData(x, y_data[i].s21, 4);
-                    }
-
-                    if(this.getResponse.sparam.s22){
-                        this.addSParamData(x, y_data[i].s22, 6);
-                    }
-                } else if(this.type == 'single') {
-                    //only 1 dataset on the graph at index 0, so get the correct set of data from the response (which contains all data)
-                    if(this.sparams.includes('s11')){
-                        this.addSParamData(x, y_data[i].s11, 0);
-                    } else if(this.sparams.includes('s12')){
-                        this.addSParamData(x, y_data[i].s12, 0);
-                    } else if(this.sparams.includes('s21')){
-                        this.addSParamData(x, y_data[i].s21, 0);
-                    } else if(this.sparams.includes('s22')){
-                        this.addSParamData(x, y_data[i].s22, 0);
-                    } 
+                if(this.getResponse.sparam.s12){
+                    this.addSParamData(x, y_data[i].s12, 2);
                 }
-                
+
+                if(this.getResponse.sparam.s21){
+                    this.addSParamData(x, y_data[i].s21, 4);
+                }
+
+                if(this.getResponse.sparam.s22){
+                    this.addSParamData(x, y_data[i].s22, 6);
+                }
                 
             }
 
@@ -441,48 +422,6 @@ export default {
 
 
 <style scoped>
-
-#linear_function{
-    width: 120px;
-    height: 30px;
-}
-
-#trig_function{
-    width: 150px;
-    height: 30px;
-}
-
-#plotFunctionButton       {background-color: #4CAF50FF; color: rgb(255, 255, 255)}
-#plotFunctionButton:hover {background-color: #3e8e41} 
-
-#clearFunctionButton        {background-color: #e13131ff; color: rgb(255, 255, 255)}
-#clearFunctionButton:hover {background-color: #cc1e1eff;}
-
-#clearButton  {background-color: #e17a31ff;}
-#clearButton:hover  {background-color: #cc661eff;}
-
-#outputButton        {background-color: #e1b131ff;}
-#outputButton:hover  {background-color: #cc9d1eff;}
-
-
-label {
-    font-size:16px;
-    color: #0501f7;
-    font-weight: bold;
-    display: inline-block;
-    /* vertical-align: middle; */
-    /* width: 20px; */
-    /* padding-top: 20px; */
-    /* float: left; */
-}
-
-select{
-    color: white;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    
-    background-color: #4490d8;
-}
 
 
 
