@@ -3,42 +3,36 @@
 <template>
 <div class='container-fluid row m-2 background-white border rounded'>
 
-    <div class='col-md-8'>
-        <div class='input-group mb-2'>
-            <div class='input-group-text '>
-                <input class="form-check-input form-check-inline" type="radio" name="real-imag-radio" value='real-imag' id="real-imag-radio" v-model='output_mode'>
-                <!-- <input type='text' class="input-disabled" placeholder="Real/Imag"> -->
-                <label class='txt-primary txt-sm me-2'>Real/Imag</label>
-            </div>
-            
-        
+    <div class='row'>
+
+        <div class="input-group">
             <div class="input-group-text">
-                <input class="form-check-input form-check-inline" type="radio" name="dBRadio" value='dB-phase' id="dBRadio" v-model='output_mode'>
-                <!-- <input type='text' class="input-disabled" placeholder="dB/phase"> -->
-                <label class='txt-primary txt-sm me-2'>dB/phase</label>
+                <input class="form-check-input mt-0" type="radio" name="real-imag-radio" value='real-imag' id="real-imag-radio" v-model='output_mode'>
             </div>
-            
+            <input type="text" placeholder="Real/Imag" class="form-control" aria-label="Text input with radio button" disabled>
+
+            <div class="input-group-text">
+                <input class="form-check-input mt-0" type="radio" name="dBRadio" value='dB-phase' id="dBRadio" v-model='output_mode'>
+            </div>
+            <input type="text" placeholder="dB/phase" class="form-control" aria-label="Text input with radio button" disabled>
         </div>
 
-        <div class='input-group mb-2'>
-            <div class='input-group-text'>
-                <input class="form-check-input form-check-inline" type="radio" name="csvRadio" value='csv' id="csvRadio" v-model='output_type'>
-                <!-- <input type='text' class="input-disabled" placeholder=".csv"> -->
-                <label class='txt-primary txt-sm me-2'>.csv</label>
-            </div>
-            
-        
+        <div class="input-group mt-2">
             <div class="input-group-text">
-                <input class="form-check-input form-check-inline" type="radio" name="s2pRadio" value='s2p' id="s2pRadio" v-model='output_type' >
-                <!-- <input type='text' class="input-disabled" :placeholder="sparams.length == 1 ? 's1p':'s2p'"> -->
-                <label class='txt-primary txt-sm me-2'>{{ sparams.length == 1 ? 's1p':'s2p' }}</label>
+                <input class="form-check-input mt-0" type="radio" name="csvRadio" value='csv' id="csvRadio" v-model='output_type'>
             </div>
-            
+            <input type="text" placeholder=".csv" class="form-control" aria-label="Text input with radio button" disabled>
+
+            <div class="input-group-text">
+                <input class="form-check-input mt-0" type="radio" name="s2pRadio" value='s2p' id="s2pRadio" v-model='output_type' >
+            </div>
+            <input type="text" :placeholder="sparams.length == 1 ? 's1p':'s2p'" class="form-control" aria-label="Text input with radio button" disabled>
         </div>
+
     
     </div>
 
-    <div class='d-flex col-md-4 p-1'>
+    <div class='row'>
     
         <button type='button' class="button-sm button-success" id="outputButton" @click="download" :disabled='getResultDB.length == 0'>Download</button>
     

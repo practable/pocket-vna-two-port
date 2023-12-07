@@ -2,12 +2,12 @@
 
     <div class='row' id='component-grid'>
 
-          <div class='col-sm-6' id='left-screen'>
+          <div class='col-lg-6' id='left-screen'>
             <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-measurement id='dragAndDropMeasurement' :calibrationState='getCalibrationState' /></div>
              <div class='col drop-area' id='drop_1_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><download id='download' :sparams="getSParams" /></div>
           </div>
 
-          <div class='col-sm-6' id='right-screen'>
+          <div class='col-lg-6' id='right-screen'>
             <div class='col drop-area' id='drop_0_1' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><data-stream id='data-stream' /></div>
             <div class='col drop-area' id='drop_1_1' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><smith-chart id='smith-chart' :sparams="getSParams" /></div>
             <div class='col drop-area' id='drop_2_1' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><graph-output id='11' type="single" sparams="s11"/></div>

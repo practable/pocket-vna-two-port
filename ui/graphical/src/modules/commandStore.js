@@ -4,8 +4,8 @@
 const commandStore = {
     state: () => ({
         dataSocket: null,
-        isCalibrated: true,     //set to false before deploying.
-        isVerified: true,      //set to false before deploying
+        isCalibrated: false,     //set to false before deploying.
+        isVerified: false,      //set to false before deploying
 
        }),
        mutations:{
