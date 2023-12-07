@@ -7,7 +7,7 @@ const uiStore = {
         showCalibrationModal: false,
         showRequestModal: false,
         sparams: {'s11':true, 's12': true, 's21':true, 's22':true},       //which params are allowed on the UI
-        calibration_state: {sparams:[], average: 1, points: 20, start: 1, end: 4},        //for reflecting on verification and measurement tabs
+        calibration_state: {sparams:{s11:true, s12:true, s21:true, s22: true}, average: 1, points: 20, start: 1, end: 4},        //for reflecting on verification and measurement tabs
         config_json: '',
 
        }),
@@ -26,6 +26,9 @@ const uiStore = {
         },
         SET_CALIBRATION_STATE(state, params){
             state.calibration_state = params;
+        },
+        SET_DUT(state, dut){
+            state.dut_selected = dut;
         }          
 
        },
@@ -44,6 +47,9 @@ const uiStore = {
         },
         setCalibrationState(context, params){
             context.commit('SET_CALIBRATION_STATE', params);
+        },
+        setDUT(context, dut){
+            context.commit('SET_DUT', dut);
         }
 
 
@@ -73,6 +79,9 @@ const uiStore = {
         },
         getCalibrationState(state){
             return state.calibration_state;
+        },
+        getDUT(state){
+            return state.dut_selected;
         }
           
          

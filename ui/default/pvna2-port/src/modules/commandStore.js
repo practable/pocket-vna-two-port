@@ -53,7 +53,7 @@ const commandStore = {
                 console.log('range request sent');
                 state.dataSocket.send(JSON.stringify({
                     "id": params.what,
-                    "t": 0,
+                    "t": params.t,
                     "cmd":"crq",
                     "what": params.what,
                     "avg":params.avg,
@@ -80,12 +80,12 @@ const commandStore = {
         setDataSocket(context, socket){
             context.commit("SET_DATA_SOCKET", socket);
         },
-        requestSingle(context, params){
-            context.commit('REQUEST_SINGLE', params);
-        },
-        requestRange(context, params){
-            context.commit('REQUEST_RANGE', params);
-        },
+        // requestSingle(context, params){
+        //     context.commit('REQUEST_SINGLE', params);
+        // },
+        // requestRange(context, params){
+        //     context.commit('REQUEST_RANGE', params);
+        // },
         requestCalibration(context, params){
             context.commit('REQUEST_CALIBRATION', params);
         },

@@ -7,32 +7,32 @@
      </div>
 
     <div v-else>
-        <h4 v-if='calibrationState.sparams.length < 2'> 1 port Measurement </h4>
+        <h4 v-if='!calibrationState.sparams.s12 && !calibrationState.sparams.s21 & !calibrationState.sparams.s22'> 1 port Verification </h4>
         <h4 v-else> 2 port Measurement </h4>
 
-        <div v-if='calibrationState.sparams.length > 1' class='row mb-2'>
-        <div class='col-12'>
-            <div v-if='sparams.includes("s11")' class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" v-model='s11' disabled>
-            <label class="form-check-label" for="s11check">S11</label>
-            </div>
+        <div class='row mb-2'>
+            <div class='col-12'>
+                <div v-if='calibrationState.sparams.s11' class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" disabled checked>
+                <label class="form-check-label" for="s11check">S11</label>
+                </div>
 
-            <div v-if='sparams.includes("s12")' class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s12check" v-model='s12' disabled>
-            <label class="form-check-label" for="s12check">S12</label>
-            </div>
+                <div v-if='calibrationState.sparams.s12' class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s12check" disabled checked>
+                <label class="form-check-label" for="s12check">S12</label>
+                </div>
 
-            <div v-if='sparams.includes("s21")' class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s21check" v-model='s21' disabled>
-            <label class="form-check-label" for="s21check">S21</label>
-            </div>
+                <div v-if='calibrationState.sparams.s21' class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s21check" disabled checked>
+                <label class="form-check-label" for="s21check">S21</label>
+                </div>
 
-            <div v-if='sparams.includes("s22")' class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s22check" v-model='s22' disabled>
-            <label class="form-check-label" for="s22check">S22</label>
+                <div v-if='calibrationState.sparams.s22' class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s22check" disabled checked>
+                <label class="form-check-label" for="s22check">S22</label>
+                </div>
+                
             </div>
-            
-        </div>
         </div>
 
         <div class='row m-3'>
@@ -69,7 +69,7 @@
 
 
         <!-- Drag and Drop elements -->
-        <drag-and-drop-components id='dragdropcomponents' header="" :display='standards' @port1change='updatePort1' @port2change='updatePort2'/>
+        <drag-and-drop-components id='dragdropcomponents' header="Device Under Test (DUT)" :display='duts' @port1change='updatePort1' @port2change='updatePort2'/>
         
         <div class='d-flex flex-row justify-content-center'>
 
@@ -118,7 +118,7 @@
 <script>
 import { mapActions, mapGetters } from 'vuex';
 import DragAndDropComponents from '@/components/DragAndDropComponents.vue';
-
+import dayjs from "dayjs";
 
 export default {
    name: 'DragAndDropMeasurement',
@@ -128,11 +128,11 @@ export default {
     },
     data () {
         return {
-            standards: [
-                {type: 'short', img: "Short"},
-                {type: 'open', img: "Open"},
-                {type: 'load', img: "Load"},
-                {type: 'dut', img: "DUT_real"},
+            duts: [
+                {type: 'dut1', img: "dut1"},
+                {type: 'dut2', img: "dut2"},
+                {type: 'dut3', img: "dut3"},
+                {type: 'dut4', img: "dut4"}
             ],
 
             port1: '',
@@ -160,28 +160,25 @@ export default {
     },
     methods:{
         ...mapActions([
-            'setShowRequestModal'
+            'setShowRequestModal',
         ]),
-        // Take a measurement of calibration standards to check the calibration process
         measure(){
             this.rangeFreqRequest();
         }, 
         
       rangeFreqRequest(){
         //command structure: {"cmd":"crq","avg":1,"sparam":{"S11":true,"S12":false,"S21":false,"S22":false}}
-        //only works for s11 parameter alone
         let params = {
+            t:dayjs().unix(),
             avg:Number(this.calibrationState.average),
-            sparam:{s11:this.calibrationState.sparams.includes('s11'),s12:this.calibrationState.sparams.includes('s12'),s21:this.calibrationState.sparams.includes('s21'),s22:this.calibrationState.sparams.includes('s22')},
-            what: this.port1
+            sparam:{s11:this.calibrationState.sparams.s11,s12:this.calibrationState.sparams.s12,s21:this.calibrationState.sparams.s21,s22:this.calibrationState.sparams.s22},
+            what: this.port1 != '' ? this.port1 : this.port2 
           }
-
+          console.log(params);
           this.$store.dispatch('requestRangeAfterCal', params);
           this.$store.dispatch('setShowRequestModal', true);
       },
         updatePort1(connected){
-            console.log("PORT 1 Connected");
-            console.log(connected.type);
             if(connected.type){
                 this.port1 = connected.type;
             } else{
@@ -189,8 +186,6 @@ export default {
             }
         },
         updatePort2(connected){
-            console.log("PORT 2 Connected");
-            console.log(connected.type);
             if(connected.type){
                 this.port2 = connected.type;
             } else{

@@ -337,6 +337,7 @@ export default {
                   _this.$store.dispatch('setCalibrated', true);
                   _this.$store.dispatch('setShowCalibrationModal', false);
                 } 
+                // DOES NOT HAVE THE UI FIX, BECAUSE FIRMWARE IS NOW FIXED.
                 else if(response.cmd == 'crq'){
                   this.previous_phase = null;
                   console.log(response);

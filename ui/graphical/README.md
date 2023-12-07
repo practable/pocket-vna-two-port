@@ -2,6 +2,11 @@
 
 Copy of 1 port graphical UI - temporary
 
+# Dev notes
+
+For mobile or touchscreen, currently tapping an image during calibration will automatically apply it to port 1 - need to update this to allow either port to be selected
+
+
 ## Project setup
 ```
 npm install

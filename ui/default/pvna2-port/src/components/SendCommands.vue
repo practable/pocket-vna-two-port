@@ -442,6 +442,7 @@ export default {
         //command structure: {"cmd":"crq","avg":1,"sparam":{"S11":true,"S12":false,"S21":false,"S22":false}}
         //only works for s11 parameter alone
         let params = {
+            t:dayjs().unix(),
             avg:Number(this.avgCounts),
             sparam:{s11:this.s11,s12:this.s12,s21:this.s21,s22:this.s22},
             what: this.what

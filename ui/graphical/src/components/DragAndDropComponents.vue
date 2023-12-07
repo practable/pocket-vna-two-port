@@ -18,36 +18,54 @@
     <!-- Pocket VNA and ports -->
   <div class='row'>
 
-      <div v-if="port1 == ''" class='col-sm-12 pvna' @dragstart="removePort1" @dragover.prevent @dragenter.prevent @touchstart="removePort1">
-        <img class='pvna-img' id='pvna-image' src='/images/DUT-disconnected.png' alt='pocket-vna'>
-
-        <div v-if='getSParams.length > 1' class='dropbox mb-2' id='port2' @drop='dropPort2' @dragstart='removePort2'>
-            <!-- <img v-if='port2 != ""' class='dropbox-image' :id='port2.type' :src='require(`/images/${port2.img}.png`)' :alt='port2.type'> -->
-            <img v-if='port2 != ""' class='dropbox-image' :id='port2.type' :src='"/images/" + port2.img + ".png"' :alt='port2.type'>
-        </div>
-
-        <div class='dropbox' id='port1' @drop='dropPort1' @dragstart='removePort1'>
-            <!-- <img v-if='port1 != ""' class='dropbox-image' :id='port1.type' :src='require(`/images/${port1.img}.png`)' :alt='port1.type'> -->
-            <img v-if='port1 != ""' class='dropbox-image' :id='port1.type' :src='"/images/" + port1.img + ".png"' :alt='port1.type'>
-        </div>
+     <!-- If a DUT (either 1,2,3,4) are connected then show the equivalent image and this connects both ports -->
+    <div v-if="port1.type == 'dut1' || port2.type == 'dut1'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut1.png' alt='pocket-vna-connected'>
       </div>
 
-      <div v-else-if="port1.type == 'dut'" class='col-sm-12 pvna' @mousedown='removePort1' @touchstart="removePort1">
-        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/PVNA-connected-state-dut.png' alt='pocket-vna-connected'>
+      <div v-else-if="port1.type == 'dut2' || port2.type == 'dut2'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut2.png' alt='pocket-vna-connected'>
       </div>
 
-      <div v-else class='col-sm-12 pvna' @mousedown='removePort1' @touchstart="removePort1">
-        <img class='pvna-img' id='pvna-connected-cal-image' src='/images/PVNA-connected-state-cal.png' alt='pocket-vna-connected'>
+      <div v-else-if="port1.type == 'dut3' || port2.type == 'dut3'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut3.png' alt='pocket-vna-connected'>
       </div>
 
-      <!-- <div v-if="port1 == ''" class='col-sm-6 mt-1 pt-2'>
-          <div :class='getSParams.length > 1 ? "dropbox mb-2" : "dropbox-hidden mb-2"' id='port2' @drop='dropPort2' @dragstart='removePort2'>
-            <img v-if='port2 != ""' class='dropbox-image' :id='port2.type' :src='require(`../../public/images/${port2.img}.png`)' :alt='port2.type'>
-        </div>
-        <div class='dropbox' id='port1' @drop='dropPort1' @dragstart='removePort1'>
-            <img v-if='port1 != ""' class='dropbox-image' :id='port1.type' :src='require(`../../public/images/${port1.img}.png`)' :alt='port1.type'>
-        </div>
-      </div> -->
+      <div v-else-if="port1.type == 'dut4' || port2.type == 'dut4'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut4.png' alt='pocket-vna-connected'>
+      </div>
+
+      <!-- If the thru is connected then similarly connect both and show image -->
+      <div v-else-if="port1.type == 'thru' || port2.type == 'thru'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-thru.png' alt='pocket-vna-connected'>
+      </div>
+
+      <!-- Else check if cal standards are shown in either port separately -->
+      <div v-else-if="port1.type == 'short' || port1.type == 'open' || port1.type == 'load'" class='col-sm-12 pvna' @mousedown='removePort1' @touchstart="removePort1">
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-cal.png' alt='pocket-vna-connected'>
+      </div>
+
+      <div v-else-if="port2.type == 'short' || port2.type == 'open' || port2.type == 'load'" class='col-sm-12 pvna' @mousedown='removePort2' @touchstart="removePort2">
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-2-cal.png' alt='pocket-vna-connected'>
+      </div>
+
+
+        <!-- Else ports are empty -->
+      <div v-else class='col-sm-12 pvna' @dragover.prevent @dragenter.prevent>
+        <img class='pvna-img' id='pvna-image' src='/images/pvna-disconnected.png' alt='pocket-vna'>
+
+            <div class='dropbox mb-2' id='port2' @drop='dropPort2' @dragstart='removePort2'>
+                <!-- <img v-if='port2 != ""' class='dropbox-image' :id='port2.type' :src='"/images/" + port2.img + ".png"' :alt='port2.type'> -->
+            </div>
+
+            <div class='dropbox' id='port1' @drop='dropPort1' @dragstart='removePort1'>
+                <!-- <img v-if='port1 != ""' class='dropbox-image' :id='port1.type' :src='"/images/" + port1.img + ".png"' :alt='port1.type'> -->
+            </div>
+      </div>
+
+    
+
+     
   </div>
 
 </div>
@@ -108,7 +126,7 @@ export default {
         },
         removePort2(){
             this.port2 = '';
-            this.$emit('port1change', '');
+            this.$emit('port2change', '');
         },
         dragTest(event){
             event.dataTransfer.effectAllowed = 'move';

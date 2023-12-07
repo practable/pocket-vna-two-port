@@ -7,22 +7,22 @@
     <div v-if='sparams.length > 1' class='row mb-2'>
       <div class='col-12'>
         <div v-if='sparams.includes("s11")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" v-model='s11'>
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" checked disabled>
           <label class="form-check-label" for="s11check">S11</label>
         </div>
 
         <div v-if='sparams.includes("s12")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s12check" v-model='s12'>
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s12check" checked disabled>
           <label class="form-check-label" for="s12check">S12</label>
         </div>
 
         <div v-if='sparams.includes("s21")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s21check" v-model='s21'>
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s21check" checked disabled>
           <label class="form-check-label" for="s21check">S21</label>
         </div>
 
          <div v-if='sparams.includes("s22")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s22check" v-model='s22'>
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s22check" checked disabled>
           <label class="form-check-label" for="s22check">S22</label>
         </div>
         
@@ -66,14 +66,25 @@
     <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' @port1change='updatePort1' @port2change='updatePort2'/>
 
     <div class='d-flex flex-row justify-content-center form-check-inline'>
+        <label class='txt-primary txt-lg me-2'>Port 1: </label>
           <label class='txt-primary txt-lg me-2'>Short</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortCheck" :checked='getShortSaved' disabled>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortCheck" :checked='getShortOneSaved' disabled>
           <label class='txt-primary txt-lg me-2'>Open</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openCheck" :checked='getOpenSaved' disabled>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openCheck" :checked='getOpenOneSaved' disabled>
           <label class='txt-primary txt-lg me-2'>Load</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadCheck" :checked='getLoadSaved' disabled>
-          <!-- <label class='txt-primary txt-lg me-2'>Through</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="throughCheck" :checked='getThroughSaved' disabled> -->
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadCheck" :checked='getLoadOneSaved' disabled>
+          <label class='txt-primary txt-lg me-2'>Thru</label>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="thruCheck" :checked='getThruSaved' disabled>
+    </div>
+
+    <div class='d-flex flex-row justify-content-center form-check-inline'>
+        <label class='txt-primary txt-lg me-2'>Port 2: </label>
+          <label class='txt-primary txt-lg me-2'>Short</label>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortCheck" :checked='getShortTwoSaved' disabled>
+          <label class='txt-primary txt-lg me-2'>Open</label>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openCheck" :checked='getOpenTwoSaved' disabled>
+          <label class='txt-primary txt-lg me-2'>Load</label>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadCheck" :checked='getLoadTwoSaved' disabled>
     </div>
 
     <div class='d-flex flex-row justify-content-center'>
@@ -140,22 +151,25 @@ export default {
             units: 1E6, //MHz
             avgCounts: 1,
             islog: false,
-            s11: true,          
-            s12: false,
-            s21: false,
-            s22: false,
+            s11: this.sparams.includes('s11') ? true:false,         
+            s12: this.sparams.includes('s12') ? true:false,
+            s21: this.sparams.includes('s21') ? true:false,
+            s22: this.sparams.includes('s22') ? true:false,
 
             standards: [
                 {type: 'short', img: "Short"},
                 {type: 'open', img: "Open"},
                 {type: 'load', img: "Load"},
-                // {type: 'through', img: "Through"},
+                {type: 'thru', img: "Thru"},
             ],
             calibration: [
-                {type: 'short', required: true, scanned: false, saved: false},
-                {type: 'open', required: true, scanned: false, saved: false},
-                {type: 'load', required: true, scanned: false, saved: false},
-                // {type: 'through', required: false, scanned: false, saved: false},
+                {type: 'short', port:"1", required: true, scanned: false, saved: false},
+                {type: 'open', port:"1", required: true, scanned: false, saved: false},
+                {type: 'load', port:"1", required: true, scanned: false, saved: false},
+                {type: 'thru', port:"1", required: true, scanned: false, saved: false},
+                {type: 'short', port:"2", required: true, scanned: false, saved: false},
+                {type: 'open', port:"2", required: true, scanned: false, saved: false},
+                {type: 'load', port:"2", required: true, scanned: false, saved: false}
             ],
             port1: '',
             port2: '',
@@ -178,34 +192,55 @@ export default {
             });
             return ready;
         },
-        getShortSaved(){
+        getShortOneSaved(){
             if(this.calibration[0].saved){
                 return true;
             } else{
                 return false;
             }
         },
-        getOpenSaved(){
+        getShortTwoSaved(){
+            if(this.calibration[4].saved){
+                return true;
+            } else{
+                return false;
+            }
+        },
+        getOpenOneSaved(){
             if(this.calibration[1].saved){
                 return true;
             } else{
                 return false;
             }
         },
-        getLoadSaved(){
+        getOpenTwoSaved(){
+            if(this.calibration[5].saved){
+                return true;
+            } else{
+                return false;
+            }
+        },
+        getLoadOneSaved(){
             if(this.calibration[2].saved){
                 return true;
             } else{
                 return false;
             }
         },
-        // getThroughSaved(){
-        //     if(this.calibration[3].saved){
-        //         return true;
-        //     } else{
-        //         return false;
-        //     }
-        // },
+        getLoadTwoSaved(){
+            if(this.calibration[6].saved){
+                return true;
+            } else{
+                return false;
+            }
+        },
+        getThruSaved(){
+            if(this.calibration[3].saved){
+                return true;
+            } else{
+                return false;
+            }
+        },
         getShowSave(){
             if(this.port1 == 'short' && this.calibration[0].scanned){
                 return true;
@@ -213,7 +248,16 @@ export default {
                 return true;
             } else if(this.port1 == 'load' && this.calibration[2].scanned){
                 return true;
-            } else {
+            } else if(this.port2 == 'short' && this.calibration[4].scanned){
+                return true;
+            } else if(this.port2 == 'open' && this.calibration[5].scanned){
+                return true;
+            } else if(this.port2 == 'load' && this.calibration[6].scanned){
+                return true;
+            } else if((this.port1 == 'thru' || this.port2 == 'thru') && this.calibration[3].scanned){
+                return true;
+            } 
+            else {
                 return false;
             }
         }
@@ -226,7 +270,6 @@ export default {
         
     },
     mounted(){
-        
 
     },
     methods:{
@@ -234,111 +277,66 @@ export default {
             'setDraggable',
             'setCalibrated',
             'setShowCalibrationModal',
-            'rangeFreqCalibration'
         ]),
         scan(){
-            this.calibration.forEach((connection) => {
-                if(connection.type == this.port1){
-                    connection.scanned = true;
-                }
-            });
-            //this.rangeFreqRequest();      //NEED TO FIGURE OUT WHAT FUNCTION TO SEND AT THIS POINT
+            // thru is between port 1 and 2 so if either are connected to thru then scan thru
+            if(this.port1 == 'thru' || this.port2 == 'thru'){
+                this.calibration[3].scanned = true;
+            } else{
+                this.calibration.forEach((connection) => {
+                    if((connection.port == "1" && connection.type == this.port1) || (connection.port == "2" && connection.type == this.port2)){
+                        connection.scanned = true;
+                    }
+                });
+            }
         }, 
         save(){
-            this.calibration.forEach((connection) => {
-                if(connection.type == this.port1){
-                    if(connection.scanned){
-                        connection.saved = true;
-                    }
+            // thru is between port 1 and 2 so if either are connected to thru then save thru
+            if(this.port1 == 'thru' || this.port2 == 'thru'){
+                if(this.calibration[3].scanned){
+                    this.calibration[3].saved = true;
                 }
-            });
+            } else {
+                this.calibration.forEach((connection) => {
+                    if((connection.port == "1" && connection.type == this.port1) || (connection.port == "2" && connection.type == this.port2)){
+                        if(connection.scanned){
+                            connection.saved = true;
+                        }
+                    }
+                });
+            }
         },
         rangeFreqCalibration(){
-        //command structure: {"cmd":"rc","range":{"Start":100000,"End":4000000},"size":2,"isLog":true,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false}}
-        if(this.frequency < this.minFrequency){
-            this.frequency = this.minFrequency;
-          } else if(this.frequency > this.maxFrequency){
-            this.frequency = this.maxFrequency - 1;
-          }
+            //command structure: {"cmd":"rc","range":{"Start":100000,"End":4000000},"size":2,"isLog":true,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false}}
+            if(this.frequency < this.minFrequency){
+                this.frequency = this.minFrequency;
+            } else if(this.frequency > this.maxFrequency){
+                this.frequency = this.maxFrequency - 1;
+            }
 
-          if(this.frequency_end < this.frequency){
-            this.frequency_end = this.frequency + 1;
-          } else if(this.frequency_end > this.maxFrequency){
-            this.frequency_end = this.maxFrequency;
-          }
+            if(this.frequency_end < this.frequency){
+                this.frequency_end = this.frequency + 1;
+            } else if(this.frequency_end > this.maxFrequency){
+                this.frequency_end = this.maxFrequency;
+            }
 
-        
-        let params = {
-            id:'',
-            t:dayjs().unix(),
-            range:{start: this.frequency*this.units, end: this.frequency_end*this.units},
-            size: Number(this.frequency_points),
-            islog: this.islog,
-            avg:Number(this.avgCounts),
-            sparam:{s11:this.s11,s12:this.s12,s21:this.s21,s22:this.s22}
-          }
+            
+            let params = {
+                id:'',
+                t:dayjs().unix(),
+                range:{start: this.frequency*this.units, end: this.frequency_end*this.units},
+                size: Number(this.frequency_points),
+                islog: this.islog,
+                avg:Number(this.avgCounts),
+                sparam:{s11:this.s11,s12:this.s12,s21:this.s21,s22:this.s22}
+            }
 
-          this.$store.dispatch('requestCalibration', params);
-          this.$store.dispatch('setShowCalibrationModal', true);
+            this.$store.dispatch('setCalibrationState', {sparams: params.sparam, average: Number(this.avgCounts), points: this.frequency_points, start: this.frequency, end: this.frequency_end});
+            this.$store.dispatch('requestCalibration', params);
+            this.$store.dispatch('setShowCalibrationModal', true);
 
-          let sp_list = [];
-
-          if(this.s11 == true) sp_list.push('s11');
-          if(this.s12 == true) sp_list.push('s12');
-          if(this.s21 == true) sp_list.push('s21');
-          if(this.s22 == true) sp_list.push('s22');
-          
-          this.$store.dispatch('setCalibrationState', {sparams: sp_list, average: Number(this.avgCounts), points: this.frequency_points, start: this.frequency, end: this.frequency_end});
-
-          
-      },
-      rangeFreqRequest(){
-        //command structure: {"cmd":"rq","range":{"Start":100000,"End":4000000},"size":2,"isLog":true,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false}}
-        if(this.frequency < this.minFrequency){
-            this.frequency = this.minFrequency;
-          } else if(this.frequency > this.maxFrequency){
-            this.frequency = this.maxFrequency - 1;
-          }
-
-          if(this.frequency_end < this.frequency){
-            this.frequency_end = this.frequency + 1;
-          } else if(this.frequency_end > this.maxFrequency){
-            this.frequency_end = this.maxFrequency;
-          }
-
-        
-        let params = {
-            id:'',
-            t:dayjs().unix(),
-            range:{start: this.frequency*this.units, end: this.frequency_end*this.units},
-            size: Number(this.frequency_points),
-            islog: this.islog,
-            avg:Number(this.avgCounts),
-            sparam:{s11:this.s11,s12:this.s12,s21:this.s21,s22:this.s22},
-            what: this.port1
-          }
-
-          this.$store.dispatch('requestRange', params);
-          this.$store.dispatch('setShowRequestModal', true);
-
-
-          
-      },
-      rangeFreqRequestAfterCal(){
-        //command structure: {"cmd":"crq","avg":1,"sparam":{"S11":true,"S12":false,"S21":false,"S22":false}}
-        //only works for s11 parameter alone
-        let params = {
-            avg:Number(this.avgCounts),
-            sparam:{s11:this.s11,s12:this.s12,s21:this.s21,s22:this.s22},
-            what: this.port1
-          }
-
-          this.$store.dispatch('requestRangeAfterCal', params);
-          this.$store.dispatch('setShowRequestModal', true);
       },
         updatePort1(connected){
-            console.log("PORT 1 Connected");
-            console.log(connected.type);
             if(connected.type){
                 this.port1 = connected.type;
             } else{
@@ -346,14 +344,11 @@ export default {
             }
         },
         updatePort2(connected){
-            console.log("PORT 2 Connected");
-            console.log(connected.type);
             if(connected.type){
                 this.port2 = connected.type;
             } else{
                 this.port2 = '';
             }
-            
         }
 
 

@@ -4,37 +4,37 @@
 const commandStore = {
     state: () => ({
         dataSocket: null,
-        isCalibrated: false,     //set to false before deploying.
-        isVerified: false,      //set to false before deploying
+        isCalibrated: true,     //set to false before deploying.
+        isVerified: true,      //set to false before deploying
 
        }),
        mutations:{
         SET_DATA_SOCKET(state, socket){
             state.dataSocket = socket;
         },
-        REQUEST_SINGLE(state, params){
-            state.dataSocket.send(JSON.stringify({
-                "id":params.id,
-                "t":params.t,
-                "cmd":"sq",
-                "freq":params.freq,
-                "avg":params.avg,
-                "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
-            }));
-        },
-        REQUEST_RANGE(state, params){
-            state.dataSocket.send(JSON.stringify({
-                "id":params.id,
-                "t":params.t,
-                "cmd":"rq",
-                "range":{"start":params.range.start,"end":params.range.end},
-                "size":params.size,
-                "islog":params.islog,
-                "avg":params.avg,
-                "what": params.what,
-                "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
-            }));
-        },
+        // REQUEST_SINGLE(state, params){
+        //     state.dataSocket.send(JSON.stringify({
+        //         "id":params.id,
+        //         "t":params.t,
+        //         "cmd":"sq",
+        //         "freq":params.freq,
+        //         "avg":params.avg,
+        //         "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
+        //     }));
+        // },
+        // REQUEST_RANGE(state, params){
+        //     state.dataSocket.send(JSON.stringify({
+        //         "id":params.id,
+        //         "t":params.t,
+        //         "cmd":"rq",
+        //         "range":{"start":params.range.start,"end":params.range.end},
+        //         "size":params.size,
+        //         "islog":params.islog,
+        //         "avg":params.avg,
+        //         "what": params.what,
+        //         "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
+        //     }));
+        // },
         REQUEST_CALIBRATION(state, params){
             console.log('calibration request sent');
             state.dataSocket.send(JSON.stringify({
@@ -45,7 +45,7 @@ const commandStore = {
                 "size":params.size,
                 "islog":params.islog,
                 "avg":params.avg,
-                "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
+                // "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
             }));
         },
         REQUEST_RANGE_AFTER_CAL(state, params){
@@ -53,10 +53,12 @@ const commandStore = {
             if(state.isCalibrated){
                 console.log('range request sent');
                 state.dataSocket.send(JSON.stringify({
+                    "id": params.what,
+                    "t": params.t,
                     "cmd":"crq",
-                    "avg":params.avg,
                     "what": params.what,
-                    "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22}
+                    "avg":params.avg,
+                    "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22}  //should all be true
                 }));
             } else{
                 console.log("Error: need to request calibration first");
@@ -82,12 +84,12 @@ const commandStore = {
         setDataSocket(context, socket){
             context.commit("SET_DATA_SOCKET", socket);
         },
-        requestSingle(context, params){
-            context.commit('REQUEST_SINGLE', params);
-        },
-        requestRange(context, params){
-            context.commit('REQUEST_RANGE', params);
-        },
+        // requestSingle(context, params){
+        //     context.commit('REQUEST_SINGLE', params);
+        // },
+        // requestRange(context, params){
+        //     context.commit('REQUEST_RANGE', params);
+        // },
         requestCalibration(context, params){
             context.commit('REQUEST_CALIBRATION', params);
         },
