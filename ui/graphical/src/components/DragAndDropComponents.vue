@@ -42,11 +42,13 @@
 
       <!-- Else check if cal standards are shown in either port separately -->
       <div v-else-if="port1.type == 'short' || port1.type == 'open' || port1.type == 'load'" class='col-sm-12 pvna' @mousedown='removePort1' @touchstart="removePort1">
-        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-cal.png' alt='pocket-vna-connected'>
+        <img v-if="!syncPorts" class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-cal.png' alt='pocket-vna-connected'>
+        <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal.png' alt='pocket-vna-connected'>
       </div>
 
       <div v-else-if="port2.type == 'short' || port2.type == 'open' || port2.type == 'load'" class='col-sm-12 pvna' @mousedown='removePort2' @touchstart="removePort2">
-        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-2-cal.png' alt='pocket-vna-connected'>
+        <img v-if="!syncPorts" class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-2-cal.png' alt='pocket-vna-connected'>
+        <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal.png' alt='pocket-vna-connected'>
       </div>
 
 
@@ -77,7 +79,7 @@ import { mapActions, mapGetters } from 'vuex';
 
 export default {
     name: 'DragAndDropComponents',
-    props: ['header', 'display'],
+    props: ['header', 'display', 'syncPorts'],
     emit:['port1change', 'port2change'],
     data () {
         return {

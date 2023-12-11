@@ -4,8 +4,9 @@
 const commandStore = {
     state: () => ({
         dataSocket: null,
-        isCalibrated: false,     //set to false before deploying.
-        isVerified: false,      //set to false before deploying
+        isCalibrated: true,     //set to false before deploying.
+        isVerified: true,      //set to false before deploying
+        syncPorts: true,        //for calibration in particular, should dragging a standard onto a port then add that standard to both ports - calibration in the hardware does both at once
 
        }),
        mutations:{
@@ -65,6 +66,19 @@ const commandStore = {
             }
             
         },
+        //NOT YET IMPLEMENTED IN FIRMWARE
+        REQUEST_RANGE_BEFORE_CAL(state, params){
+            console.log('scanning prior to cal');
+            // state.dataSocket.send(JSON.stringify({
+            //     "id": params.what,
+            //     "t": params.t,
+            //     "cmd":"",       //NEED TO KNOW WHAT COMMAND TO SEND
+            //     "what": params.what,
+            //     "avg":params.avg,
+            //     "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22}  //should all be true
+            // }));
+
+        },
         SET_CALIBRATED(state, set){
             state.isCalibrated = set;
         },
@@ -96,6 +110,9 @@ const commandStore = {
         requestRangeAfterCal(context, params){
             context.commit('REQUEST_RANGE_AFTER_CAL', params);
         },
+        requestRangeBeforeCal(context, params){
+            context.commit('REQUEST_RANGE_BEFORE_CAL', params);
+        },
         setCalibrated(context, set){
             context.commit('SET_CALIBRATED', set);
         },
@@ -115,6 +132,9 @@ const commandStore = {
         },
         getVerified(state){
             return state.isVerified;
+        },
+        getSyncPorts(state){
+            return state.syncPorts;
         }
           
        },  

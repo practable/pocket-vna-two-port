@@ -63,32 +63,20 @@
 
 
     <!-- Drag and Drop elements -->
-    <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' :syncPorts="getSyncPorts" @port1change='updatePort1' @port2change='updatePort2'/>
+    <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' :syncPorts='getSyncPorts' @port1change='updatePort1' @port2change='updatePort2'/>
 
 
-    <!-- Scan and Save logic -->
+    <!-- Scan and Save logic DIFFERENT FROM THE NON-SYNCED PORTS VERSION-->
     <div class='d-flex flex-row justify-content-center form-check-inline'>
-        <label class='txt-primary txt-lg me-2'>Port 1: </label>
           <label class='txt-primary txt-lg me-2'>Short</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortOneCheck" :checked='getShortOneSaved' disabled>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortSyncCheck" :checked='getShortSaved' disabled>
           <label class='txt-primary txt-lg me-2'>Open</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openOneCheck" :checked='getOpenOneSaved' disabled>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openSyncCheck" :checked='getOpenSaved' disabled>
           <label class='txt-primary txt-lg me-2'>Load</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadOneCheck" :checked='getLoadOneSaved' disabled>
+          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadSyncCheck" :checked='getLoadSaved' disabled>
           <label class='txt-primary txt-lg me-2'>Thru</label>
           <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="thruCheck" :checked='getThruSaved' disabled>
-    </div>
-
-    <div class='d-flex flex-row justify-content-center form-check-inline'>
-        <label class='txt-primary txt-lg me-2'>Port 2: </label>
-          <label class='txt-primary txt-lg me-2'>Short</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortTwoCheck" :checked='getShortTwoSaved' disabled>
-          <label class='txt-primary txt-lg me-2'>Open</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openTwoCheck" :checked='getOpenTwoSaved' disabled>
-          <label class='txt-primary txt-lg me-2'>Load</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadTwoCheck" :checked='getLoadTwoSaved' disabled>
-    </div>
-  
+    </div>    
 
     <div class='d-flex flex-row justify-content-center'>
           <button id="scan" type='button' class="button-lg button-primary" @click='scan' :disabled="port1 === '' && port2 === ''">Scan</button>
@@ -116,7 +104,7 @@
                 </div>
                 <div class='col-10'>
                   <p> Please wait for the pocket VNA to calibrate.</p>
-                  <p>This could take around 30 seconds.</p>
+                  <p>This could take around 1 minute.</p>
                 </div>
               </div>
             </div>
@@ -167,7 +155,7 @@ import DragAndDropComponents from '@/components/DragAndDropComponents.vue';
 import dayjs from "dayjs";
 
 export default {
-   name: 'DragAndDropCalibrate',
+   name: 'DragAndDropCalibrateSyncPorts',
     props: ['sparams'],
     components:{
         DragAndDropComponents,
@@ -194,13 +182,10 @@ export default {
                 {type: 'thru', img: "Thru"},
             ],
             calibration: [
-                {type: 'short', port:"1", required: true, scanned: false, saved: false},
-                {type: 'open', port:"1", required: true, scanned: false, saved: false},
-                {type: 'load', port:"1", required: true, scanned: false, saved: false},
-                {type: 'thru', port:"1", required: true, scanned: false, saved: false},
-                {type: 'short', port:"2", required: true, scanned: false, saved: false},
-                {type: 'open', port:"2", required: true, scanned: false, saved: false},
-                {type: 'load', port:"2", required: true, scanned: false, saved: false}
+                {type: 'short', port:"sync", required: true, scanned: false, saved: false},
+                {type: 'open', port:"sync", required: true, scanned: false, saved: false},
+                {type: 'load', port:"sync", required: true, scanned: false, saved: false},
+                {type: 'thru', port:"sync", required: true, scanned: false, saved: false},
             ],
             port1: '',
             port2: '',
@@ -225,43 +210,22 @@ export default {
             });
             return ready;
         },
-        getShortOneSaved(){
+        getShortSaved(){
             if(this.calibration[0].saved){
                 return true;
             } else{
                 return false;
             }
         },
-        getShortTwoSaved(){
-            if(this.calibration[4].saved){
-                return true;
-            } else{
-                return false;
-            }
-        },
-        getOpenOneSaved(){
+        getOpenSaved(){
             if(this.calibration[1].saved){
                 return true;
             } else{
                 return false;
             }
         },
-        getOpenTwoSaved(){
-            if(this.calibration[5].saved){
-                return true;
-            } else{
-                return false;
-            }
-        },
-        getLoadOneSaved(){
+        getLoadSaved(){
             if(this.calibration[2].saved){
-                return true;
-            } else{
-                return false;
-            }
-        },
-        getLoadTwoSaved(){
-            if(this.calibration[6].saved){
                 return true;
             } else{
                 return false;
@@ -275,19 +239,13 @@ export default {
             }
         },
         getShowSave(){
-            if(this.port1 == 'short' && this.calibration[0].scanned){
+            if((this.port1 == 'short' || this.port2 == 'short') && this.calibration[0].scanned){
                 return true;
-            } else if(this.port1 == 'open' && this.calibration[1].scanned){
+            } else if((this.port1 == 'open' || this.port2 == 'open') && this.calibration[1].scanned){
                 return true;
-            } else if(this.port1 == 'load' && this.calibration[2].scanned){
+            } else if((this.port1 == 'load' || this.port2 == 'load') && this.calibration[2].scanned){
                 return true;
-            } else if(this.port2 == 'short' && this.calibration[4].scanned){
-                return true;
-            } else if(this.port2 == 'open' && this.calibration[5].scanned){
-                return true;
-            } else if(this.port2 == 'load' && this.calibration[6].scanned){
-                return true;
-            } else if((this.port1 == 'thru' || this.port2 == 'thru') && this.calibration[3].scanned){
+            }  else if((this.port1 == 'thru' || this.port2 == 'thru') && this.calibration[3].scanned){
                 return true;
             } 
             else {
@@ -313,17 +271,12 @@ export default {
             'setShowScanningModal'
         ]),
         scan(){
-            // thru is between port 1 and 2 so if either are connected to thru then scan thru
-            if(this.port1 == 'thru' || this.port2 == 'thru'){
-                this.calibration[3].scanned = true;
-            } else{
-                this.calibration.forEach((connection) => {
-                    if((connection.port == "1" && connection.type == this.port1) || (connection.port == "2" && connection.type == this.port2)){
-                        connection.scanned = true;
-                    }
-                });
-            }
-
+            this.calibration.forEach((connection) => {
+                if(connection.type == this.port1 || connection.type == this.port2){
+                    connection.scanned = true;
+                }
+            });
+            
             // ACTUALLY SEND A COMMAND HERE TO RECEIVE CURRENT DATA
             let params = {
                 t:dayjs().unix(),
@@ -336,20 +289,14 @@ export default {
             this.$store.dispatch('setShowScanningModal', true);
         }, 
         save(){
-            // thru is between port 1 and 2 so if either are connected to thru then save thru
-            if(this.port1 == 'thru' || this.port2 == 'thru'){
-                if(this.calibration[3].scanned){
-                    this.calibration[3].saved = true;
-                }
-            } else {
-                this.calibration.forEach((connection) => {
-                    if((connection.port == "1" && connection.type == this.port1) || (connection.port == "2" && connection.type == this.port2)){
-                        if(connection.scanned){
-                            connection.saved = true;
-                        }
+            this.calibration.forEach((connection) => {
+                if(connection.type == this.port1 || connection.type == this.port2){
+                    if(connection.scanned){
+                        connection.saved = true;
                     }
-                });
-            }
+                }
+            });
+            
         },
         rangeFreqCalibration(){
             //command structure: {"cmd":"rc","range":{"Start":100000,"End":4000000},"size":2,"isLog":true,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false}}

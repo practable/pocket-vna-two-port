@@ -69,7 +69,7 @@
 
 
         <!-- Drag and Drop elements -->
-        <drag-and-drop-components id='dragdropcomponents' header="Device Under Test (DUT)" :display='duts' @port1change='updatePort1' @port2change='updatePort2'/>
+        <drag-and-drop-components id='dragdropcomponents' header="Device Under Test (DUT)" :display='duts' :syncPorts="getSyncPorts" @port1change='updatePort1' @port2change='updatePort2'/>
         
         <div class='d-flex flex-row justify-content-center'>
 
@@ -145,6 +145,7 @@ export default {
             'getCalibrated',
             'getVerified',
             'getShowRequestModal',
+            'getSyncPorts'
         ]),
         
     },

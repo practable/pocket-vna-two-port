@@ -345,6 +345,13 @@ export default {
                   _this.$store.dispatch('setShowRequestModal', false);
                   //_this.$store.dispatch('setCalibrated', false);
                 } 
+                //PLACEHOLDER FOR NEW FIRMWARE COMMAND RECEIVED AFTER SCANNING PORTS WITH CAL STANDARDS
+                else if(response.cmd == 'SCAN'){
+                  this.previous_phase = null;
+                  console.log(response);
+                  _this.$store.dispatch('setResponse', response);
+                  _this.$store.dispatch('setShowScanningModal', false);
+                }
                 else {
                   this.previous_phase = null;
                   console.log('response command not recognised');

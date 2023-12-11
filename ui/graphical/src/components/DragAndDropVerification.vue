@@ -69,7 +69,7 @@
 
 
         <!-- Drag and Drop elements -->
-        <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' @port1change='updatePort1' @port2change='updatePort2'/>
+        <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' :syncPorts="getSyncPorts" @port1change='updatePort1' @port2change='updatePort2'/>
         
         <div class='d-flex flex-row justify-content-center'>
 
@@ -149,6 +149,7 @@ export default {
         ...mapGetters([
             'getCalibrated',
             'getShowRequestModal',
+            'getSyncPorts'
         ]),
         
     },

@@ -4,6 +4,7 @@
 const uiStore = {
     state: () => ({
         isDraggable: true,
+        showScanningModal: false,
         showCalibrationModal: false,
         showRequestModal: false,
         sparams: {'s11':true, 's12': true, 's21':true, 's22':true},       //which params are allowed on the UI
@@ -15,6 +16,9 @@ const uiStore = {
         SET_DRAGGABLE(state, draggable){
             state.isDraggable = draggable;
          },
+         SET_SHOW_SCANNING_MODAL(state, set){
+            state.showScanningModal = set;
+        },
          SET_SHOW_CALIBRATION_MODAL(state, set){
              state.showCalibrationModal = set;
          },
@@ -35,6 +39,9 @@ const uiStore = {
        actions:{
         setDraggable(context, draggable){
             context.commit('SET_DRAGGABLE', draggable);
+        },
+        setShowScanningModal(context, set){
+            context.commit('SET_SHOW_SCANNING_MODAL', set);
         },
         setShowCalibrationModal(context, set){
             context.commit('SET_SHOW_CALIBRATION_MODAL', set);
@@ -57,6 +64,9 @@ const uiStore = {
        getters:{
         getDraggable(state){
             return state.isDraggable;
+        },
+        getShowScanningModal(state){
+            return state.showScanningModal;
         },
         getShowCalibrationModal(state){
             return state.showCalibrationModal;
