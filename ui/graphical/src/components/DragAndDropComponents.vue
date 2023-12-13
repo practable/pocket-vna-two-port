@@ -20,7 +20,7 @@
 
      <!-- If a DUT (either 1,2,3,4) are connected then show the equivalent image and this connects both ports -->
     <div v-if="port1.type == 'dut1' || port2.type == 'dut1'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
-        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut1.png' alt='pocket-vna-connected'>
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-dut1.png' alt='pocket-vna-connected'>
       </div>
 
       <div v-else-if="port1.type == 'dut2' || port2.type == 'dut2'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">

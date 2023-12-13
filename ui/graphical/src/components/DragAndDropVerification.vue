@@ -7,67 +7,7 @@
      </div>
 
     <div v-else>
-        <h4 v-if='!calibrationState.sparams.s12 && !calibrationState.sparams.s21 & !calibrationState.sparams.s22'> 1 port Verification </h4>
-        <h4 v-else> 2 port Verification </h4>
-
-        <div class='row mb-2'>
-            <div class='col-12'>
-                <div v-if='calibrationState.sparams.s11' class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" disabled checked>
-                <label class="form-check-label" for="s11check">S11</label>
-                </div>
-
-                <div v-if='calibrationState.sparams.s12' class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s12check" disabled checked>
-                <label class="form-check-label" for="s12check">S12</label>
-                </div>
-
-                <div v-if='calibrationState.sparams.s21' class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s21check" disabled checked>
-                <label class="form-check-label" for="s21check">S21</label>
-                </div>
-
-                <div v-if='calibrationState.sparams.s22' class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s22check" disabled checked>
-                <label class="form-check-label" for="s22check">S22</label>
-                </div>
-                
-            </div>
-        </div>
-
-        <div class='row m-3'>
         
-            <div class='input-group'>
-            <div class='col-md-2 pe-2'>
-                <label for="sizeRange" class="txt-grey">Data points</label>
-            </div>
-            <div class='col-md-8 pe-2'>
-                <input type="range" class="form-range" min="2" max="501" step="1" id="sizeRange" :value='calibrationState.points' disabled>
-            </div>
-            <div class='col-md-2'>
-                <label class='txt-grey'>{{ calibrationState.points }}</label>
-            </div>
-            </div>
-        
-        </div>
-
-        
-        <div class='d-flex flex-column'>
-            <!-- CALIBRATION COMMANDS SHOWING BUT DISABLED-->
-            <div class="input-group mb-2">
-            <span class="input-group-text txt-grey col-sm-3">Start</span>
-            <input type="number" class='form-control' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" :value="calibrationState.start" disabled>
-            <span class="input-group-text txt-grey" id="basic-addon1">MHz</span>
-            </div>
-
-            <div class="input-group">
-            <span class="input-group-text txt-grey col-sm-3" id="basic-addon1">End</span>
-            <input type="number" class='form-control' aria-label="freq" aria-describedby="basic-addon1" id="freq_end" :value='calibrationState.end' disabled>     
-            <span class="input-group-text txt-grey" id="basic-addon1">MHz</span>
-            </div>
-        </div>
-
-
         <!-- Drag and Drop elements -->
         <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' :syncPorts="getSyncPorts" @port1change='updatePort1' @port2change='updatePort2'/>
         
@@ -99,9 +39,7 @@
                     <div class='col-2'>
                     <div class="spinner-border text-primary text-center" role="status">
                         <span class="visually-hidden">Loading...</span>
-                    </div>
-                    </div>
-                    <div class='col-10'>
+                    </div>disabled="isDisabled"
                     <p> Please wait for the pocket VNA to measure.</p>
                     <p>This could take around 30 seconds.</p>
                     </div>
@@ -179,8 +117,8 @@ export default {
         //command structure: {"cmd":"crq","avg":1,"sparam":{"S11":true,"S12":false,"S21":false,"S22":false}}
         let params = {
             t:dayjs().unix(),
-            avg:Number(this.calibrationState.average),
-            sparam:{s11:this.calibrationState.sparams.s11, s12:this.calibrationState.sparams.s12,s21:this.calibrationState.sparams.s21, s22:this.calibrationState.sparams.s22},
+            avg:Number(this.calibrationState.avg),
+            sparam:this.calibrationState.sparam,
             what: this.port1 != '' ? this.port1 : this.port2  
           }
 

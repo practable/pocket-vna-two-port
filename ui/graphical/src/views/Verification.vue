@@ -3,7 +3,8 @@
     <div class='row' id='component-grid'>
 
           <div class='col-sm-6' id='left-screen'>
-            <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-verification id='dragDropVerification' :calibrationState="getCalibrationState"/></div>
+            <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><set-parameters :sparams="getSParams" :isDisabled="true" :calibrationState="getCalibrationState"/></div>
+            <div class='col drop-area' id='drop_1_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-verification id='dragDropVerification' :calibrationState="getCalibrationState"/></div>
           </div>
 
           <div class='col-sm-6' id='right-screen'>
@@ -29,6 +30,7 @@ import GraphOutput from '../components/GraphOutput.vue';
 import DragAndDropVerification from '../components/DragAndDropVerification.vue';
 import SmithChart from '../components/SmithChart.vue';
 import DataStream from '../components/DataStream.vue';
+import SetParameters from '../components/SetParameters.vue';
 
 export default {
     name: 'Verification',
@@ -42,7 +44,8 @@ export default {
         GraphOutput,
         DragAndDropVerification,
         SmithChart,
-        DataStream
+        DataStream,
+        SetParameters
         
     },
     computed:{

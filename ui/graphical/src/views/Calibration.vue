@@ -3,8 +3,9 @@
     <div class='row' id='component-grid'>
 
           <div class='col-md-6' id='left-screen'>
-            <div v-if="getSyncPorts" class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-calibrate-sync-ports id='drag-and-drop-calibrate' :sparams="getSParams"/></div>
-            <div v-else class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-calibrate id='drag-and-drop-calibrate' :sparams="getSParams"/></div>
+            <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><set-parameters :sparams="getSParams" :isDisabled="true" :calibrationState="getCalibrationState"/></div>
+            <div v-if="getSyncPorts" class='col drop-area' id='drop_1_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-calibrate-sync-ports id='drag-and-drop-calibrate' :calibrationState="getCalibrationState"/></div>
+            <div v-else class='col drop-area' id='drop_1_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-calibrate id='drag-and-drop-calibrate' :calibrationState="getCalibrationState"/></div>
           </div>
 
           <div class='col-md-6' id='right-screen'>
@@ -30,6 +31,7 @@ import DragAndDropCalibrateSyncPorts from '@/components/DragAndDropCalibrateSync
 import DataStream from '../components/DataStream.vue';
 import GraphOutput from '../components/GraphOutput.vue';
 import SmithChart from '../components/SmithChart.vue';
+import SetParameters from '../components/SetParameters.vue';
 
 export default {
     name: 'Calibration',
@@ -44,14 +46,16 @@ export default {
         DragAndDropCalibrateSyncPorts,
         DataStream,
         GraphOutput,
-        SmithChart
+        SmithChart,
+        SetParameters
         
     },
     computed:{
         ...mapGetters([
             'getDraggable',
             'getSParams',
-            'getSyncPorts'
+            'getSyncPorts',
+            'getCalibrationState'
         ])
     },
     watch:{
