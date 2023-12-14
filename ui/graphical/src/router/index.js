@@ -1,4 +1,5 @@
 import { createWebHistory, createRouter } from 'vue-router';
+import Parameters from '@/views/Parameters.vue';
 import Calibration from '@/views/Calibration.vue';
 import Verification from '@/views/Verification.vue';
 import Measurement from '@/views/Measurement.vue';
@@ -7,7 +8,12 @@ import Measurement from '@/views/Measurement.vue';
 const routes = [
     {
         path: '/',
-        redirect: '/calibration'
+        redirect: '/parameters'
+    },
+    {
+        path: '/parameters',
+        name: 'Parameters',
+        component: Parameters
     },
   {
     path: '/calibration',

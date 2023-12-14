@@ -36,7 +36,7 @@
             <label for="sizeRange" class="txt-primary">Data points</label>
           </div>
           <div class='col-md-8 pe-2'>
-            <input type="range" class="form-range" min="2" max="501" step="1" id="sizeRange" v-model='frequency_points' @change='setCalibrated(false)'>
+            <input type="range" class="form-range" min="2" max="501" step="1" id="sizeRange" v-model='frequency_points' @change='setCalibrated(false); setParametersSet(false)'>
           </div>
           <div class='col-md-2'>
             <label class='txt-primary'>{{frequency_points}}</label>
@@ -66,13 +66,13 @@
         <!-- CALIBRATION COMMANDS-->
         <div class="input-group mb-2" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text txt-primary col-sm-3">Start</span>
-          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency" @change="setCalibrated(false)" :disabled="isDisabled">
+          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency" @change='setCalibrated(false); setParametersSet(false)' :disabled="isDisabled">
           <span class="input-group-text txt-primary" id="basic-addon1">MHz</span>
         </div>
 
         <div class="input-group" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text txt-primary col-sm-3" id="basic-addon1">End</span>
-          <input type="number" :class="(parseFloat(frequency_end) >= 0 && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq_end" v-model="frequency_end" @change="setCalibrated(false)" :disabled="isDisabled">     
+          <input type="number" :class="(parseFloat(frequency_end) >= 0 && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq_end" v-model="frequency_end" @change='setCalibrated(false); setParametersSet(false)' :disabled="isDisabled">     
           <span class="input-group-text txt-primary" id="basic-addon1">MHz</span>
         </div>
     </div>
@@ -81,13 +81,13 @@
             <!-- CALIBRATION COMMANDS SHOWING BUT DISABLED-->
             <div class="input-group mb-2">
             <span class="input-group-text txt-grey col-sm-3">Start</span>
-            <input type="number" class='form-control' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" :value="calibrationState.range.start" disabled>
+            <input type="number" class='form-control' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" :value="calibrationState.range.start/units" disabled>
             <span class="input-group-text txt-grey" id="basic-addon1">MHz</span>
             </div>
 
             <div class="input-group">
             <span class="input-group-text txt-grey col-sm-3" id="basic-addon1">End</span>
-            <input type="number" class='form-control' aria-label="freq" aria-describedby="basic-addon1" id="freq_end" :value='calibrationState.range.end' disabled>     
+            <input type="number" class='form-control' aria-label="freq" aria-describedby="basic-addon1" id="freq_end" :value='calibrationState.range.end/units' disabled>     
             <span class="input-group-text txt-grey" id="basic-addon1">MHz</span>
             </div>
         </div>
@@ -95,7 +95,7 @@
 
 
     <div v-if="!isDisabled" class='d-flex flex-row justify-content-center'>
-          <button id="set" type='button' class="button-lg button-primary" @click='setCalibrationState'>Set Parameters</button>
+          <button id="set" type='button' class="button-lg button-success" @click='setCalibrationState'>Set Parameters</button>
     </div>
 
 
@@ -155,6 +155,8 @@ export default {
     methods:{
         ...mapActions([
             'setDraggable',
+            'setCalibrated',
+            'setParametersSet'
             
         ]),
         setCalibrationState(){
@@ -179,6 +181,8 @@ export default {
             }
 
             this.$store.dispatch('setCalibrationState', params);
+            this.$store.dispatch('sendCalibrationParameters', params);
+
         }
         
 

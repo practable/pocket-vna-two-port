@@ -2,87 +2,94 @@
   
  <div class='container-sm m-2 background-white border rounded'>
     
-    <!-- Drag and Drop elements -->
-    <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' :syncPorts='getSyncPorts' @port1change='updatePort1' @port2change='updatePort2'/>
+    <div v-if='!getParametersSet'>
+         <h4 class='txt-primary txt-lg'>Please set the calibration parameters before progressing</h4>
+     </div>
+
+     <div v-else>
+        <!-- Drag and Drop elements -->
+        <drag-and-drop-components id='dragdropcomponents' header="Calibration Standards" :display='standards' :syncPorts='getSyncPorts' @port1change='updatePort1' @port2change='updatePort2'/>
 
 
-    <!-- Scan and Save logic DIFFERENT FROM THE NON-SYNCED PORTS VERSION-->
-    <div class='d-flex flex-row justify-content-center form-check-inline'>
-          <label class='txt-primary txt-lg me-2'>Short</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortSyncCheck" :checked='getShortSaved' disabled>
-          <label class='txt-primary txt-lg me-2'>Open</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openSyncCheck" :checked='getOpenSaved' disabled>
-          <label class='txt-primary txt-lg me-2'>Load</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadSyncCheck" :checked='getLoadSaved' disabled>
-          <label class='txt-primary txt-lg me-2'>Thru</label>
-          <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="thruCheck" :checked='getThruSaved' disabled>
-    </div>    
+        <!-- Scan and Save logic DIFFERENT FROM THE NON-SYNCED PORTS VERSION-->
+        <div class='d-flex flex-row justify-content-center form-check-inline'>
+            <label class='txt-primary txt-lg me-2'>Short</label>
+            <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="shortSyncCheck" :checked='getShortSaved' disabled>
+            <label class='txt-primary txt-lg me-2'>Open</label>
+            <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="openSyncCheck" :checked='getOpenSaved' disabled>
+            <label class='txt-primary txt-lg me-2'>Load</label>
+            <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="loadSyncCheck" :checked='getLoadSaved' disabled>
+            <label class='txt-primary txt-lg me-2'>Thru</label>
+            <input class="form-check-input mt-2 me-2" type="checkbox" value="" id="thruCheck" :checked='getThruSaved' disabled>
+        </div>    
 
-    <div class='d-flex flex-row justify-content-center'>
-          <button id="scan" type='button' class="button-lg button-primary" @click='scan' :disabled="port1 === '' && port2 === ''">Scan</button>
-          <button id="save_to_calibrate" type='button' class="button-lg button-secondary" @click='save' :disabled="!getShowSave">Save</button>
-          <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="rangeFreqCalibration" :disabled='!ready_to_calibrate'>Calibrate</button>
+        <div class='d-flex flex-row justify-content-center'>
+            <button id="scan" type='button' class="button-lg button-primary" @click='scan' :disabled="port1 === '' && port2 === ''">Scan</button>
+            <button id="save_to_calibrate" type='button' class="button-lg button-secondary" @click='save' :disabled="!getShowSave">Save</button>
+            <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="rangeFreqCalibration" :disabled='!ready_to_calibrate'>Calibrate</button>
+        </div>
+
+        
+
+
+
+        <transition name='fade'>
+        <div v-if='getShowCalibrationModal' class="modal" id='modal-show' tabindex="-1">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #ccc">
+                <h5 class="modal-title">Calibrating Pocket VNA</h5>
+                </div>
+                <div class="modal-body">
+                <div class='d-flex row align-items-center'>
+                    <div class='col-2'>
+                    <div class="spinner-border text-primary text-center" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    </div>
+                    <div class='col-10'>
+                    <p> Please wait for the pocket VNA to calibrate.</p>
+                    <p>This could take around 1 minute.</p>
+                    </div>
+                </div>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="setShowCalibrationModal(false)">Close</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        </transition>
+
+        <transition name='fade'>
+        <div v-if='getShowScanningModal' class="modal" id='modal-show' tabindex="-1">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #ccc">
+                <h5 class="modal-title">Scanning Pocket VNA ports</h5>
+                </div>
+                <div class="modal-body">
+                <div class='d-flex row align-items-center'>
+                    <div class='col-2'>
+                    <div class="spinner-border text-primary text-center" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    </div>
+                    <div class='col-10'>
+                    <p> Please wait for the pocket VNA to scan ports.</p>
+                    <p>This could take around 30 seconds.</p>
+                    </div>
+                </div>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="setShowScanningModal(false)">Close</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        </transition>
+
     </div>
-
-     
-
-
-
-    <transition name='fade'>
-      <div v-if='getShowCalibrationModal' class="modal" id='modal-show' tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header" style="background-color: #ccc">
-              <h5 class="modal-title">Calibrating Pocket VNA</h5>
-            </div>
-            <div class="modal-body">
-              <div class='d-flex row align-items-center'>
-                <div class='col-2'>
-                  <div class="spinner-border text-primary text-center" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-                <div class='col-10'>
-                  <p> Please wait for the pocket VNA to calibrate.</p>
-                  <p>This could take around 1 minute.</p>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-danger" @click="setShowCalibrationModal(false)">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      </transition>
-
-      <transition name='fade'>
-      <div v-if='getShowScanningModal' class="modal" id='modal-show' tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header" style="background-color: #ccc">
-              <h5 class="modal-title">Scanning Pocket VNA ports</h5>
-            </div>
-            <div class="modal-body">
-              <div class='d-flex row align-items-center'>
-                <div class='col-2'>
-                  <div class="spinner-border text-primary text-center" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-                <div class='col-10'>
-                  <p> Please wait for the pocket VNA to scan ports.</p>
-                  <p>This could take around 30 seconds.</p>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-danger" @click="setShowScanningModal(false)">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      </transition>
 
 </div>
 
@@ -137,7 +144,8 @@ export default {
             'getCalibrated',
             'getShowCalibrationModal',
             'getSyncPorts',
-            'getShowScanningModal'
+            'getShowScanningModal',
+            'getParametersSet'
         ]),
         ready_to_calibrate(){
             let ready = true;

@@ -346,11 +346,19 @@ export default {
                   //_this.$store.dispatch('setCalibrated', false);
                 } 
                 //PLACEHOLDER FOR NEW FIRMWARE COMMAND RECEIVED AFTER SCANNING PORTS WITH CAL STANDARDS
-                else if(response.cmd == 'SCAN'){
+                else if(response.cmd == '_SCAN'){
                   this.previous_phase = null;
                   console.log(response);
                   _this.$store.dispatch('setResponse', response);
                   _this.$store.dispatch('setShowScanningModal', false);
+                }
+                //PLACEHOLDER FOR RESPONSE TO NEW SET PARAMETERS COMMAND
+                else if(response.cmd == '_SET'){
+                  //this.previous_phase = null;
+                  console.log(response);
+                  _this.$store.dispatch('setParametersSet', true);
+                  //_this.$store.dispatch('setResponse', response);
+                  //_this.$store.dispatch('setShowScanningModal', false);
                 }
                 else {
                   this.previous_phase = null;

@@ -8,7 +8,7 @@ const uiStore = {
         showCalibrationModal: false,
         showRequestModal: false,
         sparams: {'s11':true, 's12': true, 's21':true, 's22':true},       //which params are allowed on the UI
-        calibration_state: {sparam:{s11:true, s12:true, s21:true, s22: true}, islog:false, avg: 1, size: 20, range:{start: 1, end: 4}},        //for reflecting on verification and measurement tabs
+        calibration_state: {sparam:{s11:true, s12:true, s21:true, s22: true}, islog:false, avg: 1, size: 20, range:{start: 1000000, end: 4000000}},        //set by SetParameters.vue and then read and displayed in other cal, verify and measure tabs
         config_json: '',
 
        }),

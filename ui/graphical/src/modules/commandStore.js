@@ -4,8 +4,9 @@
 const commandStore = {
     state: () => ({
         dataSocket: null,
-        isCalibrated: true,     //set to false before deploying.
-        isVerified: true,      //set to false before deploying
+        isParametersSet: false,
+        isCalibrated: false,     //set to false before deploying.
+        isVerified: false,      //set to false before deploying
         syncPorts: true,        //for calibration in particular, should dragging a standard onto a port then add that standard to both ports - calibration in the hardware does both at once
 
        }),
@@ -36,6 +37,33 @@ const commandStore = {
         //         "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
         //     }));
         // },
+        //not implemented in firmware yet
+        SEND_CALIBRATION_PARAMETERS(state, params){
+            console.log('sending calibration parameters');
+            // state.dataSocket.send(JSON.stringify({
+            //     "id":params.id,
+            //     "t":params.t,
+            //     "cmd":"",
+            //     "range":{"start":params.range.start,"end":params.range.end},
+            //     "size":params.size,
+            //     "islog":params.islog,
+            //     "avg":params.avg,
+            //     // "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
+            // }));
+        },
+        //NOT YET IMPLEMENTED IN FIRMWARE
+        REQUEST_RANGE_BEFORE_CAL(state, params){
+            console.log('scanning prior to cal');
+            // state.dataSocket.send(JSON.stringify({
+            //     "id": params.what,
+            //     "t": params.t,
+            //     "cmd":"",       //NEED TO KNOW WHAT COMMAND TO SEND
+            //     "what": params.what,
+            //     "avg":params.avg,
+            //     "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22}  //should all be true
+            // }));
+
+        },
         REQUEST_CALIBRATION(state, params){
             console.log('calibration request sent');
             state.dataSocket.send(JSON.stringify({
@@ -66,18 +94,8 @@ const commandStore = {
             }
             
         },
-        //NOT YET IMPLEMENTED IN FIRMWARE
-        REQUEST_RANGE_BEFORE_CAL(state, params){
-            console.log('scanning prior to cal');
-            // state.dataSocket.send(JSON.stringify({
-            //     "id": params.what,
-            //     "t": params.t,
-            //     "cmd":"",       //NEED TO KNOW WHAT COMMAND TO SEND
-            //     "what": params.what,
-            //     "avg":params.avg,
-            //     "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22}  //should all be true
-            // }));
-
+        SET_PARAMETERS_SET(state, set){
+            state.isParametersSet = set;
         },
         SET_CALIBRATED(state, set){
             state.isCalibrated = set;
@@ -104,14 +122,20 @@ const commandStore = {
         // requestRange(context, params){
         //     context.commit('REQUEST_RANGE', params);
         // },
+        sendCalibrationParameters(context, params){
+            context.commit('SEND_CALIBRATION_PARAMETERS', params);
+        },
+        requestRangeBeforeCal(context, params){
+            context.commit('REQUEST_RANGE_BEFORE_CAL', params);
+        },
         requestCalibration(context, params){
             context.commit('REQUEST_CALIBRATION', params);
         },
         requestRangeAfterCal(context, params){
             context.commit('REQUEST_RANGE_AFTER_CAL', params);
         },
-        requestRangeBeforeCal(context, params){
-            context.commit('REQUEST_RANGE_BEFORE_CAL', params);
+        setParametersSet(context, set){
+            context.commit('SET_PARAMETERS_SET', set);
         },
         setCalibrated(context, set){
             context.commit('SET_CALIBRATED', set);
@@ -126,6 +150,9 @@ const commandStore = {
        getters:{
         getDataSocket(state){
             return state.dataSocket;
+        },
+        getParametersSet(state){
+            return state.isParametersSet;
         },
         getCalibrated(state){
             return state.isCalibrated;

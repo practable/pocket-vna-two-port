@@ -10,13 +10,16 @@
    
         <ul class="nav nav-tabs">
             <li class="nav-item">
-                <router-link :class="getCalibrationClass" aria-current="page" :to="{ path: '/calibration', query: $route.query }">1) Calibration</router-link>
+                <router-link :class="getParametersClass" aria-current="page" :to="{ path: '/parameters', query: $route.query }">1) Set Parameters</router-link>
             </li>
             <li class="nav-item">
-                <router-link :class="getVerificationClass" aria-current="page" :to="{ path: '/verification', query: $route.query }">2) Verification</router-link>
+                <router-link :class="getCalibrationClass" aria-current="page" :to="{ path: '/calibration', query: $route.query }">2) Calibration</router-link>
             </li>
             <li class="nav-item">
-                <router-link class="tab" aria-current="page" :to="{ path: '/measurement', query: $route.query }">3) Measurement</router-link>
+                <router-link :class="getVerificationClass" aria-current="page" :to="{ path: '/verification', query: $route.query }">3) Verification</router-link>
+            </li>
+            <li class="nav-item">
+                <router-link class="tab" aria-current="page" :to="{ path: '/measurement', query: $route.query }">4) Measurement</router-link>
             </li>
         </ul>
           
@@ -51,8 +54,16 @@ export default {
     ...mapGetters([
       'getDraggable',
       'getCalibrated',
-      'getVerified'
+      'getVerified',
+      'getParametersSet'
     ]),
+    getParametersClass(){
+        if(this.getParametersSet){
+            return 'tab completed'
+        } else{
+            return 'tab'
+        }
+    },
     getCalibrationClass(){
         if(this.getCalibrated){
             return 'tab completed'

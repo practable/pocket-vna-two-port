@@ -3,7 +3,7 @@
     <div class='row' id='component-grid'>
 
           <div class='col-md-6' id='left-screen'>
-            <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><set-parameters :sparams="getSParams" :isDisabled="true" :calibrationState="getCalibrationState"/></div>
+            <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><set-parameters id="set-parameters" :sparams="getSParams" :isDisabled="true" :calibrationState="getCalibrationState"/></div>
             <div v-if="getSyncPorts" class='col drop-area' id='drop_1_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-calibrate-sync-ports id='drag-and-drop-calibrate' :calibrationState="getCalibrationState"/></div>
             <div v-else class='col drop-area' id='drop_1_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-calibrate id='drag-and-drop-calibrate' :calibrationState="getCalibrationState"/></div>
           </div>

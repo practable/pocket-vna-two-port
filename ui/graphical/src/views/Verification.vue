@@ -3,7 +3,7 @@
     <div class='row' id='component-grid'>
 
           <div class='col-sm-6' id='left-screen'>
-            <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><set-parameters :sparams="getSParams" :isDisabled="true" :calibrationState="getCalibrationState"/></div>
+            <div class='col drop-area' id='drop_0_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><set-parameters id="set-parameters" :sparams="getSParams" :isDisabled="true" :calibrationState="getCalibrationState"/></div>
             <div class='col drop-area' id='drop_1_0' :draggable='getDraggable' @dragstart="dragComponent" @drop='dropComponent' @dragover.prevent @dragenter.prevent><drag-and-drop-verification id='dragDropVerification' :calibrationState="getCalibrationState"/></div>
           </div>
 
