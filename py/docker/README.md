@@ -30,7 +30,9 @@ sudo usermod -aG docker $USER
 ```
 
 After installing docker, enable it to start on statup.
-`sudo systemctl enable docker`
+```
+sudo systemctl enable docker
+```
 
 
 log out, log in and try hello world
