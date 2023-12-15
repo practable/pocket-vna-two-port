@@ -24,6 +24,19 @@ Install docker....
 ```
 curl -sSL https://get.docker.com | sh
 ```
+avoid needing sudo to run docker commands
+```
+sudo usermod -aG docker $USER 
+```
+
+After installing docker, enable it to start on statup.
+`sudo systemctl enable docker`
+
+
+log out, log in and try hello world
+```
+docker run hello-world 
+```
 
 ```
 #get sources

@@ -1,7 +1,8 @@
-FROM python:3.7-slim
-ADD calibration.py /
-ADD client.py /
-ENV WEBSOCKET ws://172.17.0.1:8888/ws/calibration
+FROM arm64v8/python:3.12-bookworm
+ADD server.py /
+ADD calibrate_pb2.py /
+ADD calibrate_pb2_grpc.py /
+ENV CALIBRATE_PORT 9001
 COPY ./requirements.txt /var/www/requirements.txt
 RUN apt-get update && \
     apt-get install -y \
@@ -12,4 +13,4 @@ RUN apt-get update && \
     && apt-get remove -y --purge make gcc build-essential \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
-CMD [ "python", "./client.py" ]
+CMD [ "python", "./server.py" ]
