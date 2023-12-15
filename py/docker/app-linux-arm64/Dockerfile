@@ -2,6 +2,7 @@ FROM arm64v8/python:3.12-bookworm
 ADD server.py /
 ADD calibrate_pb2.py /
 ADD calibrate_pb2_grpc.py /
+ADD __init__.py /
 ENV CALIBRATE_PORT 9001
 COPY ./requirements.txt /var/www/requirements.txt
 RUN apt-get update && \
@@ -13,4 +14,5 @@ RUN apt-get update && \
     && apt-get remove -y --purge make gcc build-essential \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
+EXPOSE 9001
 CMD [ "python", "./server.py" ]
