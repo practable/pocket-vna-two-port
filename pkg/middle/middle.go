@@ -16,6 +16,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type Ready struct {
+	Setup bool
+	Short bool
+	Open  bool
+	Load  bool
+	Thru  bool
+}
+
 // Middle holds config and service pointers
 type Middle struct {
 	c       *pb.CalibrateClient
@@ -32,6 +40,7 @@ type Middle struct {
 	dut     []pocket.SParam
 	dutcal  []pocket.SParam
 	ctpr    *pb.CalibrateTwoPortRequest
+	ready   Ready
 }
 
 // for the channel in Handle
@@ -80,6 +89,7 @@ func New(ctx context.Context, addr, port string, baud int, timeoutUSB, timeoutRe
 		ctpr:    ctpr,
 		ctx:     ctx,
 		h:       h,
+		ready:   Ready{},
 		s:       &s,
 		timeout: timeoutRequest,
 	}
@@ -167,6 +177,27 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 					Error:  err,
 				}
 
+			case "sc", "setupcal":
+				req := request.(pocket.RangeQuery)
+				err := m.CalibrateSetup(&req)
+				r <- Response{
+					Result: req,
+					Error:  err,
+				}
+			case "mc", "measurecal":
+				req := request.(pocket.RangeQuery)
+				err := m.CalibrateMeasure(&req)
+				r <- Response{
+					Result: req,
+					Error:  err,
+				}
+			case "cc", "confirmcal":
+				req := request.(pocket.RangeQuery)
+				err := m.CalibrateConfirm(&req)
+				r <- Response{
+					Result: req,
+					Error:  err,
+				}
 			}
 
 		case pocket.CalibratedRangeQuery:
@@ -178,7 +209,6 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				Result: req,
 				Error:  err,
 			}
-
 		}
 	}()
 
@@ -237,6 +267,12 @@ func (m *Middle) CalibrateRange(request *pocket.RangeQuery) error {
 	rq := *request //make a local copy of the request to break the link to the original request
 	// so it's not changed by future requests coming in
 	m.rq = &rq
+
+	m.ready.Setup = false //we've changed the stored frequency range so a step-by-step cal must be restarted
+	m.ready.Short = false
+	m.ready.Open = false
+	m.ready.Load = false
+	m.ready.Thru = false
 
 	// we need to measure all Sparams, so ignore user's select settings
 	m.rq.Select = pocket.SParamSelect{
@@ -878,3 +914,150 @@ func (m *Middle) RangeCal(rc pocket.RangeQuery) interface{} {
 
 }
 */
+
+// func CalibrateSetup stores the frequency range and distribution
+func (m *Middle) CalibrateSetup(request *pocket.RangeQuery) error {
+
+	// store frequency range, size, LogDistribution
+	// Measure & save SOLT for all S-params
+	// return Sparams for the calibrated item that was listed in the What?
+	// Avg can be changed without invalidating the cal, so don't save it
+
+	request.What = "thru" //we'll force the return of the thru results for simplicity
+
+	rq := *request //make a local copy of the request to break the link to the original request
+	// so it's not changed by future requests coming in
+	m.rq = &rq
+
+	// we need to measure all Sparams, so ignore user's select settings
+	m.rq.Select = pocket.SParamSelect{
+		S11: true,
+		S12: true,
+		S21: true,
+		S22: true,
+	}
+
+	m.ready.Setup = true //this stays true once the first CalibrateSetup has been run
+	// this is set false by any other command that would change the frequency range.
+	m.ready.Short = false
+	m.ready.Open = false
+	m.ready.Load = false
+	m.ready.Thru = false
+
+	return nil
+
+}
+
+// func CalibrateMeasure stores the frequency range and distribution
+func (m *Middle) CalibrateMeasure(request *pocket.RangeQuery) error {
+
+	if m.rq == nil {
+		return errors.New("not calibrated yet")
+	}
+
+	if m.ready.Setup == false {
+		return errors.New("calibration not yet setup (use sc or setupcal command)")
+	}
+
+	// measure cal standards
+
+	switch request.What {
+
+	case "short":
+		m.rq.What = "short"
+		err := m.h.MeasureRange(m.rq)
+
+		if err != nil {
+			return err
+		}
+
+		m.short = m.rq.Result
+		m.ready.Short = true
+
+	case "open":
+		m.rq.What = "open"
+		err := m.h.MeasureRange(m.rq)
+
+		if err != nil {
+			return err
+		}
+
+		m.open = m.rq.Result
+		m.ready.Open = true
+
+	case "load":
+		m.rq.What = "load"
+		err := m.h.MeasureRange(m.rq)
+
+		if err != nil {
+			return err
+		}
+
+		m.load = m.rq.Result
+		m.ready.Load = true
+
+	case "thru":
+		m.rq.What = "thru"
+		err := m.h.MeasureRange(m.rq)
+
+		if err != nil {
+			return err
+		}
+
+		m.thru = m.rq.Result
+		m.ready.Thru = true
+	}
+
+	return nil
+
+}
+
+func (m *Middle) CalibrateConfirm(request *pocket.RangeQuery) error {
+
+	if m.rq == nil {
+		return errors.New("not calibrated yet")
+	}
+
+	if m.ready.Setup == false {
+		return errors.New("calibration not setup yet")
+	}
+
+	if m.ready.Short == false {
+		return errors.New("calibration not complete (missing short, maybe others)")
+	}
+	if m.ready.Open == false {
+		return errors.New("calibration not complete (missing open, maybe others)")
+	}
+	if m.ready.Load == false {
+		return errors.New("calibration not complete (missing load, maybe others)")
+	}
+	if m.ready.Thru == false {
+		return errors.New("calibration not complete (missing thru)")
+	}
+
+	// Use the thru for the DUT for the purpose of this cal
+	m.dut = m.thru
+
+	// Prepare the cal buffer...
+	m.ctpr.Reset()
+
+	m.ctpr.Frequency = Meas2Freq(m.short)
+
+	m.ctpr.Short = Meas2Cal(m.short)
+	m.ctpr.Open = Meas2Cal(m.open)
+	m.ctpr.Load = Meas2Cal(m.load)
+	m.ctpr.Thru = Meas2Cal(m.thru)
+	m.ctpr.Dut = Meas2Cal(m.dut)
+
+	r, err := (*m.c).CalibrateTwoPort(m.ctx, m.ctpr)
+	if err != nil {
+		log.Fatalf("could not calibrate: %v", err)
+	}
+
+	m.dutcal = Cal2Meas(r.GetFrequency(), r.GetResult())
+
+	request.Result = m.dutcal
+
+	return nil
+
+}
