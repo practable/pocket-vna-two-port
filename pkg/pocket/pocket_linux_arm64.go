@@ -18,7 +18,7 @@ package pocket
 
 /*
 #cgo CFLAGS: -g -Wall
-#cgo LDFLAGS: -L. -lPocketVnaApi -lm
+#cgo LDFLAGS: -L. -lPocketVnaApi_x64 -lm
 #include "pocketvna.h"
 */
 import "C"
