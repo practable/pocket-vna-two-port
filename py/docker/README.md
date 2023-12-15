@@ -15,6 +15,54 @@ runc run failed: unable to start container process: error during container init:
 Fix 1 - upgrade OS to Odroid community Ubuntu image which uses kernel v5.15.
 Fix 2 - set systemd.unified_cgroup_hierarchy=0 to bootargs in /media/boot/boot.ini (This worked on pvna10 with Linux odroid 4.9.337-13 #1 SMP PREEMPT Tue Nov 28 16:28:39 UTC 2023 aarch64 aarch64 aarch64 GNU/Linux)
 
+having issues with versions between protoc and the python grpcio version, after breaking change in library
+
+#### Try running directly in python on odroid
+
+python on system is version 3.10
+
+sudo pip install is not recommended but trying it to ensure can run as root
+
+
+
+```
+sudo pip install grpcio
+sudo pip install matplotlib
+sudo pip install numpy
+sudo pip install scipy
+sudo pip install scikit-rf
+sudo pip install google-api-python-client
+```
+
+allow sudo to use go
+```
+sudo visudo #add /usr/local/go/bin to the secure_path
+```
+
+install protocol buffer compilers into user's own path
+```
+#sudo go install github.com/golang/protobuf/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+```
+
+add go to path, by editing `~/.profile`
+```
+# set PATH so it includes go bin if it exists
+if [ -d "$HOME/go/bin" ] ; then
+    PATH="$HOME/go/bin:$PATH"
+fi
+```
+
+Right, libprotoc is ver 3.12 and can't rebuild libprotoc on odroid because package bazel not available via apt-get (could try to build)
+
+alt plan is to downgrade protobuf in python
+
+```
+sudo pip install --force-reinstall -v "protobuf==3.20.0"
+```
+
+OK, this works, now to sort this in the `requirements.txt`
 
 ### Installing Docker on the RPi4
 
