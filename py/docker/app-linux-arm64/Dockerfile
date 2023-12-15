@@ -1,4 +1,4 @@
-FROM arm64v8/python:3.12-bookworm
+FROM arm64v8/python:3.7-buster
 ADD server.py /
 ADD calibrate_pb2.py /
 ADD calibrate_pb2_grpc.py /
