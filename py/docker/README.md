@@ -4,6 +4,18 @@
 
 This needs to be built on the raspberry pi, due to a lack of suitable emulators for the raspberry pi 4. Some earlier models are available with QEMU but not suitable for this task.
 
+
+### Docker on Odroid C4
+
+This error below is beacuse the [kernel out of date](https://github.com/docker/cli/issues/4273) in the ubuntu image we're using on the odroids
+```
+runc run failed: unable to start container process: error during container init: error setting cgroup config for procHooks process: bpf_prog_query(BPF_CGROUP_DEVICE)
+```
+
+Fix 1 - upgrade OS to Odroid community Ubuntu image which uses kernel v5.15.
+Fix 2 - set systemd.unified_cgroup_hierarchy=0 to bootargs in /media/boot/boot.ini (This worked on pvna10 with Linux odroid 4.9.337-13 #1 SMP PREEMPT Tue Nov 28 16:28:39 UTC 2023 aarch64 aarch64 aarch64 GNU/Linux)
+
+
 ### Installing Docker on the RPi4
 
 Ensure you are using a raspberry pi with the latest raspbian pi OS lite 32 (currently kernal 5.15)
