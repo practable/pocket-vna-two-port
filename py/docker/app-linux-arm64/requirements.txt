@@ -2,3 +2,4 @@ grpcio>=1.60.0
 numpy>=1.21.5<2.0
 scikit-rf>=0.18.1<1.0
 matplotlib>=3.5.1
+google-api-python-client>=2.111.0

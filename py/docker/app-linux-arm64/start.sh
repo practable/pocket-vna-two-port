@@ -1,5 +1,5 @@
 #!/bin/bash
-app="calibration"
+app="calibration-twoport-grpc"
 docker build -t ${app} .
 docker run ${app} 
 
