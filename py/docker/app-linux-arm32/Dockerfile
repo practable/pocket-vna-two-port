@@ -8,6 +8,7 @@ COPY ./requirements.txt /var/www/requirements.txt
 RUN apt-get update && \
     apt-get install -y \
         build-essential \
+		cmake \
         make \
         gcc \
     && pip install -r /var/www/requirements.txt \
