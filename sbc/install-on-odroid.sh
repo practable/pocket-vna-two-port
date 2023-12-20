@@ -12,12 +12,12 @@ cp ./services/* /etc/systemd/system
 
 #programme the arduino
 curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-arduino-cli core update-index
-arduino-cli core install arduino:avr
-arduino-cli lib install timerinterrupt
+./bin/arduino-cli core update-index
+./bin/arduino-cli core install arduino:avr
+./bin/arduino-cli lib install timerinterrupt
 cd ./fw
-arduino-cli compile --fqbn arduino:avr:nano RFSwitch/ 
-arduino-cli upload --port /dev/ttyUSB0 --fqbn arduino:avr:nano RFSwitch/
+../sbc/bin/arduino-cli compile --fqbn arduino:avr:nano RFSwitch/ 
+../sbc//bin/arduino-cli upload --port /dev/ttyUSB0 --fqbn arduino:avr:nano RFSwitch/
 
 #get relay tokens
 export FILES=$(/home/odroid/files.link)
