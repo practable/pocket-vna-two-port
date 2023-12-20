@@ -15,9 +15,8 @@ curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.
 ./bin/arduino-cli core update-index
 ./bin/arduino-cli core install arduino:avr
 ./bin/arduino-cli lib install timerinterrupt
-cd ./fw
-../sbc/bin/arduino-cli compile --fqbn arduino:avr:nano RFSwitch/ 
-../sbc//bin/arduino-cli upload --port /dev/ttyUSB0 --fqbn arduino:avr:nano RFSwitch/
+./bin/arduino-cli compile --fqbn arduino:avr:nano ../fw/RFSwitch/ 
+./bin/arduino-cli upload --port /dev/ttyUSB0 --fqbn arduino:avr:nano ../fw/RFSwitch/
 
 #get relay tokens
 export FILES=$(/home/odroid/files.link)
