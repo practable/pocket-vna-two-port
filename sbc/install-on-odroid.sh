@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# reminder to user to modify kernel if 4.9
+echo "for kernel 4.9, cgroup error with docker requires kernel mod"
+echo "edit /media/boot/boot.ini to include systemd.unified_cgroup_hierarchy=0 (see comments in this script"
+# sudo cp /media/boot/boot.ini ./
+# sudo nano boot.ini
+# sudo diff /media/boot/boot.ini boot.ini
+# sudo cp boot.ini /media/boot/boot.ini
+# sudo reboot
+# setenv bootargs "root=UUID=e139ce78-9841-40fe-8823-96a304a09859 rootwait rw ${condev} ${amlogic} no_console_suspend fsck.repair=yes net.ifnames=0 elevator=noop hdmimode=${hdmimode} cvbsmode=576cvbs max_freq_a55=${max_freq_a55} maxcpus=${maxcpus} voutmode=${voutmode} ${cmode} disablehpd=${disablehpd} cvbscable=${cvbscable} overscan=${overscan} ${hid_quirks} monitor_onoff=${monitor_onoff} logo=osd0,loaded ${cec_enable} sdrmode=${sdrmode} enable_wol=${enable_wol} systemd.unified_cgroup_hierarchy=0"
+
+
+
 # we assume jump is already installed
 # we assume that relay access and token files are already present in /etc/practable
 # assume that /etc/practable/id has the correct id for the experiment, e.g. pvna05
