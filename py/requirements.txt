@@ -1,4 +1,5 @@
-OUTPUT:
-scikit-rf=0.18.1
-numpy=1.21.5
-
+grpcio==1.60.0
+matplotlib==3.5.0
+numpy==1.21.5
+protobuf==4.25.1
+scikit_rf==0.30.0
