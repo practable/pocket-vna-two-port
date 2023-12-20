@@ -4,6 +4,10 @@
 # we assume that relay access and token files are already present in /etc/practable
 # assume that /etc/practable/id has the correct id for the experiment, e.g. pvna05
 
+curl -sSL https://get.docker.com | sh
+sudo usermod -aG docker $USER 
+sudo systemctl enable docker
+
 cp ./files/vna-data /usr/local/bin/
 cp ./files/relay-rules /usr/local/bin/
 cp ./files/odroid/vna /usr/local/bin
