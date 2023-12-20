@@ -15,7 +15,7 @@ echo "edit /media/boot/boot.ini to include systemd.unified_cgroup_hierarchy=0 (s
 # we assume jump is already installed
 # we assume that relay access and token files are already present in /etc/practable
 # assume that /etc/practable/id has the correct id for the experiment, e.g. pvna05
-
+apt-get install curl
 curl -sSL https://get.docker.com | sh
 sudo usermod -aG docker $USER 
 sudo systemctl enable docker
