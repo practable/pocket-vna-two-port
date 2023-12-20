@@ -9,8 +9,8 @@ cp ./files/relay-rules /usr/local/bin/
 cp ./files/odroid/vna /usr/local/bin
 cp ./files/odroid/relay /usr/local/bin 
 cp ./services/* /etc/systemd/system
-cp ./lib/libPocketVnaApi.so /var/lib/libPocketVnaApi.so.0
-cp ./lib/libPocketVnaApi.so /var/lib/libPocketVnaApi.so.1
+cp ../lib/arm64/libPocketVnaApi.so /usr/lib/libPocketVnaApi.so.0
+cp ../lib/arm64/libPocketVnaApi.so /usr/lib/libPocketVnaApi.so.1
 
 #programme the arduino
 curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
