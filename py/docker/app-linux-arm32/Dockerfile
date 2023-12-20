@@ -12,6 +12,7 @@ RUN apt-get update && \
         make \
         gcc \
 		gfortran \
+		libopenblas-dev \
     && pip install -r /var/www/requirements.txt \
     && apt-get remove -y --purge make gcc build-essential \
     && apt-get autoremove -y \
