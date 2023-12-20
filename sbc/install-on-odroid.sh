@@ -27,7 +27,7 @@ wget $FILES/st-ed0-data.token.$PRACTABLE_ID -O   st-ed0-data.token
 
 # start services
 systemctl enable calibration.service
-systemctl enable relay/service
+systemctl enable relay.service
 systemctl enable relay-rules.service
 systemctl enable vna-data.service
 systemctl start calibration.service
