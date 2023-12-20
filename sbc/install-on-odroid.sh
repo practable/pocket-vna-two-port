@@ -19,7 +19,7 @@ curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.
 ./bin/arduino-cli upload --port /dev/ttyUSB0 --fqbn arduino:avr:nano ../fw/RFSwitch/
 
 #get relay tokens
-export FILES=$(/home/odroid/files.link)
+export FILES=$(cat /home/odroid/files.link)
 export PRACTABLE_ID=$(cat /etc/practable/id)
 cd /etc/practable
 wget $FILES/st-ed0-data.access.$PRACTABLE_ID -O  st-ed0-data.access
