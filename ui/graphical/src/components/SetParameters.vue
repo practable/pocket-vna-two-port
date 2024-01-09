@@ -180,6 +180,7 @@ export default {
                 sparam:{s11:this.s11,s12:this.s12,s21:this.s21,s22:this.s22}
             }
 
+            this.$store.dispatch('setParametersSet', true);
             this.$store.dispatch('setCalibrationState', params);
             this.$store.dispatch('sendCalibrationParameters', params);
 

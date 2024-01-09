@@ -110,11 +110,10 @@ export default {
         //command structure: {"cmd":"crq","avg":1,"sparam":{"S11":true,"S12":false,"S21":false,"S22":false}}
         let params = {
             t:dayjs().unix(),
-            avg:Number(this.calibrationState.average),
-            sparam:{s11:this.calibrationState.sparams.s11,s12:this.calibrationState.sparams.s12,s21:this.calibrationState.sparams.s21,s22:this.calibrationState.sparams.s22},
+            avg:Number(this.calibrationState.avg),
+            sparam:this.calibrationState.sparam,
             what: this.port1 != '' ? this.port1 : this.port2 
           }
-          console.log(params);
           this.$store.dispatch('requestRangeAfterCal', params);
           this.$store.dispatch('setShowRequestModal', true);
       },

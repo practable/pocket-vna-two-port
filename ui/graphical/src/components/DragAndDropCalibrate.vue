@@ -38,7 +38,7 @@
         <div class='d-flex flex-row justify-content-center'>
             <button id="scan" type='button' class="button-lg button-primary" @click='scan' :disabled="port1 === '' && port2 === ''">Scan</button>
             <button id="save_to_calibrate" type='button' class="button-lg button-secondary" @click='save' :disabled="!getShowSave">Save</button>
-            <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="rangeFreqCalibration" :disabled='!ready_to_calibrate'>Calibrate</button>
+            <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="confirmCal" :disabled='!ready_to_calibrate'>Calibrate</button>
         </div>
 
         
@@ -275,8 +275,8 @@ export default {
             // ACTUALLY SEND A COMMAND HERE TO RECEIVE CURRENT DATA
             let params = {
                 t:dayjs().unix(),
-                avg:Number(this.calibrationState.points),
-                sparam:{s11:this.calibrationState.sparams.s11,s12:this.calibrationState.sparams.s12,s21:this.calibrationState.sparams.s21,s22:this.calibrationState.sparams.s22},
+                avg:Number(this.calibrationState.avg),
+                sparam:this.calibrationState.sparam,
                 what: this.port1 != '' ? this.port1 : this.port2  
             }
 
@@ -298,6 +298,16 @@ export default {
                     }
                 });
             }
+        },
+        confirmCal(){
+            let params = {
+                t:dayjs().unix(),
+                avg:Number(this.calibrationState.avg),
+                sparam:this.calibrationState.sparam,
+            }
+
+            this.$store.dispatch('confirmCal', params);
+
         },
         rangeFreqCalibration(){
             //command structure: {"cmd":"rc","range":{"Start":100000,"End":4000000},"size":2,"isLog":true,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false}}

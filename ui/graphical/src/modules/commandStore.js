@@ -37,31 +37,39 @@ const commandStore = {
         //         "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
         //     }));
         // },
-        //not implemented in firmware yet
         SEND_CALIBRATION_PARAMETERS(state, params){
-            console.log('sending calibration parameters');
-            // state.dataSocket.send(JSON.stringify({
-            //     "id":params.id,
-            //     "t":params.t,
-            //     "cmd":"",
-            //     "range":{"start":params.range.start,"end":params.range.end},
-            //     "size":params.size,
-            //     "islog":params.islog,
-            //     "avg":params.avg,
-            //     // "sparam":{"s11":params.sparam.s11,"s12":params.sparam.s12,"s21":params.sparam.s21,"s22":params.sparam.s22}
-            // }));
+            console.log(params);
+            state.dataSocket.send(JSON.stringify({
+                "id":params.t,
+                "t":params.t,
+                "cmd":"sc",
+                "range":{"start":params.range.start,"end":params.range.end},
+                "size":params.size,
+                "islog":params.islog,
+                "avg":params.avg,
+            }));
         },
-        //NOT YET IMPLEMENTED IN FIRMWARE
         REQUEST_RANGE_BEFORE_CAL(state, params){
-            console.log('scanning prior to cal');
-            // state.dataSocket.send(JSON.stringify({
-            //     "id": params.what,
-            //     "t": params.t,
-            //     "cmd":"",       //NEED TO KNOW WHAT COMMAND TO SEND
-            //     "what": params.what,
-            //     "avg":params.avg,
-            //     "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22}  //should all be true
-            // }));
+            console.log(params);
+            state.dataSocket.send(JSON.stringify({
+                "id": params.what,
+                "t": params.t,
+                "cmd":"mc",      
+                "what": params.what,
+                "avg":params.avg,
+                "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22} 
+            }));
+
+        },
+        CONFIRM_CAL(state, params){
+            console.log(params);
+            state.dataSocket.send(JSON.stringify({
+                "id": params.t,
+                "t": params.t,
+                "cmd":"cc",      
+                "avg":params.avg,
+                "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22} 
+            }));
 
         },
         REQUEST_CALIBRATION(state, params){
@@ -78,7 +86,7 @@ const commandStore = {
             }));
         },
         REQUEST_RANGE_AFTER_CAL(state, params){
-            
+            console.log(params)
             if(state.isCalibrated){
                 console.log('range request sent');
                 state.dataSocket.send(JSON.stringify({
@@ -127,6 +135,9 @@ const commandStore = {
         },
         requestRangeBeforeCal(context, params){
             context.commit('REQUEST_RANGE_BEFORE_CAL', params);
+        },
+        confirmCal(context, params){
+            context.commit('CONFIRM_CAL', params);
         },
         requestCalibration(context, params){
             context.commit('REQUEST_CALIBRATION', params);
