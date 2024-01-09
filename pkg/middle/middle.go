@@ -599,6 +599,7 @@ func (m *Middle) CalibrateConfirm(request *pocket.RangeQuery) error {
 
 	m.dutcal = Cal2Meas(r.GetFrequency(), r.GetResult())
 
+	request.What = "thru" //let the user know what result we're sending back
 	request.Result = m.dutcal
 
 	return nil
