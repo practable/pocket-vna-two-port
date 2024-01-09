@@ -244,7 +244,10 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				Result: req,
 				Error:  err,
 			}
+		default:
+			log.Errorf("Uknown command type %s", request)
 		}
+
 	}()
 
 	select {
