@@ -568,6 +568,78 @@ SC:
 		}
 	}
 
+	mcs := pocket.RangeQuery{
+		Command: pocket.Command{Command: "mc"},
+		What:    "short",
+	}
+
+	message, err = json.Marshal(mcs)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+MCS:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break MCS
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var cr pocket.CustomResult
+			var rq pocket.RangeQuery
+
+			err := json.Unmarshal(m.Data, &cr)
+			assert.NoError(t, err)
+			log.Debugf("message: %s", string(m.Data))
+			log.Debugf("cr result: %+v", cr)
+
+			err = json.Unmarshal(m.Data, &rq)
+			assert.NoError(t, err)
+			log.Debugf("rq result: %+v", rq)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("MCS timeout")
+					break MCS
+				}
+				t.Log("MCS: heartbeat")
+				continue
+			}
+
+			cmd := cr.Command.(map[string]interface{})
+
+			assert.Equal(t, "mc", cmd["cmd"])
+			assert.Equal(t, "short", cmd["what"])
+
+			// cast to int to make human readable in assert error message
+			if cr.Message != "ok" {
+				t.Fatal("MCS wrong message")
+			}
+			t.Log("MCS test completed")
+			break MCS
+
+		}
+	}
+
 }
 
 func userChannelHandler(t *testing.T, toClient, fromClient chan reconws.WsMessage, ctx context.Context) func(w http.ResponseWriter, r *http.Request) {

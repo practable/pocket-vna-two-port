@@ -193,15 +193,21 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				req := request.(pocket.RangeQuery)
 				err := m.CalibrateMeasure(&req)
 				r <- Response{
-					Result: req,
-					Error:  err,
+					Result: pocket.CustomResult{
+						Message: "ok",
+						Command: req,
+					},
+					Error: err,
 				}
 			case "cc", "confirmcal":
 				req := request.(pocket.RangeQuery)
 				err := m.CalibrateConfirm(&req)
 				r <- Response{
-					Result: req,
-					Error:  err,
+					Result: pocket.CustomResult{
+						Message: "ok",
+						Command: req,
+					},
+					Error: err,
 				}
 			default:
 				log.Errorf("pkg/middle: Handle did not understand command %s in RangeQuery", rq.Command.Command)
