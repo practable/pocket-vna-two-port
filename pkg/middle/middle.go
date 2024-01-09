@@ -202,39 +202,6 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				log.Errorf("pkg/middle: Handle did not understand command %s in RangeQuery", rq.Command.Command)
 			}
 
-		case pocket.CalQuery:
-
-			rq := request.(pocket.CalQuery)
-
-			switch rq.Command.Command {
-
-			/*
-				case "sc", "setupcal":
-								req := request.(pocket.RangeQuery)
-								err := m.CalibrateSetup(&req)
-								r <- Response{
-									Result: req,
-									Error:  err,
-								}
-			*/
-
-			case "mc", "measurecal":
-				req := request.(pocket.RangeQuery)
-				err := m.CalibrateMeasure(&req)
-				r <- Response{
-					Result: req,
-					Error:  err,
-				}
-			case "cc", "confirmcal":
-				req := request.(pocket.RangeQuery)
-				err := m.CalibrateConfirm(&req)
-				r <- Response{
-					Result: req,
-					Error:  err,
-				}
-			default:
-				log.Errorf("pkg/middle: Handle did not understand command %s in CalQuery", rq.Command.Command)
-			}
 		case pocket.CalibratedRangeQuery:
 
 			req := request.(pocket.CalibratedRangeQuery)
