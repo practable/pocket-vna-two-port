@@ -95,9 +95,11 @@ func RunDirect(ctx context.Context, u string) {
 					fmt.Printf("\n%s\n", msg.Data)
 				}
 
+				log.Debugf("pkg/stream.RunDirect() received command %s", strings.ToLower(c.Command))
+
 				switch strings.ToLower(c.Command) {
 
-				case "rq", "rangequery", "rc", "rangecal":
+				case "rq", "rangequery", "rc", "rangecal", "sc", "setupcal", "mc", "measurecal", "cc", "confirmcal":
 
 					s := pocket.RangeQuery{}
 
@@ -313,7 +315,7 @@ func PipeWsToInterface(in chan reconws.WsMessage, out chan interface{}, ctx cont
 
 			switch strings.ToLower(c.Command) {
 
-			case "rq", "rangequery", "rc", "rangecal":
+			case "rq", "rangequery", "rc", "rangecal", "sc", "setupcal", "mc", "mesaurecal", "cc", "confirmcal":
 
 				s := pocket.RangeQuery{}
 

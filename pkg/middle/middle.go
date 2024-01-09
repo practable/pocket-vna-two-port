@@ -141,6 +141,8 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 	// but hopefully small impact compared to whole system hanging
 	go func() {
 
+		// add any new commands to pkg/stream.PipeWsToInterface() or else they'll be silently dropped
+		// before getting to this handler
 		switch request.(type) {
 
 		case pocket.ReasonableFrequencyRange:
@@ -181,8 +183,11 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				req := request.(pocket.RangeQuery)
 				err := m.CalibrateSetup(&req)
 				r <- Response{
-					Result: req,
-					Error:  err,
+					Result: pocket.CustomResult{
+						Message: "ok",
+						Command: req,
+					},
+					Error: err,
 				}
 			case "mc", "measurecal":
 				req := request.(pocket.RangeQuery)
