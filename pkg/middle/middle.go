@@ -203,11 +203,8 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 				req := request.(pocket.RangeQuery)
 				err := m.CalibrateConfirm(&req)
 				r <- Response{
-					Result: pocket.CustomResult{
-						Message: "ok",
-						Command: req,
-					},
-					Error: err,
+					Result: req,
+					Error:  err,
 				}
 			default:
 				log.Errorf("pkg/middle: Handle did not understand command %s in RangeQuery", rq.Command.Command)
@@ -240,6 +237,10 @@ func (m *Middle) Handle(ctx context.Context, request interface{}) (response inte
 func (m *Middle) MeasureRangeCalibrated(request *pocket.CalibratedRangeQuery) error {
 
 	if m.rq == nil {
+		return errors.New("not calibrated yet")
+	}
+
+	if !m.CalibrationOK() {
 		return errors.New("not calibrated yet")
 	}
 
@@ -362,6 +363,13 @@ func (m *Middle) CalibrateRange(request *pocket.RangeQuery) error {
 	m.dutcal = Cal2Meas(r.GetFrequency(), r.GetResult())
 
 	request.Result = m.dutcal
+
+	// set calibration ok
+	m.ready.Setup = true
+	m.ready.Short = true
+	m.ready.Open = true
+	m.ready.Load = true
+	m.ready.Thru = true
 
 	return nil
 
@@ -541,6 +549,10 @@ func (m *Middle) CalibrateMeasure(request *pocket.RangeQuery) error {
 
 	return nil
 
+}
+
+func (m *Middle) CalibrationOK() bool {
+	return m.ready.Setup && m.ready.Short && m.ready.Open && m.ready.Load && m.ready.Thru
 }
 
 func (m *Middle) CalibrateConfirm(request *pocket.RangeQuery) error {
