@@ -126,6 +126,13 @@ type Command struct {
 	Command string `json:"cmd,omitEmpty"`
 }
 
+//CalQuery is for sc, mc, cc
+type CalQuery struct {
+	Command
+	Result []SParam `json:"result,omitEmpty"`
+	What   string   `json:"what"`
+}
+
 type RangeQuery struct {
 	Command
 	Range           Range        `json:"range"`
