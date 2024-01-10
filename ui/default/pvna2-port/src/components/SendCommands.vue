@@ -103,7 +103,7 @@
         <!-- CALIBRATION COMMANDS-->
         <div v-if='mode == "single"' class="input-group" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text" id="basic-addon1">Frequency</span>
-          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
+          <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
           <span class="input-group-text" id="basic-addon1">MHz</span>
           <button id="request" type='button' class="btn btn-success btn-lg" @click="singleFreqCommand">Request</button>
         </div>
@@ -111,13 +111,13 @@
         <div v-else @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
             <div class="input-group">
                 <span class="input-group-text" id="span-start-1">Start</span>
-                <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="span-start-1" id="freq" v-model="frequency" @change="setCalibrated(false)">
+                <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="span-start-1" id="freq" v-model="frequency" @change="setCalibrated(false)">
                 <span class="input-group-text" id="span-end-1">MHz</span>
             </div>
 
             <div class="input-group">
                 <span class="input-group-text" id="span-start-2">End&nbsp;</span>
-                <input type="number" :class="(parseFloat(frequency_end) >= 0 && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="span-start-2" id="freq_end" v-model="frequency_end" @change="setCalibrated(false)">     
+                <input type="number" :class="(parseFloat(frequency_end) >= minFrequency && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="span-start-2" id="freq_end" v-model="frequency_end" @change="setCalibrated(false)">     
                 <span class="input-group-text" id="span-end-2">MHz</span>
             </div>
           
@@ -141,7 +141,7 @@
          <!-- MEASUREMENT COMMANDS-->
         <div v-if='mode == "single"' class="input-group mb-2" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text" id="basic-addon1">Frequency</span>
-          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
+          <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
           <span class="input-group-text" id="basic-addon1">MHz</span>
           <button id="request" type='button' class="btn btn-success btn-lg" @click="singleFreqCommand">Request</button>
         </div>
@@ -149,13 +149,13 @@
         <div v-else @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
             <div class="input-group">
                 <span class="input-group-text" id="span-start-measure-1">Start</span>
-                <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="span-start-measure-1" id="freq" :value="frequency" disabled>
+                <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="span-start-measure-1" id="freq" :value="frequency" disabled>
                 <span class="input-group-text" id="span-end-measure-1">MHz</span>
             </div>
 
             <div class="input-group mb-2">
                 <span class="input-group-text" id="span-start-measure-2">End&nbsp;</span>
-                <input type="number" :class="(parseFloat(frequency_end) >= 0 && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="span-start-measure-2" id="freq_end" :value="frequency_end" disabled>     
+                <input type="number" :class="(parseFloat(frequency_end) >= minFrequency && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="span-start-measure-2" id="freq_end" :value="frequency_end" disabled>     
                 <span class="input-group-text" id="span-end-measure-2">MHz</span>
             </div>
           
@@ -310,7 +310,7 @@ export default {
         frequency_end: 4.0, //MHz
         min_data_points: 2,
         max_data_points: 201,
-        minFrequency: 0,
+        minFrequency: 0.5,
         maxFrequency: 4000.0, //MHz
         units: 1E6,
         s11: true,
