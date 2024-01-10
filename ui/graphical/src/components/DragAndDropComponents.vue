@@ -211,13 +211,13 @@ export default {
 }
 
 #port1{
-    top: 57%;
-    left: 65%;
+    top: 55%;
+    left: 52%;
 }
 
 #port2{
-    top: 22%;
-    left: 65%;
+    top: 20%;
+    left: 52%;
 }
 
 .dropbox-hidden{

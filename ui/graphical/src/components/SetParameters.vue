@@ -66,13 +66,13 @@
         <!-- CALIBRATION COMMANDS-->
         <div class="input-group mb-2" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text txt-primary col-sm-3">Start</span>
-          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency" @change='setCalibrated(false); setVerified(false); setParametersSet(false)' :disabled="isDisabled">
+          <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency" @change='setCalibrated(false); setVerified(false); setParametersSet(false)' :disabled="isDisabled">
           <span class="input-group-text txt-primary" id="basic-addon1">MHz</span>
         </div>
 
         <div class="input-group" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text txt-primary col-sm-3" id="basic-addon1">End</span>
-          <input type="number" :class="(parseFloat(frequency_end) >= 0 && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq_end" v-model="frequency_end" @change='setCalibrated(false); setVerified(false); setParametersSet(false)' :disabled="isDisabled">     
+          <input type="number" :class="(parseFloat(frequency_end) >= minFrequency && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq_end" v-model="frequency_end" @change='setCalibrated(false); setVerified(false); setParametersSet(false)' :disabled="isDisabled">     
           <span class="input-group-text txt-primary" id="basic-addon1">MHz</span>
         </div>
     </div>
@@ -149,7 +149,7 @@ export default {
             frequency_points: 20,
             frequency: 1.0,   //MHz
             frequency_end: 4.0, //MHz
-            minFrequency: 0,
+            minFrequency: 0.5,
             maxFrequency: 4000.0, //MHz
             units: 1E6, //MHz
             avgCounts: 1,
