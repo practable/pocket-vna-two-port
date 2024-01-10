@@ -345,19 +345,23 @@ export default {
                   //_this.$store.dispatch('setCalibrated', false);
                 } 
                 // new responses to commands for the multi-step calibration procedure
+                // set calibration parameters response
                 else if(response.message == 'ok' && response.Command.cmd == 'sc'){
-                  this.previous_phase = null;
+                  //this.previous_phase = null;
                   console.log(response);
                   _this.$store.dispatch('setParametersSet', true);
                   //_this.$store.dispatch('setShowScanningModal', false);
                 }
-                //PLACEHOLDER FOR RESPONSE TO NEW SET PARAMETERS COMMAND
-                else if(response.cmd == '_SET'){
-                  //this.previous_phase = null;
+                // response after each step of scanning a standard
+                else if(response.message == 'ok' && response.Command.cmd == 'mc'){
                   console.log(response);
-                  _this.$store.dispatch('setParametersSet', true);
-                  //_this.$store.dispatch('setResponse', response);
-                  //_this.$store.dispatch('setShowScanningModal', false);
+                  _this.$store.dispatch('setScanned', response.Command.what);
+                  _this.$store.dispatch('setShowScanningModal', false);
+                }
+                // response after confirm cal (cc) command - returns calibrated thru data
+                else if(response.cmd == 'cc'){
+                  console.log(response);
+                  _this.$store.dispatch('setCalibrated', true);
                 }
                 else {
                   this.previous_phase = null;

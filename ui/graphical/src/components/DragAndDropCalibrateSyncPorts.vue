@@ -145,11 +145,12 @@ export default {
             'getShowCalibrationModal',
             'getSyncPorts',
             'getShowScanningModal',
-            'getParametersSet'
+            'getParametersSet',
+            'getCalibrationPorts'
         ]),
         ready_to_calibrate(){
             let ready = true;
-            this.calibration.forEach((connection) => {
+            this.getCalibrationPorts.forEach((connection) => {
                 if(connection.required){
                     if(!connection.saved){
                         ready = false;
@@ -159,41 +160,41 @@ export default {
             return ready;
         },
         getShortSaved(){
-            if(this.calibration[0].saved){
+            if(this.getCalibrationPorts[0].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getOpenSaved(){
-            if(this.calibration[1].saved){
+            if(this.getCalibrationPorts[1].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getLoadSaved(){
-            if(this.calibration[2].saved){
+            if(this.getCalibrationPorts[2].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getThruSaved(){
-            if(this.calibration[3].saved){
+            if(this.getCalibrationPorts[3].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getShowSave(){
-            if((this.port1 == 'short' || this.port2 == 'short') && this.calibration[0].scanned){
+            if((this.port1 == 'short' || this.port2 == 'short') && this.getCalibrationPorts[0].scanned){
                 return true;
-            } else if((this.port1 == 'open' || this.port2 == 'open') && this.calibration[1].scanned){
+            } else if((this.port1 == 'open' || this.port2 == 'open') && this.getCalibrationPorts[1].scanned){
                 return true;
-            } else if((this.port1 == 'load' || this.port2 == 'load') && this.calibration[2].scanned){
+            } else if((this.port1 == 'load' || this.port2 == 'load') && this.getCalibrationPorts[2].scanned){
                 return true;
-            }  else if((this.port1 == 'thru' || this.port2 == 'thru') && this.calibration[3].scanned){
+            }  else if((this.port1 == 'thru' || this.port2 == 'thru') && this.getCalibrationPorts[3].scanned){
                 return true;
             } 
             else {
@@ -219,7 +220,7 @@ export default {
             'setShowScanningModal'
         ]),
         scan(){
-            this.calibration.forEach((connection) => {
+            this.getCalibrationPorts.forEach((connection) => {
                 if(connection.type == this.port1 || connection.type == this.port2){
                     connection.scanned = true;
                 }
@@ -237,7 +238,7 @@ export default {
             this.$store.dispatch('setShowScanningModal', true);
         }, 
         save(){
-            this.calibration.forEach((connection) => {
+            this.getCalibrationPorts.forEach((connection) => {
                 if(connection.type == this.port1 || connection.type == this.port2){
                     if(connection.scanned){
                         connection.saved = true;

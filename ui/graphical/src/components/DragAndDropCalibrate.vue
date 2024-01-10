@@ -140,15 +140,6 @@ export default {
                 {type: 'load', img: "Load"},
                 {type: 'thru', img: "Thru"},
             ],
-            calibration: [
-                {type: 'short', port:"1", required: true, scanned: false, saved: false},
-                {type: 'open', port:"1", required: true, scanned: false, saved: false},
-                {type: 'load', port:"1", required: true, scanned: false, saved: false},
-                {type: 'thru', port:"1", required: true, scanned: false, saved: false},
-                {type: 'short', port:"2", required: true, scanned: false, saved: false},
-                {type: 'open', port:"2", required: true, scanned: false, saved: false},
-                {type: 'load', port:"2", required: true, scanned: false, saved: false}
-            ],
             port1: '',
             port2: '',
 
@@ -160,11 +151,12 @@ export default {
             'getShowCalibrationModal',
             'getSyncPorts',
             'getShowScanningModal',
-            'getParametersSet'
+            'getParametersSet',
+            'getCalibrationPorts'
         ]),
         ready_to_calibrate(){
             let ready = true;
-            this.calibration.forEach((connection) => {
+            this.getCalibrationPorts.forEach((connection) => {
                 if(connection.required){
                     if(!connection.saved){
                         ready = false;
@@ -174,68 +166,68 @@ export default {
             return ready;
         },
         getShortOneSaved(){
-            if(this.calibration[0].saved){
+            if(this.getCalibrationPorts[0].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getShortTwoSaved(){
-            if(this.calibration[4].saved){
+            if(this.getCalibrationPorts[4].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getOpenOneSaved(){
-            if(this.calibration[1].saved){
+            if(this.getCalibrationPorts[1].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getOpenTwoSaved(){
-            if(this.calibration[5].saved){
+            if(this.getCalibrationPorts[5].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getLoadOneSaved(){
-            if(this.calibration[2].saved){
+            if(this.getCalibrationPorts[2].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getLoadTwoSaved(){
-            if(this.calibration[6].saved){
+            if(this.getCalibrationPorts[6].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getThruSaved(){
-            if(this.calibration[3].saved){
+            if(this.getCalibrationPorts[3].saved){
                 return true;
             } else{
                 return false;
             }
         },
         getShowSave(){
-            if(this.port1 == 'short' && this.calibration[0].scanned){
+            if(this.port1 == 'short' && this.getCalibrationPorts[0].scanned){
                 return true;
-            } else if(this.port1 == 'open' && this.calibration[1].scanned){
+            } else if(this.port1 == 'open' && this.getCalibrationPorts[1].scanned){
                 return true;
-            } else if(this.port1 == 'load' && this.calibration[2].scanned){
+            } else if(this.port1 == 'load' && this.getCalibrationPorts[2].scanned){
                 return true;
-            } else if(this.port2 == 'short' && this.calibration[4].scanned){
+            } else if(this.port2 == 'short' && this.getCalibrationPorts[4].scanned){
                 return true;
-            } else if(this.port2 == 'open' && this.calibration[5].scanned){
+            } else if(this.port2 == 'open' && this.getCalibrationPorts[5].scanned){
                 return true;
-            } else if(this.port2 == 'load' && this.calibration[6].scanned){
+            } else if(this.port2 == 'load' && this.getCalibrationPorts[6].scanned){
                 return true;
-            } else if((this.port1 == 'thru' || this.port2 == 'thru') && this.calibration[3].scanned){
+            } else if((this.port1 == 'thru' || this.port2 == 'thru') && this.getCalibrationPorts[3].scanned){
                 return true;
             } 
             else {
@@ -261,18 +253,6 @@ export default {
             'setShowScanningModal'
         ]),
         scan(){
-            // thru is between port 1 and 2 so if either are connected to thru then scan thru
-            if(this.port1 == 'thru' || this.port2 == 'thru'){
-                this.calibration[3].scanned = true;
-            } else{
-                this.calibration.forEach((connection) => {
-                    if((connection.port == "1" && connection.type == this.port1) || (connection.port == "2" && connection.type == this.port2)){
-                        connection.scanned = true;
-                    }
-                });
-            }
-
-            // ACTUALLY SEND A COMMAND HERE TO RECEIVE CURRENT DATA
             let params = {
                 t:dayjs().unix(),
                 avg:Number(this.calibrationState.avg),
@@ -286,11 +266,11 @@ export default {
         save(){
             // thru is between port 1 and 2 so if either are connected to thru then save thru
             if(this.port1 == 'thru' || this.port2 == 'thru'){
-                if(this.calibration[3].scanned){
-                    this.calibration[3].saved = true;
+                if(this.getCalibrationPorts[3].scanned){
+                    this.getCalibrationPorts[3].saved = true;
                 }
             } else {
-                this.calibration.forEach((connection) => {
+                this.getCalibrationPorts.forEach((connection) => {
                     if((connection.port == "1" && connection.type == this.port1) || (connection.port == "2" && connection.type == this.port2)){
                         if(connection.scanned){
                             connection.saved = true;

@@ -10,6 +10,15 @@ const uiStore = {
         sparams: {'s11':true, 's12': true, 's21':true, 's22':true},       //which params are allowed on the UI
         calibration_state: {sparam:{s11:true, s12:true, s21:true, s22: true}, islog:false, avg: 1, size: 20, range:{start: 1000000, end: 4000000}},        //set by SetParameters.vue and then read and displayed in other cal, verify and measure tabs
         config_json: '',
+        calibrationPorts: [
+            {type: 'short', port:"1", required: true, scanned: false, saved: false},
+            {type: 'open', port:"1", required: true, scanned: false, saved: false},
+            {type: 'load', port:"1", required: true, scanned: false, saved: false},
+            {type: 'thru', port:"1", required: true, scanned: false, saved: false},
+            {type: 'short', port:"2", required: true, scanned: false, saved: false},
+            {type: 'open', port:"2", required: true, scanned: false, saved: false},
+            {type: 'load', port:"2", required: true, scanned: false, saved: false}
+        ],
 
        }),
        mutations:{
@@ -33,7 +42,14 @@ const uiStore = {
         },
         SET_DUT(state, dut){
             state.dut_selected = dut;
-        }          
+        },
+        SET_SCANNED(state, what){
+            state.calibrationPorts.forEach((connection) => {
+                if(connection.type == what){
+                    connection.scanned = true;
+                }
+            });
+        }     
 
        },
        actions:{
@@ -57,6 +73,9 @@ const uiStore = {
         },
         setDUT(context, dut){
             context.commit('SET_DUT', dut);
+        },
+        setScanned(context, what){
+            context.commit('SET_SCANNED', what);
         }
 
 
@@ -92,6 +111,9 @@ const uiStore = {
         },
         getDUT(state){
             return state.dut_selected;
+        },
+        getCalibrationPorts(state){
+            return state.calibrationPorts;
         }
           
          
