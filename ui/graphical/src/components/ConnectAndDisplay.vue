@@ -337,7 +337,6 @@ export default {
                   _this.$store.dispatch('setCalibrated', true);
                   _this.$store.dispatch('setShowCalibrationModal', false);
                 } 
-                // DOES NOT HAVE THE UI FIX, BECAUSE FIRMWARE IS NOW FIXED.
                 else if(response.cmd == 'crq'){
                   this.previous_phase = null;
                   console.log(response);
@@ -345,12 +344,12 @@ export default {
                   _this.$store.dispatch('setShowRequestModal', false);
                   //_this.$store.dispatch('setCalibrated', false);
                 } 
-                //PLACEHOLDER FOR NEW FIRMWARE COMMAND RECEIVED AFTER SCANNING PORTS WITH CAL STANDARDS
-                else if(response.cmd == '_SCAN'){
+                // new responses to commands for the multi-step calibration procedure
+                else if(response.message == 'ok' && response.Command.cmd == 'sc'){
                   this.previous_phase = null;
                   console.log(response);
-                  _this.$store.dispatch('setResponse', response);
-                  _this.$store.dispatch('setShowScanningModal', false);
+                  _this.$store.dispatch('setParametersSet', true);
+                  //_this.$store.dispatch('setShowScanningModal', false);
                 }
                 //PLACEHOLDER FOR RESPONSE TO NEW SET PARAMETERS COMMAND
                 else if(response.cmd == '_SET'){
