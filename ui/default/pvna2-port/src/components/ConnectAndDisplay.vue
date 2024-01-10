@@ -233,7 +233,6 @@ export default {
         previous_phase: null,
         unit: 1E6,    //frequency in MHz
 
-        first_response: true,       //TEMPORARY for dealing with measurement issue in pocket VNA
     }
   },
   computed:{
@@ -343,28 +342,8 @@ export default {
                 else if(response.cmd == 'crq'){
                   this.previous_phase = null;
                   console.log(response);
-                  
-                  // THIS WILL CHANGE AFTER FIRMWARE FIX TO NOT RUN TWICE
-                  //if this is the first reponse then resend the measurement command
-                  if(_this.first_response){
-
-                    _this.first_response = false;
-
-                    let params = {
-                        avg:1,
-                        sparam:{s11:true,s12:true,s21:true,s22:true},
-                        what: _this.getDUT
-                    }
-
-                    _this.$store.dispatch('requestRangeAfterCal', params);
-                  } 
-                  //if it is the second reponse then display data as expected
-                  else{
-                    _this.first_response = true;
-
-                    _this.$store.dispatch('setResponse', response);
-                    _this.$store.dispatch('setShowRequestModal', false);
-                  }
+                  _this.$store.dispatch('setResponse', response);
+                  _this.$store.dispatch('setShowRequestModal', false);
 
                 } 
                 else {
