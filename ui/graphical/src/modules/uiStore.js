@@ -4,9 +4,11 @@
 const uiStore = {
     state: () => ({
         isDraggable: true,
+        showParametersSetModal: false,
         showScanningModal: false,
         showCalibrationModal: false,
         showRequestModal: false,
+        showVerifiedModal: false,
         sparams: {'s11':true, 's12': true, 's21':true, 's22':true},       //which params are allowed on the UI
         calibration_state: {sparam:{s11:true, s12:true, s21:true, s22: true}, islog:false, avg: 1, size: 20, range:{start: 1000000, end: 4000000}},        //set by SetParameters.vue and then read and displayed in other cal, verify and measure tabs
         config_json: '',
@@ -25,6 +27,9 @@ const uiStore = {
         SET_DRAGGABLE(state, draggable){
             state.isDraggable = draggable;
          },
+         SET_SHOW_PARAMETERS_SET_MODAL(state, set){
+            state.showParametersSetModal = set;
+        },
          SET_SHOW_SCANNING_MODAL(state, set){
             state.showScanningModal = set;
         },
@@ -33,6 +38,9 @@ const uiStore = {
          },
          SET_SHOW_REQUEST_MODAL(state, set){
             state.showRequestModal = set;
+        },
+        SET_SHOW_VERIFIED_MODAL(state, set){
+            state.showVerifiedModal = set;
         },
         SET_CONFIG_JSON(state, json){
             state.config_json = json;
@@ -56,6 +64,9 @@ const uiStore = {
         setDraggable(context, draggable){
             context.commit('SET_DRAGGABLE', draggable);
         },
+        setShowParametersSetModal(context, set){
+            context.commit('SET_SHOW_PARAMETERS_SET_MODAL', set);
+        },
         setShowScanningModal(context, set){
             context.commit('SET_SHOW_SCANNING_MODAL', set);
         },
@@ -64,6 +75,9 @@ const uiStore = {
         },
         setShowRequestModal(context, set){
             context.commit('SET_SHOW_REQUEST_MODAL', set);
+        },
+        setShowVerifiedModal(context, set){
+            context.commit('SET_SHOW_VERIFIED_MODAL', set);
         },
         setConfigJSON(context, json){
             context.commit('SET_CONFIG_JSON', json);
@@ -84,6 +98,9 @@ const uiStore = {
         getDraggable(state){
             return state.isDraggable;
         },
+        getShowParametersSetModal(state){
+            return state.showParametersSetModal;
+        },
         getShowScanningModal(state){
             return state.showScanningModal;
         },
@@ -92,6 +109,9 @@ const uiStore = {
         },
         getShowRequestModal(state){
             return state.showRequestModal;
+        },
+        getShowVerifiedModal(state){
+            return state.showVerifiedModal;
         },
         getConfigJSON(state){
             return state.config_json;

@@ -350,7 +350,7 @@ export default {
                   //this.previous_phase = null;
                   console.log(response);
                   _this.$store.dispatch('setParametersSet', true);
-                  //_this.$store.dispatch('setShowScanningModal', false);
+                  _this.$store.dispatch('setShowParametersSetModal', true);
                 }
                 // response after each step of scanning a standard
                 else if(response.message == 'ok' && response.Command.cmd == 'mc'){
@@ -362,6 +362,7 @@ export default {
                 else if(response.cmd == 'cc'){
                   console.log(response);
                   _this.$store.dispatch('setCalibrated', true);
+                  _this.$store.dispatch('setShowCalibrationModal', true);
                 }
                 else {
                   this.previous_phase = null;

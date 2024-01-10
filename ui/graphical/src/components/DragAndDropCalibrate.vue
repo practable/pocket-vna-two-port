@@ -50,18 +50,18 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header" style="background-color: #ccc">
-                <h5 class="modal-title">Calibrating Pocket VNA</h5>
+                <h5 class="modal-title">Pocket VNA calibration complete</h5>
                 </div>
                 <div class="modal-body">
                 <div class='d-flex row align-items-center'>
-                    <div class='col-2'>
-                    <div class="spinner-border text-primary text-center" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+                    <div class='col-2' id="reveal-tick">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="green" class="bi bi-check-lg" viewBox="0 0 16 16">
+                            <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+                        </svg>
                     </div>
                     <div class='col-10'>
-                    <p> Please wait for the pocket VNA to calibrate.</p>
-                    <p>This could take around 30 seconds.</p>
+                    <p> You have correctly calibrated the Pocket VNA.</p>
+                    <p>Please move on to the next tab, 3) Verification</p>
                     </div>
                 </div>
                 </div>
@@ -255,8 +255,8 @@ export default {
         scan(){
             let params = {
                 t:dayjs().unix(),
-                avg:Number(this.calibrationState.avg),
-                sparam:this.calibrationState.sparam,
+                // avg:Number(this.calibrationState.avg),
+                // sparam:this.calibrationState.sparam,
                 what: this.port1 != '' ? this.port1 : this.port2  
             }
 
@@ -282,8 +282,8 @@ export default {
         confirmCal(){
             let params = {
                 t:dayjs().unix(),
-                avg:Number(this.calibrationState.avg),
-                sparam:this.calibrationState.sparam,
+                // avg:Number(this.calibrationState.avg),
+                // sparam:this.calibrationState.sparam,
             }
 
             this.$store.dispatch('confirmCal', params);

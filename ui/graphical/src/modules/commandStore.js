@@ -7,7 +7,8 @@ const commandStore = {
         isParametersSet: false,
         isCalibrated: false,     //set to false before deploying.
         isVerified: false,      //set to false before deploying
-        syncPorts: true,        //for calibration in particular, should dragging a standard onto a port then add that standard to both ports - calibration in the hardware does both at once
+        
+        syncPorts: true,        //for calibration in particular, should dragging a standard onto a port then add that standard to both ports - calibration in the hardware does both at once so defaults to true
 
        }),
        mutations:{
@@ -52,23 +53,23 @@ const commandStore = {
         REQUEST_RANGE_BEFORE_CAL(state, params){
             console.log(params);
             state.dataSocket.send(JSON.stringify({
-                "id": params.what,
+                //"id": params.what,
                 "t": params.t,
                 "cmd":"mc",      
                 "what": params.what,
-                "avg":params.avg,
-                "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22} 
+                //"avg":params.avg,
+                //"sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22} 
             }));
 
         },
         CONFIRM_CAL(state, params){
             console.log(params);
             state.dataSocket.send(JSON.stringify({
-                "id": params.t,
+                //"id": params.t,
                 "t": params.t,
                 "cmd":"cc",      
-                "avg":params.avg,
-                "sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22} 
+                //"avg":params.avg,
+                //"sparam":{"S11":params.sparam.s11,"S12":params.sparam.s12,"S21":params.sparam.s21,"S22":params.sparam.s22} 
             }));
 
         },

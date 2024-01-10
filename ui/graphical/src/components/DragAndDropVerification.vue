@@ -24,7 +24,33 @@
         </div>
 
         
-
+        <transition name='fade'>
+        <div v-if='getShowVerifiedModal' class="modal" id='modal-show' tabindex="-1">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #ccc">
+                <h5 class="modal-title">Pocket VNA calibration verified</h5>
+                </div>
+                <div class="modal-body">
+                <div class='d-flex row align-items-center'>
+                    <div class='col-2' id="reveal-tick">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="green" class="bi bi-check-lg" viewBox="0 0 16 16">
+                            <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+                        </svg>
+                    </div>
+                    <div class='col-10'>
+                    <p> You have verified the Pocket VNA calibration.</p>
+                    <p>Please move on to the next tab, 4) Measurement</p>
+                    </div>
+                </div>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="setShowVerifiedModal(false)">Close</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        </transition>
 
 
         <transition name='fade'>
@@ -32,14 +58,16 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header" style="background-color: #ccc">
-                <h5 class="modal-title">Verifying Measurement from Pocket VNA</h5>
+                <h5 class="modal-title">Requesting Measurement from Pocket VNA</h5>
                 </div>
                 <div class="modal-body">
                 <div class='d-flex row align-items-center'>
                     <div class='col-2'>
                     <div class="spinner-border text-primary text-center" role="status">
                         <span class="visually-hidden">Loading...</span>
-                    </div>disabled="isDisabled"
+                    </div>
+                    </div>
+                    <div class='col-10'>
                     <p> Please wait for the pocket VNA to measure.</p>
                     <p>This could take around 30 seconds.</p>
                     </div>
@@ -52,6 +80,7 @@
             </div>
         </div>
         </transition>
+
     </div>
 </div>
 
@@ -87,6 +116,7 @@ export default {
         ...mapGetters([
             'getCalibrated',
             'getShowRequestModal',
+            'getShowVerifiedModal',
             'getSyncPorts'
         ]),
         
@@ -103,7 +133,8 @@ export default {
     },
     methods:{
         ...mapActions([
-            'setShowRequestModal'
+            'setShowRequestModal',
+            'setShowVerifiedModal'
         ]),
         // Take a measurement of calibration standards to check the calibration process
         verify(){
@@ -112,6 +143,7 @@ export default {
         //Set the state as calibrated to allow measurements to be taken.
         useCalibration(){
             this.$store.dispatch('setVerified', true);
+            this.$store.dispatch('setShowVerifiedModal', true);
         },
       rangeFreqRequest(){
         //command structure: {"cmd":"crq","avg":1,"sparam":{"S11":true,"S12":false,"S21":false,"S22":false}}
