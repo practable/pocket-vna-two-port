@@ -37,8 +37,7 @@ const routes = [
 ]
 
 const router = createRouter({
-    history: createWebHistory(),   
-    base: process.env.VITE_BASE,  
+    history: createWebHistory(import.meta.env.VITE_BASE),
     routes,
 })
 
