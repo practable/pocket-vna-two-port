@@ -153,7 +153,7 @@
               <th v-if='getResponse.sparam.s22' key="s22i" scope="col">S22/Imag</th>
           </tr>
         </thead>
-        <tr v-for="(row, index) in getResponse.result" :id="index" :key="index">
+        <tr v-for="(row, index) in getResponse.result" :id="'row' + index" :key="index">
             <td>{{ (getFrequencies[index]/unit).toFixed(3)}}</td>
             <td v-if='getResponse.sparam.s11'>{{row.s11.real.toPrecision(3)}}</td>
             <td v-if='getResponse.sparam.s11'>{{row.s11.imag.toPrecision(3)}}</td>
