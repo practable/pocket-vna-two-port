@@ -186,7 +186,7 @@
               <th v-if='getResponse.sparam.s22' key="s22up" scope="col">S22/unwrapped phase[deg]</th>
           </tr>
         </thead>
-        <tr v-for="(row, index) in getResultDB" :id="index" :key="index">
+        <tr v-for="(row, index) in getResultDB" :id="'row' + index" :key="index">
             <td>{{ (getFrequencies[index]/unit).toFixed(3)}}</td>
             <td v-if='getResponse.sparam.s11'>{{row.s11.dB.toPrecision(3)}}</td>
             <td v-if='getResponse.sparam.s11'>{{row.s11.phase.toFixed(0)}}</td>

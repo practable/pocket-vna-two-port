@@ -31,7 +31,7 @@ export function dropComponent(event){
     if(event.target.childNodes.length > 0){
       draggedZone.appendChild(event.target.childNodes[0]);
     }
-    //console.log(draggedID);
+    console.log(draggedID);
     droppedElement.appendChild(document.getElementById(draggedID));
   } 
   else if(droppedElement){
@@ -39,7 +39,7 @@ export function dropComponent(event){
     while(element.parentNode){
       element = element.parentNode;
       if(element.classList.contains('drop-area')){
-        //console.log(element.childNodes[0]);
+        console.log(element.childNodes[0]);
         draggedZone.appendChild(element.childNodes[0]);
         element.appendChild(document.getElementById(draggedID));
         
