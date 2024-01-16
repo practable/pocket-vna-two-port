@@ -19,34 +19,34 @@
   <div class='row'>
 
      <!-- If a DUT (either 1,2,3,4) are connected then show the equivalent image and this connects both ports -->
-    <div v-if="port1.type == 'dut1' || port2.type == 'dut1'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+    <div v-if="port1.type == 'dut1' || port2.type == 'dut1'" class='col-sm-12 pvna' @dragleave='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
         <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut1.png' alt='pocket-vna-connected'>
       </div>
 
-      <div v-else-if="port1.type == 'dut2' || port2.type == 'dut2'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+      <div v-else-if="port1.type == 'dut2' || port2.type == 'dut2'" class='col-sm-12 pvna' @dragleave='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
         <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut2.png' alt='pocket-vna-connected'>
       </div>
 
-      <div v-else-if="port1.type == 'dut3' || port2.type == 'dut3'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+      <div v-else-if="port1.type == 'dut3' || port2.type == 'dut3'" class='col-sm-12 pvna' @dragleave='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
         <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut3.png' alt='pocket-vna-connected'>
       </div>
 
-      <div v-else-if="port1.type == 'dut4' || port2.type == 'dut4'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+      <div v-else-if="port1.type == 'dut4' || port2.type == 'dut4'" class='col-sm-12 pvna' @dragleave='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
         <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-dut4.png' alt='pocket-vna-connected'>
       </div>
 
       <!-- If the thru is connected then similarly connect both and show image -->
-      <div v-else-if="port1.type == 'thru' || port2.type == 'thru'" class='col-sm-12 pvna' @mousedown='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
+      <div v-else-if="port1.type == 'thru' || port2.type == 'thru'" class='col-sm-12 pvna' @dragleave='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
         <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-thru.png' alt='pocket-vna-connected'>
       </div>
 
       <!-- Else check if cal standards are shown in either port separately -->
-      <div v-else-if="port1.type == 'short' || port1.type == 'open' || port1.type == 'load'" class='col-sm-12 pvna' @mousedown='removePort1' @touchstart="removePort1">
+      <div v-else-if="port1.type == 'short' || port1.type == 'open' || port1.type == 'load'" class='col-sm-12 pvna' @dragleave='removePort1' @touchstart="removePort1">
         <img v-if="!syncPorts" class='pvna-img' id='pvna-connected-dut-cal-image' src='/images/pvna-connected-port-1-cal.png' alt='pocket-vna-connected'>
         <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal.png' alt='pocket-vna-connected'>
       </div>
 
-      <div v-else-if="port2.type == 'short' || port2.type == 'open' || port2.type == 'load'" class='col-sm-12 pvna' @mousedown='removePort2' @touchstart="removePort2">
+      <div v-else-if="port2.type == 'short' || port2.type == 'open' || port2.type == 'load'" class='col-sm-12 pvna' @dragleave='removePort2' @touchstart="removePort2">
         <img v-if="!syncPorts" class='pvna-img' id='pvna-connected-dut-cal-image' src='/images/pvna-connected-port-2-cal.png' alt='pocket-vna-connected'>
         <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal.png' alt='pocket-vna-connected'>
       </div>
