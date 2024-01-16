@@ -57,6 +57,12 @@ const uiStore = {
                     connection.scanned = true;
                 }
             });
+        },
+        RESET_CALIBRATION_PORTS(state){
+            state.calibrationPorts.forEach(connection => {
+                connection.scanned = false;
+                connection.saved = false;
+            })
         }     
 
        },
@@ -90,6 +96,9 @@ const uiStore = {
         },
         setScanned(context, what){
             context.commit('SET_SCANNED', what);
+        },
+        resetCalibrationPorts(context){
+            context.commit('RESET_CALIBRATION_PORTS');
         }
 
 
