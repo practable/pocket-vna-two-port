@@ -4,9 +4,9 @@
 const commandStore = {
     state: () => ({
         dataSocket: null,
-        isParametersSet: true,
-        isCalibrated: true,     //set to false before deploying.
-        isVerified: true,      //set to false before deploying
+        isParametersSet: false,
+        isCalibrated: false,     //set to false before deploying.
+        isVerified: false,      //set to false before deploying
         
         syncPorts: true,        //for calibration in particular, should dragging a standard onto a port then add that standard to both ports - calibration in the hardware does both at once so defaults to true
 
