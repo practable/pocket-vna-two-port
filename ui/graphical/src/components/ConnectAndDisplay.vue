@@ -364,6 +364,11 @@ export default {
                   _this.$store.dispatch('setCalibrated', true);
                   _this.$store.dispatch('setShowCalibrationModal', true);
                 }
+                //an error has occurred so save the error message and display the error modal
+                else if(response.message != 'ok'){
+                    _this.$store.dispatch('setErrorMessage', response.message);
+                    _this.$store.dispatch('setShowErrorModal', true);
+                }
                 else {
                   this.previous_phase = null;
                   console.log('response command not recognised');

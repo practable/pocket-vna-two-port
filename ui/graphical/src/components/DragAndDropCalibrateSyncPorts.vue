@@ -27,6 +27,7 @@
             <button id="scan" type='button' class="button-lg button-primary" @click='scan' :disabled="port1 === '' && port2 === ''">Scan</button>
             <button id="save_to_calibrate" type='button' class="button-lg button-secondary" @click='save' :disabled="!getShowSave">Save</button>
             <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="confirmCal" :disabled='!ready_to_calibrate'>Calibrate</button>
+            <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="confirmCal">Calibrate</button>
         </div>
 
         
@@ -89,6 +90,35 @@
         </div>
         </transition>
 
+        <transition name='fade'>
+        <div v-if='getShowErrorModal' class="modal" id='modal-show' tabindex="-1">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #ccc">
+                <h5 class="modal-title">Calibration incomplete</h5>
+                </div>
+                <div class="modal-body">
+                <div class='d-flex row align-items-center'>
+                    <div class='col-2' id="reveal-tick">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="red" class="bi bi-exclamation-octagon" viewBox="0 0 16 16">
+                            <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
+                            <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+                        </svg>
+                    </div>
+                    <div class='col-10'>
+                    <p> The calibration process is not complete, see the message below:</p>
+                    <p>{{ getErrorMessage }}</p>
+                    </div>
+                </div>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="setShowErrorModal(false)">Close</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        </transition>
+
     </div>
 
 </div>
@@ -140,7 +170,9 @@ export default {
             'getSyncPorts',
             'getShowScanningModal',
             'getParametersSet',
-            'getCalibrationPorts'
+            'getCalibrationPorts',
+            'getShowErrorModal',
+            'getErrorMessage'
         ]),
         ready_to_calibrate(){
             let ready = true;
@@ -211,7 +243,8 @@ export default {
             'setDraggable',
             'setCalibrated',
             'setShowCalibrationModal',
-            'setShowScanningModal'
+            'setShowScanningModal',
+            'setShowErrorModal'
         ]),
         scan(){
             let params = {

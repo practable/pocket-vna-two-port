@@ -9,6 +9,8 @@ const uiStore = {
         showCalibrationModal: false,
         showRequestModal: false,
         showVerifiedModal: false,
+        showErrorModal: false,
+        errorMessage: '',
         sparams: {'s11':true, 's12': true, 's21':true, 's22':true},       //which params are allowed on the UI
         calibration_state: {sparam:{s11:true, s12:true, s21:true, s22: true}, islog:false, avg: 1, size: 20, range:{start: 1000000, end: 4000000}},        //set by SetParameters.vue and then read and displayed in other cal, verify and measure tabs
         config_json: '',
@@ -63,6 +65,12 @@ const uiStore = {
                 connection.scanned = false;
                 connection.saved = false;
             })
+        },
+        SET_SHOW_ERROR_MODAL(state, set){
+            state.showErrorModal = set;
+        },
+        SET_ERROR_MESSAGE(state, message){
+            state.errorMessage = message;
         }     
 
        },
@@ -99,6 +107,12 @@ const uiStore = {
         },
         resetCalibrationPorts(context){
             context.commit('RESET_CALIBRATION_PORTS');
+        },
+        setShowErrorModal(context, set){
+            context.commit('SET_SHOW_ERROR_MODAL', set);
+        },
+        setErrorMessage(context, message){
+            context.commit('SET_ERROR_MESSAGE', message);
         }
 
 
@@ -143,6 +157,12 @@ const uiStore = {
         },
         getCalibrationPorts(state){
             return state.calibrationPorts;
+        },
+        getShowErrorModal(state){
+            return state.showErrorModal;
+        },
+        getErrorMessage(state){
+            return state.errorMessage;
         }
           
          
