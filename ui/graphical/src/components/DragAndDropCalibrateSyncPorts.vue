@@ -27,7 +27,6 @@
             <button id="scan" type='button' class="button-lg button-primary" @click='scan' :disabled="port1 === '' && port2 === ''">Scan</button>
             <button id="save_to_calibrate" type='button' class="button-lg button-secondary" @click='save' :disabled="!getShowSave">Save</button>
             <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="confirmCal" :disabled='!ready_to_calibrate'>Calibrate</button>
-            <button id="request_calibration" type='button' class="button-lg button-tertiary" @click="confirmCal">Calibrate</button>
         </div>
 
         
