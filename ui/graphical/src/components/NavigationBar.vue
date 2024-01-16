@@ -72,10 +72,11 @@ export default {
       getLabTitle(){
       let config = this.getConfigJSON;
       if(config.parameters != undefined){
+        let id = config.name;
         let title = config.parameters.find(parameters => {
         return parameters.for === "ui"
       })
-        return title.are[0].v;
+        return title.are[0].v + ' (' + id + ')';
       } 
       else {
         return '';
