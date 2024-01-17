@@ -490,6 +490,593 @@ CRQ:
 		}
 	}
 
+	// Test step-wise calibration
+
+	timeout = 10 * time.Second // only needs enough time for a single measurement
+
+	sc := pocket.RangeQuery{
+		Command:         pocket.Command{Command: "sc"},
+		Range:           pocket.Range{Start: 100000, End: 4000000},
+		LogDistribution: true,
+		Avg:             1,
+		Size:            2,
+	}
+
+	message, err = json.Marshal(sc)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+SC:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break SC
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var cr pocket.CustomResult
+			var rq pocket.RangeQuery
+
+			err := json.Unmarshal(m.Data, &cr)
+			assert.NoError(t, err)
+			log.Debugf("message: %s", string(m.Data))
+			log.Debugf("cr result: %+v", cr)
+
+			err = json.Unmarshal(m.Data, &rq)
+			assert.NoError(t, err)
+			log.Debugf("rq result: %+v", rq)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("SC timeout")
+					break SC
+				}
+				t.Log("SC: heartbeat")
+				continue
+			}
+
+			cmd := cr.Command.(map[string]interface{})
+
+			assert.Equal(t, "sc", cmd["cmd"])
+
+			// cast to int to make human readable in assert error message
+			if cr.Message != "ok" {
+				t.Fatal("SC wrong message")
+			}
+			t.Log("SC test completed")
+			break SC
+
+		}
+	}
+
+	mcs := pocket.RangeQuery{
+		Command: pocket.Command{Command: "mc"},
+		What:    "short",
+	}
+
+	message, err = json.Marshal(mcs)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+MCS:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break MCS
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var cr pocket.CustomResult
+			var rq pocket.RangeQuery
+
+			err := json.Unmarshal(m.Data, &cr)
+			assert.NoError(t, err)
+			log.Debugf("message: %s", string(m.Data))
+			log.Debugf("cr result: %+v", cr)
+
+			err = json.Unmarshal(m.Data, &rq)
+			assert.NoError(t, err)
+			log.Debugf("rq result: %+v", rq)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("MCS timeout")
+					break MCS
+				}
+				t.Log("MCS: heartbeat")
+				continue
+			}
+
+			cmd := cr.Command.(map[string]interface{})
+
+			assert.Equal(t, "mc", cmd["cmd"])
+			assert.Equal(t, "short", cmd["what"])
+
+			// cast to int to make human readable in assert error message
+			if cr.Message != "ok" {
+				t.Fatal("MCS wrong message")
+			}
+			t.Log("MCS test completed")
+			break MCS
+
+		}
+	}
+
+	mco := pocket.RangeQuery{
+		Command: pocket.Command{Command: "mc"},
+		What:    "open",
+	}
+
+	message, err = json.Marshal(mco)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+MCO:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break MCO
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var cr pocket.CustomResult
+			var rq pocket.RangeQuery
+
+			err := json.Unmarshal(m.Data, &cr)
+			assert.NoError(t, err)
+			log.Debugf("message: %s", string(m.Data))
+			log.Debugf("cr result: %+v", cr)
+
+			err = json.Unmarshal(m.Data, &rq)
+			assert.NoError(t, err)
+			log.Debugf("rq result: %+v", rq)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("MCO timeout")
+					break MCO
+				}
+				t.Log("MCO: heartbeat")
+				continue
+			}
+
+			cmd := cr.Command.(map[string]interface{})
+
+			assert.Equal(t, "mc", cmd["cmd"])
+			assert.Equal(t, "open", cmd["what"])
+
+			// cast to int to make human readable in assert error message
+			if cr.Message != "ok" {
+				t.Fatal("MCO wrong message")
+			}
+			t.Log("MCO test completed")
+			break MCO
+
+		}
+	}
+
+	mcl := pocket.RangeQuery{
+		Command: pocket.Command{Command: "mc"},
+		What:    "load",
+	}
+
+	message, err = json.Marshal(mcl)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+MCL:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break MCL
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var cr pocket.CustomResult
+			var rq pocket.RangeQuery
+
+			err := json.Unmarshal(m.Data, &cr)
+			assert.NoError(t, err)
+			log.Debugf("message: %s", string(m.Data))
+			log.Debugf("cr result: %+v", cr)
+
+			err = json.Unmarshal(m.Data, &rq)
+			assert.NoError(t, err)
+			log.Debugf("rq result: %+v", rq)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("MCL timeout")
+					break MCL
+				}
+				t.Log("MCL: heartbeat")
+				continue
+			}
+
+			cmd := cr.Command.(map[string]interface{})
+
+			assert.Equal(t, "mc", cmd["cmd"])
+			assert.Equal(t, "load", cmd["what"])
+
+			// cast to int to make human readable in assert error message
+			if cr.Message != "ok" {
+				t.Fatal("MCL wrong message")
+			}
+			t.Log("MCL test completed")
+			break MCL
+
+		}
+	}
+
+	// Try taking a calibrated measurement before we have finished doing the cal - must fial
+	// Test calibratedRangeQuery
+
+	crq = pocket.RangeQuery{
+		Command: pocket.Command{Command: "crq"},
+		Avg:     1,
+		Size:    2,
+		Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+		What:    "dut2",
+	}
+
+	message, err = json.Marshal(crq)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+BADCRQ:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break BADCRQ
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var crq pocket.CalibratedRangeQuery
+
+			err := json.Unmarshal(m.Data, &crq)
+
+			log.Debugf("rq result: %s", m.Data)
+
+			assert.NoError(t, err)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if crq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("BADCRQ timeout")
+					break BADCRQ
+				}
+				t.Log("BADCRQ: heartbeat")
+				continue
+			}
+
+			// check has failed
+			var cr pocket.CustomResult
+			err = json.Unmarshal(m.Data, &cr)
+			assert.NoError(t, err)
+			log.Debugf("message: %s", string(m.Data))
+			log.Debugf("cr result: %+v", cr)
+
+			//TODO check command
+			cmd := cr.Command.(map[string]interface{})
+			assert.Equal(t, "crq", cmd["cmd"])
+
+			// cast to int to make human readable in assert error message
+			if "not calibrated yet" != cr.Message {
+				t.Fatal("Ignore too-early attempt at CRQ during step-wise cal test failed")
+			}
+			t.Log("Ignore too-early attempt at CRQ during step-wise cal test success")
+			break BADCRQ
+
+		}
+	}
+	// Carry on with the cal process
+	mct := pocket.RangeQuery{
+		Command: pocket.Command{Command: "mc"},
+		What:    "thru",
+	}
+
+	message, err = json.Marshal(mct)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+MCT:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break MCT
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var cr pocket.CustomResult
+			var rq pocket.RangeQuery
+
+			err := json.Unmarshal(m.Data, &cr)
+			assert.NoError(t, err)
+			log.Debugf("message: %s", string(m.Data))
+			log.Debugf("cr result: %+v", cr)
+
+			err = json.Unmarshal(m.Data, &rq)
+			assert.NoError(t, err)
+			log.Debugf("rq result: %+v", rq)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("MCT timeout")
+					break MCT
+				}
+				t.Log("MCT: heartbeat")
+				continue
+			}
+
+			cmd := cr.Command.(map[string]interface{})
+
+			assert.Equal(t, "mc", cmd["cmd"])
+			assert.Equal(t, "thru", cmd["what"])
+
+			// cast to int to make human readable in assert error message
+			if cr.Message != "ok" {
+				t.Fatal("MCT wrong message")
+			}
+			t.Log("MCT test completed")
+			break MCT
+
+		}
+	}
+
+	cc := pocket.RangeQuery{
+		Command: pocket.Command{Command: "cc"},
+	}
+
+	message, err = json.Marshal(cc)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+CC:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break CC
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var rq pocket.RangeQuery
+
+			err = json.Unmarshal(m.Data, &rq)
+			assert.NoError(t, err)
+			log.Debugf("rq result: %+v", rq)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if rq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("CC timeout")
+					break CC
+				}
+				t.Log("CC: heartbeat")
+				continue
+			}
+
+			assert.Equal(t, "cc", rq.Command.Command)
+
+			// TODO check message contents are ok
+
+			// cast to int to make human readable in assert error message
+			if len(rq.Result) == 2 {
+				assert.Equal(t, 100000, int(rq.Result[0].Freq))
+				assert.Equal(t, 4000000, int(rq.Result[1].Freq))
+			} else {
+				t.Fatal("CC wrong length results")
+			}
+			t.Log("CC test completed")
+			break CC
+		}
+	}
+
+	// Test calibratedRangeQuery
+
+	crq = pocket.RangeQuery{
+		Command: pocket.Command{Command: "crq"},
+		Avg:     1,
+		Size:    2,
+		Select:  pocket.SParamSelect{S11: true, S12: false, S21: true, S22: false},
+		What:    "dut3",
+	}
+
+	message, err = json.Marshal(crq)
+
+	assert.NoError(t, err)
+
+	ws = reconws.WsMessage{
+		Data: message,
+		Type: mt,
+	}
+
+	select {
+	case streamWrite <- ws:
+	case <-time.After(timeout):
+		t.Error(t, "timeout awaiting send message")
+	}
+
+	t0 = time.Now()
+
+GOODCRQ:
+	for {
+		select {
+
+		case <-time.After(timeout): // timeout if no heartbeats or responses
+			t.Error("timeout awaiting response")
+			break GOODCRQ
+		case response := <-mds.Next():
+
+			m, ok := response.(reconws.WsMessage)
+
+			assert.True(t, ok)
+
+			var crq pocket.CalibratedRangeQuery
+
+			err := json.Unmarshal(m.Data, &crq)
+
+			log.Debugf("rq result: %s", m.Data)
+
+			assert.NoError(t, err)
+
+			//ignore heartbeats but timeout if only get heartbeats for too long
+			if crq.Command.Command == "hb" {
+				if time.Now().After(t0.Add(timeout)) {
+					t.Fatal("GOODCRQ timeout")
+					break GOODCRQ
+				}
+				t.Log("GOODCRQ: heartbeat")
+				continue
+			}
+
+			assert.Equal(t, "crq", crq.Command.Command)
+
+			// TODO check message contents are ok
+
+			// cast to int to make human readable in assert error message
+			if len(crq.Result) == 2 {
+				assert.Equal(t, 100000, int(crq.Result[0].Freq))
+				assert.Equal(t, 4000000, int(crq.Result[1].Freq))
+			} else {
+				t.Fatal("GOODCRQ wrong length results")
+			}
+			t.Log("GOODCRQ test completed")
+			break GOODCRQ
+
+		}
+	}
+
 }
 
 func userChannelHandler(t *testing.T, toClient, fromClient chan reconws.WsMessage, ctx context.Context) func(w http.ResponseWriter, r *http.Request) {

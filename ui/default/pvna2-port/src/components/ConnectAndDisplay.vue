@@ -232,7 +232,6 @@ export default {
         
         previous_phase: null,
         unit: 1E6,    //frequency in MHz
-
     }
   },
   computed:{
@@ -344,6 +343,7 @@ export default {
                   console.log(response);
                   _this.$store.dispatch('setResponse', response);
                   _this.$store.dispatch('setShowRequestModal', false);
+
 
                 } 
                 else {

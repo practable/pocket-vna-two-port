@@ -81,8 +81,7 @@ class CalibrateServer(CalibrateServicer):
               
       
         #create frequency using data points in object
-        f = rf.Frequency()
-        f.f = request.frequency
+        f = rf.Frequency.from_f(request.frequency, unit="hz")
         
         # np (numpy) complex format
         np_short = convert_sparams_protoc_to_np(f, request.short)

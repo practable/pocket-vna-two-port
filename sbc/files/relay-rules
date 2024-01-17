@@ -1,13 +1,5 @@
 #!/bin/sh
-dataTokenFile="/etc/practable/data.token"
-dataAccessFile="/etc/practable/data.access"
-videoTokenFile="/etc/practable/video.token"
-videoAccessFile="/etc/practable/video.access"
+dataAccess=$(cat /etc/practable/st-ed0-data.access)
+dataToken=$(cat /etc/practable/st-ed0-data.token)
 
-dataToken=$(cat "$dataTokenFile")
-dataAccess=$(cat "$dataAccessFile")
-videoToken=$(cat "$videoTokenFile")
-videoAccess=$(cat "$videoAccessFile")
-
-curl -X POST -H "Content-Type: application/json" -d '{"stream":"data","destination":"'"${dataAccess}"'","id":"0","token":"'"${dataToken}"'"}' http://localhost:8888/api/destinations 
-curl -X POST -H "Content-Type: application/json" -d '{"stream":"video","destination":"'"${videoAccess}"'","id":"1","token":"'"${videoToken}"'"}' http://localhost:8888/api/destinations 
+curl -X POST -H "Content-Type: application/json" -d '{"stream":"data","destination":"'"${dataAccess}"'","id":"0","token":"'"${dataToken}"'"}' http://localhost:8888/api/destinations

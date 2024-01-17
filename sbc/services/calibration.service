@@ -9,7 +9,7 @@ RestartSec=5s
 ExecStartPre=/bin/sleep 1
 ExecStartPre=-/usr/bin/docker stop %n
 ExecStartPre=-/usr/bin/docker rm %n
-ExecStart=/usr/bin/docker run --name %n practable/calibration-twoport:arm32v7-3.7-0.1
+ExecStart=/usr/bin/docker run --name %n practable/calibration-twoport-grpc:arm64v8-3.12-0.2
 
 [Install]
 WantedBy=multi-user.target
