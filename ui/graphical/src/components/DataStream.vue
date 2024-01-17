@@ -58,7 +58,7 @@ export default {
 		},
 		urlOK(is) {
 			if (is) {
-				console.log("get dataURL", this.urlOK, this.url);
+				console.log("get dataURL", this.urlOK);
 			}
 		},
 
