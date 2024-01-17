@@ -2,7 +2,7 @@
 
 <template>
 
-  <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar fixed-top navbar-expand-lg navbar-dark background-primary">
     <div class="container-fluid">
         <img src="/images/practable-icon.png" width="30" height="30" alt="">
       <a class="navbar-brand" href="#">{{labName}}</a>
@@ -70,17 +70,17 @@ export default {
         return 'Pocket VNA Lab: ' + this.getLabTitle;
       },
       getLabTitle(){
-        let config = this.getConfigJSON;
-        if(config.parameters != undefined){
-            let id = config.name;
-            let title = config.parameters.find(parameters => {
-            return parameters.for === "ui"
-        })
-            return title.are[0].v + ' (' + id + ')';
-        } 
-        else {
-            return '';
-        }
+      let config = this.getConfigJSON;
+      if(config.parameters != undefined){
+        let id = config.name;
+        let title = config.parameters.find(parameters => {
+        return parameters.for === "ui"
+      })
+        return title.are[0].v + ' (' + id + ')';
+      } 
+      else {
+        return '';
+      }
     },
   },
   methods: {
