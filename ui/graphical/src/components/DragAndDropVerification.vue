@@ -13,7 +13,7 @@
         
         <div class='d-flex flex-row justify-content-center'>
 
-            <button id="verify" type='button' class="button-lg button-primary" @click='verify' :disabled="port1 == '' && port2 == ''">Verify</button>
+            <button id="verify" type='button' class="button-lg button-primary" @click='verify' :disabled="port1 == '' && port2 == ''">Plot and User Verify</button>
 
         </div>
 
