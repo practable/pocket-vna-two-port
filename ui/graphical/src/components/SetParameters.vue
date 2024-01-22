@@ -105,7 +105,7 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header" style="background-color: #ccc">
-                <h5 class="modal-title">Pocket VNA calibration parameters set</h5>
+                <h5 class="modal-title">Pocket VNA frequency range</h5>
                 </div>
                 <div class="modal-body">
                 <div class='d-flex row align-items-center'>
@@ -115,7 +115,7 @@
                         </svg>
                     </div>
                     <div class='col-10'>
-                    <p> Calibration parameters have now been set.</p>
+                    <p> The frequency range for calibration has now been set.</p>
                     <p>Please move on to the next tab, 2) Calibration</p>
                     </div>
                 </div>
