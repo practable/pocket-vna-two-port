@@ -14,11 +14,11 @@
           <img id='sparams-image' src='/images/VNA.png' alt='getSParamImage.alt'>
           <figcaption>Temp image of ports</figcaption>
       </div>
-      <div v-if='getConfigJSON != ""' class='col-4 '>
+      <div v-if='getConfigJSON != ""' class='col-6'>
           <img id='dut-image' :src='getDUTImage.src' :alt='getDUTImage.alt'>
           <figcaption>{{ getDUTImage.figcaption }}</figcaption>
       </div>
-      <div v-else class='col-4 '>
+      <div v-else class='col-6'>
           <img id='dut-image' src='/images/PocketVNA.png' alt='getDUTImage.alt'>
           <figcaption>Temp image of Pocket VNA</figcaption>
       </div>
