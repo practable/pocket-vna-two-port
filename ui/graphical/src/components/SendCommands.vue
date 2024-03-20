@@ -1,7 +1,7 @@
 
 <template>
-    <div>
-        <h4> 2 port Calibration and Measurement </h4>
+    <div class='container-sm m-2 background-white border rounded'>
+        <h4> 1 port Calibration and Measurement </h4>
 
     <div v-if='singleFrequencyAllowed' class='row mb-2'>
       <div class='col-12'>
@@ -16,45 +16,30 @@
       </div>
     </div>
 
-
-    <div class='row mb-2'>
-      <div class='col-12 d-flex'>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="hardware-radio1" value='filter' id="hardware-radio1" v-model='hardware' @change="updateHardwareSelected('filter')">
-          <label class="form-check-label" for="hardware-radio1">Filter</label>
-        </div>
-
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="hardware-radio2" value='coupler' id="hardware-radio2" v-model='hardware' @change="updateHardwareSelected('coupler')">
-          <label class="form-check-label" for="hardware-radio2">Coupler</label>
-        </div>
-      </div>
-    </div>
-
-    <!-- <div v-if='sparams.length > 1' class='row mb-2'>
+    <div v-if='sparams.length > 1' class='row mb-2'>
       <div class='col-12'>
         <div v-if='sparams.includes("s11")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" v-model='s11' disabled >
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" v-model='s11' :disabled='sparams.length == 1'>
           <label class="form-check-label" for="s11check">S11</label>
         </div>
 
         <div v-if='sparams.includes("s12")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s12check" v-model='s12' disabled>
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s12check" v-model='s12'>
           <label class="form-check-label" for="s12check">S12</label>
         </div>
 
         <div v-if='sparams.includes("s21")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s21check" v-model='s21' disabled>
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s21check" v-model='s21'>
           <label class="form-check-label" for="s21check">S21</label>
         </div>
 
          <div v-if='sparams.includes("s22")' class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s22check" v-model='s22' disabled>
+          <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s22check" v-model='s22'>
           <label class="form-check-label" for="s22check">S22</label>
         </div>
         
       </div>
-    </div> -->
+    </div>
 
     <div v-if='averagingAllowed' class='row mb-2' @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
       <div class='col-12'>
@@ -79,7 +64,7 @@
             <span for="sizeRange" class="input-group-text me-4 text-wrap">Frequency points</span>
           </div>
           <div class='col-lg-7'>
-            <input type="range" class="form-range" :min="min_data_points" :max="max_data_points" step="1" id="sizeRange" v-model='size' @change='setCalibrated(false)'>
+            <input type="range" class="form-range" min="2" max="501" step="1" id="sizeRange" v-model='size' @change='setCalibrated(false)'>
           </div>
           <div class='col-lg-2'>
             <span class='input-group-text ms-4'>{{size}}</span>
@@ -103,32 +88,24 @@
         <!-- CALIBRATION COMMANDS-->
         <div v-if='mode == "single"' class="input-group" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text" id="basic-addon1">Frequency</span>
-          <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
+          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
           <span class="input-group-text" id="basic-addon1">MHz</span>
           <button id="request" type='button' class="btn btn-success btn-lg" @click="singleFreqCommand">Request</button>
         </div>
 
-        <div v-else @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
-            <div class="input-group">
-                <span class="input-group-text" id="span-start-1">Start</span>
-                <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="span-start-1" id="freq" v-model="frequency" @change="setCalibrated(false)">
-                <span class="input-group-text" id="span-end-1">MHz</span>
-            </div>
-
-            <div class="input-group">
-                <span class="input-group-text" id="span-start-2">End&nbsp;</span>
-                <input type="number" :class="(parseFloat(frequency_end) >= minFrequency && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="span-start-2" id="freq_end" v-model="frequency_end" @change="setCalibrated(false)">     
-                <span class="input-group-text" id="span-end-2">MHz</span>
-            </div>
-          
-
-          
+        <div v-else class="input-group" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
+          <span class="input-group-text" id="basic-addon1">Start</span>
+          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency" @change="setCalibrated(false)">
+          <span class="input-group-text" id="basic-addon1">MHz</span>
+          <span class="input-group-text" id="basic-addon1">End</span>
+          <input type="number" :class="(parseFloat(frequency_end) >= 0 && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq_end" v-model="frequency_end" @change="setCalibrated(false)">     
+          <span class="input-group-text" id="basic-addon1">MHz</span>
           
         </div>
       </div>
 
-      <div class='d-flex col-lg-2'>
-          <button id="request_calibration" type='button' class="btn btn-success btn-lg" @click="rangeFreqCalibration" :disabled='getSessionExpired'>Calibrate</button>
+      <div class='col-lg-2'>
+          <button id="request_calibration" type='button' class="btn btn-success btn-lg" @click="rangeFreqCalibration">Calibrate</button>
       </div>
     </div>
 
@@ -141,45 +118,26 @@
          <!-- MEASUREMENT COMMANDS-->
         <div v-if='mode == "single"' class="input-group mb-2" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
           <span class="input-group-text" id="basic-addon1">Frequency</span>
-          <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
+          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" v-model="frequency">
           <span class="input-group-text" id="basic-addon1">MHz</span>
           <button id="request" type='button' class="btn btn-success btn-lg" @click="singleFreqCommand">Request</button>
         </div>
 
-        <div v-else @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
-            <div class="input-group">
-                <span class="input-group-text" id="span-start-measure-1">Start</span>
-                <input type="number" :class="(parseFloat(frequency) >= minFrequency && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="span-start-measure-1" id="freq" :value="frequency" disabled>
-                <span class="input-group-text" id="span-end-measure-1">MHz</span>
-            </div>
-
-            <div class="input-group mb-2">
-                <span class="input-group-text" id="span-start-measure-2">End&nbsp;</span>
-                <input type="number" :class="(parseFloat(frequency_end) >= minFrequency && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="span-start-measure-2" id="freq_end" :value="frequency_end" disabled>     
-                <span class="input-group-text" id="span-end-measure-2">MHz</span>
-            </div>
-          
-          
+        <div v-else class="d-flex input-group mb-2" @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
+          <span class="input-group-text" id="basic-addon1">Start</span>
+          <input type="number" :class="(parseFloat(frequency) >= 0 && parseFloat(frequency) < maxFrequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="Start frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq" :value="frequency" disabled>
+          <span class="input-group-text" id="basic-addon1">MHz</span>
+          <span class="input-group-text" id="basic-addon1">End</span>
+          <input type="number" :class="(parseFloat(frequency_end) >= 0 && parseFloat(frequency_end) <= maxFrequency && parseFloat(frequency_end) > frequency) ? 'form-control' : 'form-control is-invalid'" :min='minFrequency' :max='maxFrequency' placeholder="End frequency" aria-label="freq" aria-describedby="basic-addon1" id="freq_end" :value="frequency_end" disabled>     
+          <span class="input-group-text" id="basic-addon1">MHz</span>
         </div>
 
         <!-- WHAT IS BEING MEASURED-->
-        <!-- <div class='row mb-2'>
+        <div class='row mb-2'>
           <div class='col-12 d-flex justify-content-end'>
             <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="dutRadio1" value='dut1' id="dutRadio1" v-model='what'>
-              <label class="form-check-label" for="dutRadio1">DUT1</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="dutRadio2" value='dut2' id="dutRadio2" v-model='what'>
-              <label class="form-check-label" for="dutRadio2">DUT2</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="dutRadio3" value='dut3' id="dutRadio3" v-model='what'>
-              <label class="form-check-label" for="dutRadio3">DUT3</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="dutRadio4" value='dut4' id="dutRadio4" v-model='what'>
-              <label class="form-check-label" for="dutRadio4">DUT4</label>
+              <input class="form-check-input" type="radio" name="dutRadio" value='dut' id="dutRadio" v-model='what'>
+              <label class="form-check-label" for="dutRadio">DUT</label>
             </div>
             <div class="form-check form-check-inline">
               <input class="form-check-input" type="radio" name="shortRadio" value='short' id="shortRadio" v-model='what'>
@@ -193,35 +151,12 @@
               <input class="form-check-input" type="radio" name="loadRadio" value='load' id="loadRadio" v-model='what'>
               <label class="form-check-label" for="loadRadio">Load</label>
             </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="thruRadio" value='thru' id="thruRadio" v-model='what'>
-              <label class="form-check-label" for="thruRadio">Thru</label>
-            </div>
-          </div>
-        </div> -->
-
-        <div class="row">
-          <div class='input-group'>
-              <span class='input-group-text' for="graph">Select measurement: </span>
-              <select class='form-select' name="measurement" id="measurement" v-model="what" @change="updateDUTSelected(what)">
-                  <option v-if="hardware == 'filter'" value="dut1">Port 1 and 2</option>
-                  <option v-if="hardware == 'coupler'" value="dut2">Port 1 and 4</option>
-                  <option v-if="hardware == 'coupler'" value="dut3">Port 1 and 2</option>
-                  <option v-if="hardware == 'coupler'" value="dut4">Port 1 and 3</option>
-                  <!-- <option value="short">Short</option>
-                  <option value="open">Open</option>
-                  <option value="load">Load</option>
-                  <option value="thru">Thru</option> -->
-                  
-              </select> 
           </div>
         </div>
-       
-
     </div>
 
       <div class='d-flex col-lg-2'>
-        <button id="request_results" type='button' class="btn btn-success btn-lg" @click="rangeFreqRequest" :disabled='!getCalibrated || getSessionExpired'>Measure</button>
+        <button id="request_results" type='button' class="btn btn-success btn-lg" @click="rangeFreqRequest" :disabled='!getCalibrated'>Measure</button>
       </div>
 
   </div>
@@ -246,8 +181,7 @@
                 </div>
                 <div class='col-10'>
                   <p> Please wait for the pocket VNA to calibrate.</p>
-                  <p>This could take a couple of minutes.</p>
-                  <p>If it takes much longer than this, please click Close, then refresh the page and try again.</p>
+                  <p>This could take around 30 seconds.</p>
                 </div>
               </div>
             </div>
@@ -278,8 +212,7 @@
                 </div>
                 <div class='col-10'>
                   <p> Please wait for the pocket VNA to send data.</p>
-                  <p>This could take a couple of minutes.</p>
-                  <p>If it takes much longer than this, please click Close, then refresh the page and try again.</p>
+                  <p>This could take around 30 seconds.</p>
                 </div>
               </div>
             </div>
@@ -304,25 +237,22 @@ export default {
   props:['singleFrequencyAllowed', 'rangeFrequencyAllowed', 'sparams', 'averagingAllowed'],
   data () {
     return {
-      hardware: 'filter', // or 'coupler'
         mode: 'range',  // or 'range'
         frequency: 1.0,   //MHz
         frequency_end: 4.0, //MHz
-        min_data_points: 2,
-        max_data_points: 201,
-        minFrequency: 0.5,
+        minFrequency: 0,
         maxFrequency: 4000.0, //MHz
         units: 1E6,
         s11: true,
-        s12: true,
-        s21: true,
-        s22: true,
+        s12: false,
+        s21: false,
+        s22: false,
         avgCounts: 1,
         size: 20,
         islog: false,
-        what: 'dut1', //'short', 'load', 'open', 'thru', 'dut1', 'dut2', 'dut3', 'dut4'
+        what: 'dut', //'short', 'load', 'open'
 
-        //showCancel: false,  //should the cancel button show on the modals
+        showCancel: false,  //should the cancel button show on the modals
 
     }
   },
@@ -333,17 +263,11 @@ export default {
       ...mapGetters([
         'getCalibrated',
         'getShowCalibrationModal',
-        'getShowRequestModal',
-        'getSessionExpired'
+        'getShowRequestModal'
       ])
   },
   watch:{
-    getSessionExpired(expired){
-        if(expired){
-            this.setShowCalibrationModal(false);
-            this.setShowRequestModal(false);
-        }
-      }
+      
   },
   created(){
       if(this.singleFrequencyAllowed && !this.rangeFrequencyAllowed){
@@ -363,8 +287,7 @@ export default {
       'setDraggable',
       'setCalibrated',
       'setShowCalibrationModal',
-      'setShowRequestModal',
-      'setDUT'
+      'setShowRequestModal'
     ]),
       singleFreqCommand(){
           //command structure: {"id":"945102d5-94e4-448e-bbbf-48384c662711","t":1634664795,"cmd":"sq","freq":100000,"avg":1,"sparam":{"S11":true,"S12":false,"S21":true,"S22":false}}
@@ -442,7 +365,6 @@ export default {
         //command structure: {"cmd":"crq","avg":1,"sparam":{"S11":true,"S12":false,"S21":false,"S22":false}}
         //only works for s11 parameter alone
         let params = {
-            t:dayjs().unix(),
             avg:Number(this.avgCounts),
             sparam:{s11:this.s11,s12:this.s12,s21:this.s21,s22:this.s22},
             what: this.what
@@ -454,20 +376,6 @@ export default {
       toggleCalibrationMessage(){
         this.showCalibrationMessage = !this.showCalibrationMessage;
       },
-      updateDUTSelected(dut){
-        if(dut == 'dut1' || dut == 'dut2' || dut == 'dut3' || dut == 'dut4'){
-          this.setDUT(dut);
-        } 
-      },
-      updateHardwareSelected(hardware){
-        if(hardware == 'filter'){
-          this.what = 'dut1';
-          this.setDUT('dut1');
-        } else{
-          this.what = 'dut2';
-          this.setDUT('dut2');
-        }
-      }
      
       
   }
