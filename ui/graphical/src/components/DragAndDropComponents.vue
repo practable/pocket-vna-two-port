@@ -37,18 +37,18 @@
 
       <!-- If the thru is connected then similarly connect both and show image -->
       <div v-else-if="port1.type == 'thru' || port2.type == 'thru'" class='col-sm-12 pvna' @dragleave='removePort1(); removePort2()' @touchstart="removePort1(); removePort2()">
-        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-2port-thru.png' alt='pocket-vna-connected'>
+        <img class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-thru.png' alt='pocket-vna-connected'>
       </div>
 
       <!-- Else check if cal standards are shown in either port separately -->
       <div v-else-if="port1.type == 'short' || port1.type == 'open' || port1.type == 'load'" class='col-sm-12 pvna' @dragleave='removePort1' @touchstart="removePort1">
         <img v-if="!syncPorts" class='pvna-img' id='pvna-connected-dut-cal-image' src='/images/pvna-connected-port-1-cal.png' alt='pocket-vna-connected'>
-        <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal.png' alt='pocket-vna-connected'>
+        <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal-with-cable.png' alt='pocket-vna-connected'>
       </div>
 
       <div v-else-if="port2.type == 'short' || port2.type == 'open' || port2.type == 'load'" class='col-sm-12 pvna' @dragleave='removePort2' @touchstart="removePort2">
         <img v-if="!syncPorts" class='pvna-img' id='pvna-connected-dut-cal-image' src='/images/pvna-connected-port-2-cal.png' alt='pocket-vna-connected'>
-        <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal.png' alt='pocket-vna-connected'>
+        <img v-else class='pvna-img' id='pvna-connected-dut-image' src='/images/pvna-connected-port-1-2-cal-with-cable.png' alt='pocket-vna-connected'>
       </div>
 
 

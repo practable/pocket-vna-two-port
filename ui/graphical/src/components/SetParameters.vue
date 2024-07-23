@@ -1,10 +1,10 @@
 <template>
   
  <div class='container-sm m-2 p-2 background-white border rounded'>
-    <h4 v-if="sparams == 's11'"> 1 port Calibration Parameters </h4>
-    <h4 v-else> 2 port Calibration Parameters </h4>
+    <!-- <h4 v-if="sparams == 's11'"> 1 port Calibration Parameters </h4>
+    <h4 v-else> 2 port Calibration Parameters </h4> -->
 
-    <div v-if='sparams.length > 1' class='row mb-2'>
+    <!-- <div v-if='sparams.length > 1' class='row mb-2'>
       <div class='col-12'>
         <div v-if='sparams.includes("s11")' class="form-check form-check-inline">
           <input class="form-check-input" type="checkbox" name="flexCheckDefault" id="s11check" checked disabled>
@@ -27,7 +27,7 @@
         </div>
         
       </div>
-    </div>
+    </div> -->
 
     <div v-if="!isDisabled" class='row m-3' @mousedown="setDraggable(false)" @mouseup="setDraggable(true)">
       
@@ -36,7 +36,7 @@
             <label for="sizeRange" class="txt-primary">Data points</label>
           </div>
           <div class='col-md-8 pe-2'>
-            <input type="range" class="form-range" min="2" max="501" step="1" id="sizeRange" v-model='frequency_points' @change='reset'>
+            <input type="range" class="form-range" min="2" :max="max_data_points" step="1" id="sizeRange" v-model='frequency_points' @change='reset'>
           </div>
           <div class='col-md-2'>
             <label class='txt-primary'>{{frequency_points}}</label>
@@ -95,7 +95,7 @@
 
 
     <div v-if="!isDisabled" class='d-flex flex-row justify-content-center'>
-          <button id="set" type='button' class="button-lg button-success" @click='setCalibrationState'>Set Parameters</button>
+          <button id="set" type='button' class="button-lg button-success" @click='setCalibrationState'>Set Frequency Range</button>
     </div>
 
 
@@ -105,7 +105,7 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header" style="background-color: #ccc">
-                <h5 class="modal-title">Pocket VNA calibration parameters set</h5>
+                <h5 class="modal-title">Pocket VNA frequency range</h5>
                 </div>
                 <div class="modal-body">
                 <div class='d-flex row align-items-center'>
@@ -115,7 +115,7 @@
                         </svg>
                     </div>
                     <div class='col-10'>
-                    <p> Calibration parameters have now been set.</p>
+                    <p> The frequency range for calibration has now been set.</p>
                     <p>Please move on to the next tab, 2) Calibration</p>
                     </div>
                 </div>
@@ -147,6 +147,7 @@ export default {
     data () {
         return {
             frequency_points: 20,
+            max_data_points: 201,
             frequency: 1.0,   //MHz
             frequency_end: 4.0, //MHz
             minFrequency: 0.5,

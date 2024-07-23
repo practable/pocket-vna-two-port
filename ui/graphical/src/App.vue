@@ -10,7 +10,7 @@
    
         <ul class="nav nav-tabs">
             <li class="nav-item">
-                <router-link :class="getParametersClass" aria-current="page" :to="{ path: '/parameters' }">1) Set Parameters</router-link>
+                <router-link :class="getParametersClass" aria-current="page" :to="{ path: '/parameters' }">1) Set Frequency Range</router-link>
             </li>
             <li class="nav-item">
                 <router-link :class="getCalibrationClass" aria-current="page" :to="{ path: '/calibration' }">2) Calibration</router-link>

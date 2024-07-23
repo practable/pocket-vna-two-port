@@ -184,9 +184,9 @@ export default {
                     {
                         label:'s12',
                         data: [],
-                        pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                        pointBackgroundColor: 'rgba(255, 0, 0, 1)',
                         backgroundColor: 'rgba(0, 0, 0, 0)',
-                        borderColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(255, 0, 0, 1)',
                         showLine: false,
                     }
                 )
@@ -198,9 +198,9 @@ export default {
                     {
                         label:'s21',
                         data: [],
-                        pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                        pointBackgroundColor: 'rgba(0, 255, 0, 1)',
                         backgroundColor: 'rgba(0, 0, 0, 0)',
-                        borderColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(0, 255, 0, 1)',
                         showLine: false,
                     }
                 )
@@ -212,9 +212,9 @@ export default {
                     {
                         label:'s22',
                         data: [],
-                        pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                        pointBackgroundColor: 'rgba(0, 0, 255, 1)',
                         backgroundColor: 'rgba(0, 0, 0, 0)',
-                        borderColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(0, 0, 255, 1)',
                         showLine: false,
                     }
                 )

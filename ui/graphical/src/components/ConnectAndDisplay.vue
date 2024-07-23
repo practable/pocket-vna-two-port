@@ -3,7 +3,7 @@
 <div class='container-sm m-2 background-white border rounded'>
 
     <div v-if='getSessionExpired' class='col-12'>
-        <img id='session-end-image' src='https://assets.practable.io/images/common/thank-you-screen.svg' alt='session ended'>
+        <img id='session-end-image' src='https://app.practable.io/ed0/static/images/common/thank-you-screen.svg' alt='session ended'>
     </div>
     <div v-else class='row mb-4' id='overlay'>
       <div v-if='getConfigJSON != ""' class='col-6'>
@@ -14,11 +14,11 @@
           <img id='sparams-image' src='/images/VNA.png' alt='getSParamImage.alt'>
           <figcaption>Temp image of ports</figcaption>
       </div>
-      <div v-if='getConfigJSON != ""' class='col-4 '>
+      <div v-if='getConfigJSON != ""' class='col-6'>
           <img id='dut-image' :src='getDUTImage.src' :alt='getDUTImage.alt'>
           <figcaption>{{ getDUTImage.figcaption }}</figcaption>
       </div>
-      <div v-else class='col-4 '>
+      <div v-else class='col-6'>
           <img id='dut-image' src='/images/PocketVNA.png' alt='getDUTImage.alt'>
           <figcaption>Temp image of Pocket VNA</figcaption>
       </div>
